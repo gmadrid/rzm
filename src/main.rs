@@ -2,6 +2,7 @@
 extern crate clap;
 
 mod args;
+mod hunt;
 mod result;
 
 use result::{Error, Result};
