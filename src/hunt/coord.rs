@@ -1,10 +1,11 @@
 use self::super::direction::{Direction, xdelta, ydelta};
+#[cfg(test)]
 use std::collections::HashSet;
 
 #[derive(Eq,PartialEq,Hash,Copy,Clone,Debug)]
 pub struct Coord {
-  row: i8,
-  col: i8,
+  pub row: i8,
+  pub col: i8,
 }
 
 impl Coord {
@@ -15,8 +16,8 @@ impl Coord {
     }
   }
 
-  pub fn in_direction(&self, dir: Direction) -> Coord {
-    Coord::new(self.row + xdelta(dir), self.col + ydelta(dir))
+  pub fn move_in_direction(&self, dir: Direction) -> Coord {
+    Coord::new(self.row + ydelta(dir), self.col + xdelta(dir))
   }
 }
 
@@ -37,10 +38,10 @@ fn test_coord_equals() {
 fn test_coord_direction() {
   let c = Coord::new(5, 5);
 
-  assert_eq!(Coord::new(4, 5), c.in_direction(Direction::West));
-  assert_eq!(Coord::new(6, 5), c.in_direction(Direction::East));
-  assert_eq!(Coord::new(5, 4), c.in_direction(Direction::North));
-  assert_eq!(Coord::new(5, 6), c.in_direction(Direction::South));
+  assert_eq!(Coord::new(5, 4), c.move_in_direction(Direction::West));
+  assert_eq!(Coord::new(5, 6), c.move_in_direction(Direction::East));
+  assert_eq!(Coord::new(4, 5), c.move_in_direction(Direction::North));
+  assert_eq!(Coord::new(6, 5), c.move_in_direction(Direction::South));
 }
 
 #[test]

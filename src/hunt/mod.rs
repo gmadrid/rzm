@@ -1,3 +1,3 @@
-mod board;
-mod coord;
+pub mod board;
+pub mod coord;
 mod direction;

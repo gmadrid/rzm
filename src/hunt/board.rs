@@ -1,11 +1,12 @@
+use ansi_term::Colour::{Red,Green};
 use result::{Error, Result};
 use std::collections::HashSet;
-
 #[cfg(test)]
 use std::hash::Hash;
 #[cfg(test)]
 use std::iter::{FromIterator, IntoIterator};
 use super::coord::Coord;
+use super::direction::Direction;
 
 macro_rules! board {
   ( $rows:expr ; $cols:expr) => { Board::new($rows, $cols, HashSet::<Coord>::new()) };
@@ -27,6 +28,7 @@ pub struct Board {
   num_rows: i8,
   num_cols: i8,
   possible_cells: HashSet<Coord>,
+  dead_cells: HashSet<Coord>,
 }
 
 impl Board {
@@ -46,6 +48,25 @@ impl Board {
     Ok(Board::new(rows, cols, dead_cells))
   }
 
+  pub fn alpha() -> Board {
+    Board::parse(15, 15,             
+      "...............\
+       ..X...X.....XX.\
+       ..X.....X...X..\
+       ........X......\
+       ...............\
+       ...............\
+       .X.X..X.X......\
+       .X.X..X........\
+       ...X...X...XXX.\
+       ...............\
+       ...X...........\
+       ..X....X...X...\
+       X...........X..\
+       ..X...X.X....X.\
+       ...X...........").unwrap()
+  }
+
   pub fn new(rows: i8, cols: i8, dead_cells: HashSet<Coord>) -> Board {
     let mut possible_cells = HashSet::<Coord>::new();
     for row in 0..rows {
@@ -60,18 +81,39 @@ impl Board {
       num_rows: rows,
       num_cols: cols,
       possible_cells: possible_cells,
+      dead_cells: dead_cells,
     }
   }
 
-  pub fn rows(&self) -> i8 {
+  pub fn dump(&self) {
+    for row in 0..self.num_rows {
+      print!("{:2} ", row);
+      for col in 0..self.num_cols {
+        let c = Coord::new(row, col);
+        if self.possible_cells.contains(&c) {
+          print!("{}", Green.paint("O"));
+        } else if self.dead_cells.contains(&c) {
+          print!("{}", Red.paint("x"));
+        } else {
+          print!("{}", ".");
+        }
+      }
+      println!("");
+    }
+  }
+
+  #[cfg(test)]
+  fn rows(&self) -> i8 {
     self.num_rows
   }
 
-  pub fn cols(&self) -> i8 {
+  #[cfg(test)]
+  fn cols(&self) -> i8 {
     self.num_cols
   }
 
-  pub fn possible_locations(&self) -> HashSet<Coord> {
+  #[cfg(test)]
+  fn possible_locations(&self) -> HashSet<Coord> {
     self.possible_cells.clone()
   }
 
@@ -88,6 +130,38 @@ impl Board {
       }
     }
     Ok(vec)
+  }
+
+  fn is_valid_coord(&self, coord: Coord) -> bool {
+    coord.row >= 0 && coord.row < self.num_rows && coord.col >= 0 && coord.col < self.num_cols &&
+    !self.dead_cells.contains(&coord)
+  }
+
+  pub fn north(&mut self) {
+    self.move_in_direction(Direction::North);
+  }
+
+  pub fn south(&mut self) {
+    self.move_in_direction(Direction::South);
+  }
+
+  pub fn east(&mut self) {
+    self.move_in_direction(Direction::East);
+  }
+
+  pub fn west(&mut self) {
+    self.move_in_direction(Direction::West);
+  }
+
+  fn move_in_direction(&mut self, dir: Direction) {
+    let mut new_active_cells = HashSet::<Coord>::new();
+    for coord in self.possible_cells.iter() {
+      let new_coord = coord.move_in_direction(dir);
+      if self.is_valid_coord(new_coord) {
+        new_active_cells.insert(new_coord);
+      }
+    }
+    self.possible_cells = new_active_cells;
   }
 }
 
@@ -193,4 +267,42 @@ fn test_string_to_coords() {
   let x_coords = board.coords_for_string(str, 'X').unwrap();
   assert_eq!(2, x_coords.len());
   assert_has_coords!(x_coords, (0, 2), (1, 0));
+}
+
+#[test]
+fn test_is_valid_coord() {
+  let board = Board::parse(2, 3, "..XX..").unwrap();
+  assert!(board.is_valid_coord(Coord::new(0, 0)));
+  assert!(board.is_valid_coord(Coord::new(1, 2)));
+  assert!(!board.is_valid_coord(Coord::new(0, 2))); // island
+  assert!(!board.is_valid_coord(Coord::new(1, 0))); // island
+  assert!(!board.is_valid_coord(Coord::new(-1, 1)));
+  assert!(!board.is_valid_coord(Coord::new(2, -1)));
+  assert!(!board.is_valid_coord(Coord::new(3, 1)));
+  assert!(!board.is_valid_coord(Coord::new(2, 2)));
+}
+
+#[test]
+fn test_move() {
+  let mut board = Board::parse(2, 3, "..XX..").unwrap();
+  assert_eq_sets(board.possible_locations(),
+                 board.coords_for_string("..XX..", '.').unwrap());
+
+  board.north();
+  assert_eq_sets(board.possible_locations(),
+                 board.coords_for_string("X.XXXX", '.').unwrap());
+  board.west();
+  assert_eq_sets(board.possible_locations(),
+                 board.coords_for_string(".XXXXX", '.').unwrap());
+
+  let mut board = Board::parse(2, 3, "..XX..").unwrap();
+  assert_eq_sets(board.possible_locations(),
+                 board.coords_for_string("..XX..", '.').unwrap());
+  board.south();
+  assert_eq_sets(board.possible_locations(),
+                 board.coords_for_string("XXXX.X", '.').unwrap());
+  board.east();
+  assert_eq_sets(board.possible_locations(),
+                 board.coords_for_string("XXXXX.", '.').unwrap());
+
 }

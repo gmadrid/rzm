@@ -1,3 +1,4 @@
+extern crate ansi_term;
 #[macro_use]
 extern crate clap;
 
@@ -5,10 +6,26 @@ mod args;
 mod hunt;
 mod result;
 
+use hunt::board::Board;
 use result::{Error, Result};
 
 fn real_main() -> Result<()> {
   let _ = try!(args::parse());
+
+  let mut board = Board::alpha();
+  board.dump();  // TODO: replace this with a display() method.
+  println!("");
+
+  board.north();
+  board.dump();
+  println!("");
+
+  board.west();
+  board.west();
+  board.west();
+  board.south();
+  board.east();
+  board.dump();
 
   Ok(())
 }
