@@ -4,6 +4,7 @@ use std::result;
 
 #[derive(Debug)]
 pub enum Error {
+  BoardParseError,
   Clap(clap::Error),
   IO(io::Error),
 }
