@@ -10,13 +10,11 @@ impl Memory {
   }
 
   pub fn u8_at_index(&self, index: usize) -> u8 {
-    //    self.bytes[index]
-    32
+    self.bytes[index]
   }
 
   pub fn u16_at_index(&self, index: usize) -> u16 {
-    //    BigEndian::read_u16(&self.bytes[index..])
-    33
+    BigEndian::read_u16(&self.bytes[index..])
   }
 }
 

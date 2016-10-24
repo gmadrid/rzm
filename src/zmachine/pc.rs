@@ -1,15 +1,10 @@
-use super::memory::Memory;
 
-pub struct PC<'a> {
+pub struct PC {
   pc: usize,
-  memory: &'a Memory,
 }
 
-impl<'a> PC<'a> {
-  pub fn new(pc: usize, memory: &'a Memory) -> PC<'a> {
-    PC {
-      pc: pc,
-      memory: memory,
-    }
+impl PC {
+  pub fn new(pc: usize) -> PC {
+    PC { pc: pc }
   }
 }

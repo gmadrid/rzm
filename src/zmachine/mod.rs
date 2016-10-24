@@ -1,4 +1,3 @@
-use byteorder::{BigEndian, ByteOrder};
 use result::Result;
 use std::io::Read;
 
@@ -13,30 +12,31 @@ use self::pc::PC;
 // const HEADER_SIZE: usize = 64;
 // const STACK_SIZE: usize = 61440;
 
-pub struct ZMachine<'a> {
+pub struct ZMachine {
   memory: Memory,
-  header: &'a Header<'a>,
-  pc: &'a PC<'a>, /* header: [u8; HEADER_SIZE],
-                   * pc: usize,
-                   * stack: [u8; STACK_SIZE],
-                   * sp: u16,
-                   *
-                   * smem_index: u16,
-                   * hmem_index: u16,
-                   *
-                   * memory: Vec<u8>, */
+  pc: PC, /* header: [u8; HEADER_SIZE],
+           *
+           * pc: usize,
+           * stack: [u8; STACK_SIZE],
+           * sp: u16,
+           *
+           * smem_index: u16,
+           * hmem_index: u16,
+           *
+           * memory: Vec<u8>, */
 }
 
-impl<'a> ZMachine<'a> {
-  pub fn from_reader<T: Read>(mut reader: T) -> Result<ZMachine<'a>> {
+impl ZMachine {
+  pub fn from_reader<T: Read>(mut reader: T) -> Result<ZMachine> {
     let mut zbytes = Vec::<u8>::new();
     try!(reader.read_to_end(&mut zbytes));
 
     let memory: Memory = From::from(zbytes);
-    //    Memory::new(zbytes.as_slice());
-    let header = Header::new(&memory);
-    let pc = PC::new(header.starting_pc(), &memory);
-
+    let mut pc: Option<PC> = None;
+    {
+      let header: Header = From::from(&memory);
+      pc = Some(PC::new(header.starting_pc()));
+    }
     // let mut zmachine = ZMachine {
     //   header: [0; HEADER_SIZE],
     //   pc: 0,
@@ -62,8 +62,7 @@ impl<'a> ZMachine<'a> {
 
     Ok(ZMachine {
       memory: memory,
-      header: &header,
-      pc: &pc,
+      pc: pc.unwrap(),
     })
   }
 
