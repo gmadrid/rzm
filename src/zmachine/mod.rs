@@ -4,16 +4,27 @@ use std::io::Read;
 mod memory;
 mod opcodes;
 mod pc;
+mod stack;
 
 use self::memory::Memory;
 use self::opcodes::{Operand, Operands, Operation};
 use self::pc::PC;
+use self::stack::Stack;
 
 const HEADER_SIZE: usize = 64;
 
 pub struct ZMachine {
   memory: Memory,
   pc: PC,
+  stack: Stack,
+}
+
+impl From<Vec<u8>> for ZMachine {
+  // WARNING: From::from cannot fail, so this does no consistency checking.
+  fn from(vec: Vec<u8>) -> ZMachine {
+    let memory = Memory::from(vec);
+    ZMachine::from(memory)
+  }
 }
 
 impl From<Memory> for ZMachine {
@@ -23,6 +34,7 @@ impl From<Memory> for ZMachine {
     let mut zmachine = ZMachine {
       memory: memory,
       pc: pc,
+      stack: Stack::new(0xfff0),
     };
     zmachine.reset_interpreter_flags();
     zmachine
@@ -96,7 +108,7 @@ impl ZMachine {
 
     try!(match opcode_number {
       0 => self.call_var_224(operation),
-      _ => panic!("Operation unimplemented: {:?}", operation),
+      _ => Err(Error::UnknownOpcode(opcode_number, self.pc.pc())),
     });
 
     Ok(())
@@ -159,51 +171,12 @@ impl ZMachine {
              operation.operands);
     }
   }
+}
 
-  // fn process_variable_opcode(&mut self, first_byte: u8) -> Result<()> {
-  //   let next_byte = try!(self.pc.next_byte(&self.memory));
-  //   println!("{:x}/{:#b}", next_byte, next_byte);
-  //   let address = try!{self.pc.next_word(&self.memory)};
-  //   let arg1 = try!{self.pc.next_word(&self.memory)};
-  //   let arg2 = try!{self.pc.next_word(&self.memory)};
-  //   let store = try!{self.pc.next_byte(&self.memory)};
-  //   println!("address: {:x}", address * 2);
-  //   println!("arg1: {:x}", arg1);
-  //   println!("arg2: {:x}", arg2);
-  //   println!("store: {:x}", store);
-
-  //   self.pc.set_pc((address * 2) as usize);
-  //   let num_locals = try!(self.pc.next_byte(&self.memory));
-  //   println!("\n\nnum_locals: {:?}", num_locals);
-  //   for _ in 0..num_locals {
-  //     let local = try!(self.pc.next_word(&self.memory));
-  //     println!("local: {:x}/{:#b}", local, local);
-  //   }
-  //   //    let first_byte = try!(self.pc.next_byte(&self.memory));
-  //   self.process_opcode();
-  //   //    let next_byte = try!(self.pc.next_byte(&self.memory));
-  //   //    let address = try!{self.pc.next_word(&self.memory)};
-  //   //    println!("new_first_byte: {:x}/{:#b}", first_byte, first_byte);
-  //   //    println!("new_next_byte: {:x}/{:#b}", next_byte, next_byte);
-  //   //    println!("address: {:x}", address * 2);
-
-
-  //   Ok(())
-  // }
-
-  // fn process_var_opcode(&mut self, first_byte: u8) -> Result<()> {
-  //   let next_byte = self.memory[(self.pc - 64) as usize];
-  //   self.pc += 1;
-  //   println!("next_byte: {:b}", next_byte);
-  //   let address = BigEndian::read_u16(&self.memory[(self.pc as usize)..]);
-  //   println!("address: {:x}", address * 2);
-  //   self.pc += 2;
-  //   let arg1 = BigEndian::read_u16(&self.memory[(self.pc as usize)..]);
-  //   self.pc += 2;
-  //   let arg2 = BigEndian::read_u16(&self.memory[(self.pc as usize)..]);
-  //   self.pc += 2;
-  //   println!("arg1: {:x}", arg1);
-  //   println!("arg2: {:x}", arg2);
-  //   Ok(())
-  // }
+#[cfg(test)]
+mod test {
+  #[test]
+  fn test_passes() {
+    assert_eq!(1, 1);
+  }
 }
