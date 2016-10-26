@@ -6,6 +6,8 @@ use std::ffi::OsString;
 use std::path::Path;
 
 const ZFILE: &'static str = "ZFILE";
+const STACK_SIZE: &'static str = "stacksize";
+const DEFAULT_STACK_SIZE: &'static str = "61440";
 
 pub struct Args<'a> {
   matches: ArgMatches<'a>,
@@ -36,6 +38,13 @@ fn parse_from<'a, I, T>(itr: I) -> Result<ArgMatches<'a>>
     .arg(Arg::with_name(ZFILE)
       .required(true)
       .index(1))
+    .arg(Arg::with_name(STACK_SIZE)
+      .long(STACK_SIZE)
+      .visible_alias("ss")
+      .takes_value(true)
+      .multiple(false)
+      .number_of_values(1)
+      .default_value(DEFAULT_STACK_SIZE))
 
     // Process it.
     .get_matches_from_safe(itr)

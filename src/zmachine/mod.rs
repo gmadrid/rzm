@@ -10,11 +10,23 @@ use self::opcodes::{Operand, Operands, Operation};
 use self::pc::PC;
 
 const HEADER_SIZE: usize = 64;
-// const STACK_SIZE: usize = 61440;
 
 pub struct ZMachine {
   memory: Memory,
   pc: PC,
+}
+
+impl From<Memory> for ZMachine {
+  // WARNING: From::from cannot fail, so this does no consistency checking.
+  fn from(memory: Memory) -> ZMachine {
+    let pc = PC::new(memory.starting_pc());
+    let mut zmachine = ZMachine {
+      memory: memory,
+      pc: pc,
+    };
+    zmachine.reset_interpreter_flags();
+    zmachine
+  }
 }
 
 impl ZMachine {
@@ -26,18 +38,14 @@ impl ZMachine {
     }
 
     let memory: Memory = From::from(zbytes);
-    let expected_file_length = memory.file_length();
+    let zmachine: ZMachine = From::from(memory);
+
+    let expected_file_length = zmachine.memory.file_length();
     if expected_file_length != 0 && expected_file_length > bytes_read as u32 {
-      // We can read extra bytes (and we often will).
+      // It's okay for the memory too be too big, but not too small.
       return Err(Error::ZFileTooShort);
     }
-    let pc = PC::new(memory.starting_pc());
 
-    let mut zmachine = ZMachine {
-      memory: memory,
-      pc: pc,
-    };
-    zmachine.reset_interpreter_flags();
     Ok(zmachine)
   }
 
@@ -48,11 +56,8 @@ impl ZMachine {
     self.memory.set_flag1(old_val & flag1_mask);
   }
 
-  // pub fn machine_version(&self) -> u8 {
-  //   self.header[0]
-  // }
-
   pub fn run(&mut self) -> Result<()> {
+    // TODO: check version number
     loop {
       try!(self.process_opcode());
     }
@@ -77,40 +82,6 @@ impl ZMachine {
       0b10000000 => self.process_short_opcode(first_byte),
       _ => self.process_long_opcode(first_byte),
     }
-
-
-
-    //    let first_byte = try!(self.pc.next_byte(&self.memory));
-
-
-    // println!("first byte: {:x}/{:b}", first_byte, first_byte);
-
-    // match first_byte {
-    //   0x00...0x1f => {
-    //     // long - 2OP
-    //     //        try!(self.process_long_opcode(first_byte));
-    //     let first_op = try!(self.pc.next_byte(&self.memory));
-    //     let second_op = try!(self.pc.next_byte(&self.memory));
-    //     let br_first = try!(self.pc.next_byte(&self.memory));
-    //     let br_second = try!(self.pc.next_byte(&self.memory));
-    //     println!("jg {} {} ({:#b}, {:x})",
-    //              first_op,
-    //              second_op,
-    //              br_first,
-    //              br_second);
-    //   }
-    //   0xe0...0xff => {
-    //     // variable - VAR
-    //     try!(self.process_variable_opcode(first_byte))
-    //   }
-    //   _ => {
-    //     println!("Unknown opcode: {:?}", first_byte);
-    //     return Err(Error::UnknownOpcode(first_byte, self.pc.pc()));
-
-    //   }
-    // }
-
-    // Ok(())
   }
 
   fn process_variable_opcode(&mut self, first_byte: u8) -> Result<()> {
@@ -123,10 +94,10 @@ impl ZMachine {
     let operation = Operation::new(first_byte, operands);
     println!("OPERATION: {:?}", operation);
 
-    match opcode_number {
+    try!(match opcode_number {
       0 => self.call_var_224(operation),
       _ => panic!("Operation unimplemented: {:?}", operation),
-    };
+    });
 
     Ok(())
   }
