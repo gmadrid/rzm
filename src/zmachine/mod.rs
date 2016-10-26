@@ -37,8 +37,8 @@ impl ZMachine {
       return Err(Error::CouldNotReadHeader);
     }
 
-    let memory: Memory = From::from(zbytes);
-    let zmachine: ZMachine = From::from(memory);
+    let memory = Memory::from(zbytes);
+    let zmachine = ZMachine::from(memory);
 
     let expected_file_length = zmachine.memory.file_length();
     if expected_file_length != 0 && expected_file_length > bytes_read as u32 {
