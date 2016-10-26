@@ -6,6 +6,10 @@ use std::result;
 pub enum Error {
   Clap(clap::Error),
   IO(io::Error),
+
+  CouldNotReadHeader,
+  UnknownOpcode(u8, usize),
+  ZFileTooShort,
 }
 
 pub type Result<T> = result::Result<T, Error>;
