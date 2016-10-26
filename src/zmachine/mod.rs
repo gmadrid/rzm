@@ -59,17 +59,11 @@ impl ZMachine {
   }
 
   fn next_pc_byte(&mut self) -> u8 {
-    match self.pc.next_byte(&self.memory) {
-      Ok(val) => val,
-      Err(err) => panic!("{:?}", err),
-    }
+    self.pc.next_byte(&self.memory)
   }
 
   fn next_pc_word(&mut self) -> u16 {
-    match self.pc.next_word(&self.memory) {
-      Ok(val) => val,
-      Err(err) => panic!("{:?}", err),
-    }
+    self.pc.next_word(&self.memory)
   }
 
   fn process_opcode(&mut self) -> Result<()> {
