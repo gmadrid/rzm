@@ -7,7 +7,7 @@ mod pc;
 mod stack;
 
 use self::memory::Memory;
-use self::opcodes::{Operand, Operands, Operation};
+use self::opcodes::{Operand, Operands, Operation, VariableRef};
 use self::pc::PC;
 use self::stack::Stack;
 
@@ -132,7 +132,7 @@ impl ZMachine {
     let operand = match operand_type {
       0b00 => Operand::LargeConstant(self.next_pc_word()),
       0b01 => Operand::SmallConstant(self.next_pc_byte()),
-      0b10 => Operand::Variable(self.next_pc_byte()),
+      0b10 => Operand::Variable(VariableRef::decode(self.next_pc_byte())),
       0b11 => Operand::Omitted,
       _ => panic!("Unknown operand type: {:?}", operand_type),
     };
@@ -159,15 +159,10 @@ impl ZMachine {
     println!("{:?}", first);
     println!("{:?}", second);
     match opcode_number {
-      20 => self.add_long_20(first, second),
+      //      20 => self.add_2op_20(first, second),
       _ => panic!("Unknown long opcode: {:?}", opcode_number),
     }
     Ok(())
-  }
-
-  fn add_long_20(&mut self, first: Operand, second: Operand) {
-    let result_location = self.next_pc_byte();
-
   }
 
   fn call_var_224(&mut self, operation: Operation) -> Result<()> {
@@ -179,7 +174,7 @@ impl ZMachine {
     if let Operands::Var(operands) = operation.operands {
       let ret_pc = self.pc.pc();
 
-      let packed_addr = Operand::value(&operands[0]);
+      let packed_addr = 1; //Operand::value(&operands[0]);
       self.pc.set_pc_to_packed_addr(packed_addr as usize);
       println!("packed addr{:#x}", packed_addr * 2);
 
