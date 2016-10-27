@@ -125,14 +125,14 @@ impl ZMachine {
     let operand2 = self.read_operand_of_type((operand_types & 0b00110000) >> 4);
     let operand3 = self.read_operand_of_type((operand_types & 0b00001100) >> 2);
     let operand4 = self.read_operand_of_type((operand_types & 0b00000011) >> 0);
-    Operands::Var(operand1, operand2, operand3, operand4)
+    Operands::Var([operand1, operand2, operand3, operand4])
   }
 
   fn read_operand_of_type(&mut self, operand_type: u8) -> Operand {
     let operand = match operand_type {
       0b00 => Operand::LargeConstant(self.next_pc_word()),
       0b01 => Operand::SmallConstant(self.next_pc_byte()),
-      0b10 => Operand::Variable,
+      0b10 => Operand::Variable(self.next_pc_byte()),
       0b11 => Operand::Omitted,
       _ => panic!("Unknown operand type: {:?}", operand_type),
     };
@@ -144,27 +144,56 @@ impl ZMachine {
   }
 
   fn process_long_opcode(&mut self, first_byte: u8) -> Result<()> {
-    unimplemented!()
+    let opcode_number = first_byte & 0b00011111;
+    println!("long opcode number: {:?}", opcode_number);
+    let first = self.read_operand_of_type(if first_byte & 0b01000000 == 0 {
+      0b01
+    } else {
+      0b10
+    });
+    let second = self.read_operand_of_type(if first_byte & 0b00100000 == 0 {
+      0b01
+    } else {
+      0b10
+    });
+    println!("{:?}", first);
+    println!("{:?}", second);
+    match opcode_number {
+      20 => self.add_long_20(first, second),
+      _ => panic!("Unknown long opcode: {:?}", opcode_number),
+    }
+    Ok(())
+  }
+
+  fn add_long_20(&mut self, first: Operand, second: Operand) {
+    let result_location = self.next_pc_byte();
+
   }
 
   fn call_var_224(&mut self, operation: Operation) -> Result<()> {
+    // TODO IMPORTANT, what about the result location. You need to read this
+    // or the PC will be wrong.
+    let result_location = self.next_pc_byte();
+
     // What about addresses in variables
-    // TODO: convert Var to have a Vec not four operands
-    if let Operands::Var(addr, a0, a1, a2) = operation.operands {
-      let packed_addr = Operand::value(addr);
+    if let Operands::Var(operands) = operation.operands {
+      let ret_pc = self.pc.pc();
+
+      let packed_addr = Operand::value(&operands[0]);
       self.pc.set_pc_to_packed_addr(packed_addr as usize);
       println!("packed addr{:#x}", packed_addr * 2);
 
       let num_args = self.next_pc_byte();
       println!("num args {:?}", num_args);
 
+      // TODO: need to properly handle argument passing.
+      self.stack.new_frame(ret_pc, num_args, result_location, &operands[1..]);
+
       for _ in 0..num_args {
         let arg = self.next_pc_word();
         println!("arg: {}", arg);
       }
 
-      // TODO: make this non-recursive.
-      //      try!(self.process_opcode());
       Ok(())
     } else {
       panic!("Non VAR operands received by call_var_224: {:?}",

@@ -1,5 +1,6 @@
 use byteorder::{BigEndian, ByteOrder};
 use std::u16;
+use super::opcodes::{Operand, Operands, Operation};
 
 pub struct Stack {
   stack: Vec<u8>,
@@ -13,7 +14,7 @@ pub struct Stack {
 //    | 0x00: fp (u16) to previous frame                     |
 //    | 0x02: pc (u32) to next instruction in previous frame |
 //    | 0x06: num locals (u8)                                |
-//    | 0x07: padding (u8)(unused)                           |
+//    | 0x07: result location (u8)                           |
 //    | 0x08: L1                                             |
 //    |  ...  LN                                             |
 //    |       base of this frame's stack                     |
@@ -42,13 +43,26 @@ impl Stack {
     stack
   }
 
-  fn new_frame(&mut self, pc: usize, num_locals: u8) {
+  pub fn new_frame(&mut self,
+                   pc: usize,
+                   num_locals: u8,
+                   result_location: u8,
+                   operands: &[Operand]) {
     let new_fp = self.sp;
     let old_fp = self.fp;
     self.push_u16(old_fp as u16);
     self.push_u32(pc as u32);
     self.push_u8(num_locals);
-    assert!(num_locals == 0, "Don't support arguments yet.");
+    self.push_u8(result_location);
+    for _ in 0..num_locals {
+      self.push_u16(0);
+    }
+
+    for (i, operand) in operands.iter().enumerate() {
+      if i >= num_locals as usize || Operand::Omitted == *operand {
+        break;
+      }
+    }
 
     self.fp = new_fp;
     self.base_sp = self.sp;

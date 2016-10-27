@@ -17,14 +17,15 @@ pub enum Operands {
   None,
   One,
   Two,
-  Var(Operand, Operand, Operand, Operand),
+  //  Var(Operand, Operand, Operand, Operand),
+  Var([Operand; 4]),
 }
 
-#[derive(Debug)]
+#[derive(Debug,Eq,PartialEq)]
 pub enum Operand {
   LargeConstant(u16),
   SmallConstant(u8),
-  Variable,
+  Variable(u8),
   Omitted,
 }
 
@@ -38,8 +39,8 @@ impl Operation {
 }
 
 impl Operand {
-  pub fn value(operand: Operand) -> u16 {
-    match operand {
+  pub fn value(operand: &Operand) -> u16 {
+    match *operand {
       Operand::LargeConstant(val) => val,
       Operand::SmallConstant(val) => val as u16,
       _ => {
