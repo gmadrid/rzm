@@ -8,7 +8,7 @@ mod pc;
 mod stack;
 
 use self::memory::Memory;
-use self::opcodes::{Operand, Operands, Operation, VariableRef};
+use self::opcodes::{OpcodeRunner, Operand, Operands, Operation, VariableRef};
 use self::pc::PC;
 use self::stack::Stack;
 
@@ -157,12 +157,11 @@ impl ZMachine {
     } else {
       0b10
     });
-    println!("{:?}", first);
-    println!("{:?}", second);
-    match opcode_number {
-      //      20 => ops::twoops::add_20(),
+    let operands = Operands::Two(first, second);
+    try!(match opcode_number {
+      20 => ops::twoops::add_0x14(self, operands),
       _ => panic!("Unknown long opcode: {:?}", opcode_number),
-    };
+    });
     Ok(())
   }
 
@@ -175,7 +174,7 @@ impl ZMachine {
     if let Operands::Var(operands) = operation.operands {
       let ret_pc = self.pc.pc();
 
-      let packed_addr = 1; //Operand::value(&operands[0]);
+      let packed_addr = operands[0].value(self);
       self.pc.set_pc_to_packed_addr(packed_addr as usize);
       println!("packed addr{:#x}", packed_addr * 2);
 
@@ -198,10 +197,30 @@ impl ZMachine {
   }
 }
 
-#[cfg(test)]
-mod test {
-  #[test]
-  fn test_passes() {
-    assert_eq!(1, 1);
+impl OpcodeRunner for ZMachine {
+  fn pop_stack(&mut self) -> u16 {
+    32
   }
+
+  fn push_stack(&mut self, val: u16) {}
+
+  fn read_local(&self, local_idx: u8) -> u16 {
+    32
+  }
+
+  fn write_local(&mut self, local_idx: u8, val: u16) {}
+
+  fn read_global(&self, global_idx: u8) -> u16 {
+    32
+  }
+
+  fn write_global(&mut self, global_idx: u8, val: u16) {}
+
+  fn result_location(&self) -> VariableRef {
+    VariableRef::Stack
+  }
+
+  // fn set_result_location(&mut self, location: VariableRef) {}
+
+  // fn clear_result_location(&mut self) {}
 }

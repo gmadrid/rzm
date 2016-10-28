@@ -9,8 +9,6 @@ pub trait OpcodeRunner: Sized {
   fn write_global(&mut self, global_idx: u8, val: u16);
 
   fn result_location(&self) -> VariableRef;
-  fn set_result_location(&mut self, location: VariableRef);
-  fn clear_result_location(&mut self);
 
   fn write_result(&mut self, value: u16) {
     let result_location = self.result_location();
@@ -126,6 +124,14 @@ pub mod test {
         result_location: Some(VariableRef::Stack),
       }
     }
+
+    pub fn set_result_location(&mut self, location: VariableRef) {
+      self.result_location = Some(location);
+    }
+
+    pub fn clear_result_location(&mut self) {
+      self.result_location = None;
+    }
   }
 
   impl OpcodeRunner for TestRunner {
@@ -156,14 +162,6 @@ pub mod test {
     fn result_location(&self) -> VariableRef {
       // should panic if called when not expected
       self.result_location.unwrap()
-    }
-
-    fn set_result_location(&mut self, location: VariableRef) {
-      self.result_location = Some(location);
-    }
-
-    fn clear_result_location(&mut self) {
-      self.result_location = None;
     }
   }
 
