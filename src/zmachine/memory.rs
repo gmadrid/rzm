@@ -2,6 +2,7 @@ use byteorder::{BigEndian, ByteOrder};
 
 const FLAG1_INDEX: usize = 0x01;
 const STARTING_PC_INDEX: usize = 0x06;
+const GLOBAL_TABLE_INDEX: usize = 0x0c;
 const FILE_LENGTH_INDEX: usize = 0x1a;
 
 pub struct Memory {
@@ -44,6 +45,26 @@ impl Memory {
   pub fn starting_pc(&self) -> usize {
     self.u16_at_index(STARTING_PC_INDEX) as usize
   }
+
+  pub fn global_base_byteaddress(&self) -> usize {
+    self.u16_at_index(GLOBAL_TABLE_INDEX) as usize
+  }
+
+  fn global_offset(&self, global_idx: u8) -> usize {
+    assert!(global_idx < 240, "Max global is 239: {}", global_idx);
+    let base = self.global_base_byteaddress();
+    base + global_idx as usize * 2
+  }
+
+  pub fn read_global(&self, global_idx: u8) -> u16 {
+    let offset = self.global_offset(global_idx);
+    BigEndian::read_u16(&self.bytes[offset..])
+  }
+
+  pub fn write_global(&mut self, global_idx: u8, val: u16) {
+    let offset = self.global_offset(global_idx);
+    BigEndian::write_u16(&mut self.bytes[offset..], val);
+  }
 }
 
 impl From<Vec<u8>> for Memory {
@@ -72,4 +93,44 @@ fn test_memory() {
 
   memory.set_index_to_u8(4, 8);
   assert_eq!(0x0805, memory.u16_at_index(4));
+}
+
+#[test]
+fn test_globals() {
+  // 608 = 0x80 (global base) + 2 * 0xf0 (number of globals)
+  let mut memory = Memory::from(vec![0; 608]);
+
+  // Set up the memory so that the global table is at 0x80 and has
+  // the value 0x84 at global 2 (0x84)
+  let global_offset = 0x80usize;
+  let val = 0x84u16;
+  BigEndian::write_u16(&mut memory.bytes[GLOBAL_TABLE_INDEX..],
+                       global_offset as u16);
+  BigEndian::write_u16(&mut memory.bytes[global_offset + 2 * 2..], val);
+
+  assert_eq!(val, memory.read_global(2));
+
+  memory.write_global(0, 0x0809);
+  assert_eq!(0x0809, memory.read_global(0));
+
+  memory.write_global(239, 0x0708);
+  assert_eq!(0x0708, memory.read_global(239));
+}
+
+#[test]
+#[should_panic]
+fn test_globals_overflow_read() {
+  // 608 = 0x80 (global base) + 2 * 0xf0 (number of globals)
+  let memory = Memory::from(vec![0; 608]);
+
+  memory.read_global(240);
+}
+
+#[test]
+#[should_panic]
+fn test_globals_overflow_write() {
+  // 608 = 0x80 (global base) + 2 * 0xf0 (number of globals)
+  let mut memory = Memory::from(vec![0; 608]);
+
+  memory.write_global(240, 0);
 }

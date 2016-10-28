@@ -8,7 +8,7 @@ pub trait OpcodeRunner: Sized {
   fn read_global(&self, global_idx: u8) -> u16;
   fn write_global(&mut self, global_idx: u8, val: u16);
 
-  fn result_location(&self) -> VariableRef;
+  fn result_location(&mut self) -> VariableRef;
 
   fn write_result(&mut self, value: u16) {
     let result_location = self.result_location();
@@ -159,7 +159,7 @@ pub mod test {
       self.globals[global_idx as usize] = val;
     }
 
-    fn result_location(&self) -> VariableRef {
+    fn result_location(&mut self) -> VariableRef {
       // should panic if called when not expected
       self.result_location.unwrap()
     }

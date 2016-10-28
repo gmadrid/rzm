@@ -199,28 +199,30 @@ impl ZMachine {
 
 impl OpcodeRunner for ZMachine {
   fn pop_stack(&mut self) -> u16 {
-    32
+    self.stack.pop_u16()
   }
 
-  fn push_stack(&mut self, val: u16) {}
+  fn push_stack(&mut self, val: u16) {
+    self.stack.push_u16(val);
+  }
 
   fn read_local(&self, local_idx: u8) -> u16 {
-    32
+    self.stack.read_local(local_idx)
   }
 
-  fn write_local(&mut self, local_idx: u8, val: u16) {}
+  fn write_local(&mut self, local_idx: u8, val: u16) {
+    self.stack.write_local(local_idx, val);
+  }
 
   fn read_global(&self, global_idx: u8) -> u16 {
-    32
+    self.memory.read_global(global_idx)
   }
 
-  fn write_global(&mut self, global_idx: u8, val: u16) {}
-
-  fn result_location(&self) -> VariableRef {
-    VariableRef::Stack
+  fn write_global(&mut self, global_idx: u8, val: u16) {
+    self.memory.write_global(global_idx, val);
   }
 
-  // fn set_result_location(&mut self, location: VariableRef) {}
-
-  // fn clear_result_location(&mut self) {}
+  fn result_location(&mut self) -> VariableRef {
+    VariableRef::decode(self.next_pc_byte())
+  }
 }
