@@ -27,7 +27,7 @@ pub fn je_0x01<T>(runner: &mut T, operands: Operands) -> Result<()>
     let cmp = lhs == rhs;
 
     let first_label_byte = runner.read_pc_byte();
-    let mut offset: i16;
+    let offset: i16;
     if first_label_byte & LABEL_LENGTH_MASK == 0 {
       // two-byte, 14-bit signed offset
       let second_label_byte = runner.read_pc_byte();
