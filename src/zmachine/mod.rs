@@ -2,7 +2,8 @@ use result::{Error, Result};
 use std::io::Read;
 
 mod memory;
-mod opcodes;
+pub mod opcodes;
+mod ops;
 mod pc;
 mod stack;
 
@@ -159,9 +160,9 @@ impl ZMachine {
     println!("{:?}", first);
     println!("{:?}", second);
     match opcode_number {
-      //      20 => self.add_2op_20(first, second),
+      //      20 => ops::twoops::add_20(),
       _ => panic!("Unknown long opcode: {:?}", opcode_number),
-    }
+    };
     Ok(())
   }
 
