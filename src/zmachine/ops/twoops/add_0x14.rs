@@ -1,5 +1,5 @@
 use result::{Error, Result};
-use zmachine::opcodes::{OpcodeRunner, Operands, VariableRef};
+use zmachine::opcodes::{OpcodeRunner, Operands};
 
 pub fn add_0x14<T>(runner: &mut T, operands: Operands) -> Result<()>
   where T: OpcodeRunner {

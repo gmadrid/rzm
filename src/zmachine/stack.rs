@@ -1,6 +1,6 @@
 use byteorder::{BigEndian, ByteOrder};
 use std::u16;
-use super::opcodes::{Operand, Operands, Operation};
+use super::opcodes::Operand;
 
 // Each stack frame:
 //    +------------------------------------------------------+
@@ -74,7 +74,6 @@ impl Stack {
 
   fn offset_for_local(&self, local_idx: u8) -> usize {
     let num_locals = self.stack[self.fp + NUM_LOCALS_OFFSET];
-    println!("num locals: {:?}", num_locals);
     assert!(local_idx < num_locals,
             "Read non-existing local variable: {}.",
             local_idx);

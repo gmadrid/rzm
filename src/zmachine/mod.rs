@@ -146,7 +146,9 @@ impl ZMachine {
 
   fn process_long_opcode(&mut self, first_byte: u8) -> Result<()> {
     let opcode_number = first_byte & 0b00011111;
-    println!("long opcode number: {:?}", opcode_number);
+    println!("long opcode number: {:x} @{:x}",
+             opcode_number,
+             self.pc.pc());
     let first = self.read_operand_of_type(if first_byte & 0b01000000 == 0 {
       0b01
     } else {
@@ -159,8 +161,14 @@ impl ZMachine {
     });
     let operands = Operands::Two(first, second);
     try!(match opcode_number {
+      1 => ops::twoops::je_0x01(self, first_byte, operands),
       20 => ops::twoops::add_0x14(self, operands),
-      _ => panic!("Unknown long opcode: {:?}", opcode_number),
+      _ => {
+        panic!("Unknown long opcode: {:x}/{:x} @{:x}",
+               opcode_number,
+               first_byte,
+               self.pc.pc())
+      }
     });
     Ok(())
   }
