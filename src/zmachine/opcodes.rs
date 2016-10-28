@@ -1,4 +1,8 @@
 pub trait OpcodeRunner: Sized {
+  fn read_pc_byte(&mut self) -> u8;
+  fn read_pc_word(&mut self) -> u16;
+  fn offset_pc(&mut self, offset: i16);
+
   fn pop_stack(&mut self) -> u16;
   fn push_stack(&mut self, val: u16);
 
@@ -46,6 +50,14 @@ impl VariableRef {
       0x01...0x0f => VariableRef::Local(encoded - 0x01),
       0x10...0xff => VariableRef::Global(encoded - 0x10),
       _ => panic!("What is this number: {}", encoded),
+    }
+  }
+
+  pub fn encode(variable: VariableRef) -> u8 {
+    match variable {
+      VariableRef::Stack => 0,
+      VariableRef::Local(local_idx) => 0x01 + local_idx,
+      VariableRef::Global(global_idx) => 0x10 + global_idx,
     }
   }
 }
@@ -106,13 +118,15 @@ impl Operand {
 
 #[cfg(test)]
 pub mod test {
+  use byteorder::{BigEndian, ByteOrder};
   use super::{OpcodeRunner, VariableRef};
 
   pub struct TestRunner {
     pub stack: Vec<u16>,
     pub locals: [u16; 15],
     pub globals: [u16; 240],
-    pub result_location: Option<VariableRef>,
+    pub pc: usize,
+    pub pcbytes: Vec<u8>,
   }
 
   impl TestRunner {
@@ -121,20 +135,38 @@ pub mod test {
         stack: Vec::new(),
         locals: [0; 15],
         globals: [0; 240],
-        result_location: Some(VariableRef::Stack),
+        pc: 0,
+        pcbytes: Vec::new(),
       }
     }
 
     pub fn set_result_location(&mut self, location: VariableRef) {
-      self.result_location = Some(location);
+      self.set_pc_bytes(vec![VariableRef::encode(location)]);
     }
 
-    pub fn clear_result_location(&mut self) {
-      self.result_location = None;
+    pub fn set_pc_bytes(&mut self, bytes: Vec<u8>) {
+      self.pcbytes = bytes;
+      self.pc = 0;
     }
   }
 
   impl OpcodeRunner for TestRunner {
+    fn read_pc_byte(&mut self) -> u8 {
+      let val = self.pcbytes[self.pc];
+      self.pc += 1;
+      val
+    }
+
+    fn read_pc_word(&mut self) -> u16 {
+      let val = BigEndian::read_u16(&self.pcbytes[self.pc..]);
+      self.pc += 2;
+      val
+    }
+
+    fn offset_pc(&mut self, offset: i16) {
+      self.pc = ((self.pc as i32) + (offset as i32)) as usize;
+    }
+
     fn pop_stack(&mut self) -> u16 {
       self.stack.pop().unwrap()
     }
@@ -160,8 +192,7 @@ pub mod test {
     }
 
     fn result_location(&mut self) -> VariableRef {
-      // should panic if called when not expected
-      self.result_location.unwrap()
+      VariableRef::decode(self.read_pc_byte())
     }
   }
 

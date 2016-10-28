@@ -161,7 +161,7 @@ impl ZMachine {
     });
     let operands = Operands::Two(first, second);
     try!(match opcode_number {
-      1 => ops::twoops::je_0x01(self, first_byte, operands),
+      1 => ops::twoops::je_0x01(self, operands),
       20 => ops::twoops::add_0x14(self, operands),
       _ => {
         panic!("Unknown long opcode: {:x}/{:x} @{:x}",
@@ -206,6 +206,19 @@ impl ZMachine {
 }
 
 impl OpcodeRunner for ZMachine {
+  fn read_pc_byte(&mut self) -> u8 {
+    self.next_pc_byte()
+  }
+
+  fn read_pc_word(&mut self) -> u16 {
+    self.next_pc_word()
+  }
+
+  fn offset_pc(&mut self, offset: i16) {
+    let new_pc = (self.pc.pc() as i32 + offset as i32) as usize;
+    self.pc.set_pc(new_pc);
+  }
+
   fn pop_stack(&mut self) -> u16 {
     self.stack.pop_u16()
   }

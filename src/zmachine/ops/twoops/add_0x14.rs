@@ -1,19 +1,35 @@
 use result::{Error, Result};
 use zmachine::opcodes::{OpcodeRunner, Operands};
 
-pub fn add_0x14<T>(runner: &mut T, operands: Operands) -> Result<()>
-  where T: OpcodeRunner {
-  if let Operands::Two(op1, op2) = operands {
-    // Rust will panic if we overflow, so do arithmetic as i32 and downcast.
-    let lhs = op1.value(runner) as i16 as i32;
-    let rhs = op2.value(runner) as i16 as i32;
-    let result = (lhs + rhs) as u16;
+// The ZMachine works mostly with unsigned words. So, to perform a signed
+// binary, we have to just through some hoops:
+// Receive two unsigned words, convert to signed, perform the requested
+// signed binary operation, then convert back to unsigned.
+// TODO: comment this function better.
+fn signed_binop<F, T>(runner: &mut T, operands: Operands, binop: F) -> Result<()>
+  where F: Fn(i32, i32) -> i32,
+        T: OpcodeRunner {
+  if let Operands::Two(lop, rop) = operands {
+    let lhs = lop.value(runner);
+    let rhs = rop.value(runner);
 
-    runner.write_result(result);
+    // First, treat the input bits as signed, then sign extend to 32 bits.
+    // This is so that if we overflow, rust will not panic.
+    // TODO: see if just casting the u16 as i32 will sign extend or not.
+    let wide_lhs = lhs as i16 as i32;
+    let wide_rhs = rhs as i16 as i32;
+    let value = binop(wide_lhs, wide_rhs) as u16;
+
+    runner.write_result(value);
   } else {
-    return Err(Error::BadOperands("add expects 2OP operands".to_string(), operands));
+    return Err(Error::BadOperands("binop expects 2OP operands".to_string(), operands));
   }
   Ok(())
+}
+
+pub fn add_0x14<T>(runner: &mut T, operands: Operands) -> Result<()>
+  where T: OpcodeRunner {
+  signed_binop(runner, operands, |l, r| l + r)
 }
 
 #[cfg(test)]
@@ -25,17 +41,25 @@ mod test {
   #[test]
   fn test_add_0x14() {
     let mut runner = TestRunner::new();
+
+    runner.set_result_location(VariableRef::Stack);
     add_0x14(&mut runner,
              Operands::Two(Operand::SmallConstant(32), Operand::SmallConstant(43)));
     assert_eq!(75u16, runner.pop_stack());
+
+    runner.set_result_location(VariableRef::Stack);
     add_0x14(&mut runner,
              Operands::Two(Operand::LargeConstant(-32i16 as u16),
                            Operand::SmallConstant(43)));
     assert_eq!(11u16, runner.pop_stack());
+
+    runner.set_result_location(VariableRef::Stack);
     add_0x14(&mut runner,
              Operands::Two(Operand::LargeConstant(-30000i16 as u16),
                            Operand::LargeConstant(-30000i16 as u16)));
     assert_eq!(-60000i32 as i16 as u16, runner.pop_stack());
+
+    runner.set_result_location(VariableRef::Stack);
     add_0x14(&mut runner,
              Operands::Two(Operand::LargeConstant(0xf000),
                            Operand::LargeConstant(0x3000)));
