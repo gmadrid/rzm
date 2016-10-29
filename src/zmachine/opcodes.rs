@@ -112,7 +112,7 @@ pub mod test {
   impl TestRunner {
     pub fn new() -> TestRunner {
       TestRunner {
-        heap: vec![1000; 0],
+        heap: vec![0; 1000],
         stack: Vec::new(),
         locals: [0; 15],
         globals: [0; 240],
@@ -141,6 +141,17 @@ pub mod test {
       }
       byte |= offset & 0b00111111;
       self.set_pc_bytes(vec![byte]);
+    }
+
+    pub fn set_jump_offset_word(&mut self, offset: i16, polarity: bool) {
+      let mut word = 0u16;
+      if polarity {
+        word |= 0b1000000000000000;
+      }
+      word |= (offset as u16) & 0b0011111111111111;
+      let mut vec = vec![0u8, 0u8];
+      BigEndian::write_u16(vec.as_mut_slice(), word as u16);
+      self.set_pc_bytes(vec);
     }
   }
 

@@ -4,7 +4,6 @@ Need to do:
   
 
 # Next
-* finish storew (needs to actually store the value).
 * add more testing to je
 * test for storew
 * add at least one test for jz
