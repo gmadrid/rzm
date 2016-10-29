@@ -141,7 +141,28 @@ impl ZMachine {
   }
 
   fn process_short_opcode(&mut self, first_byte: u8) -> Result<()> {
-    unimplemented!()
+    let op = first_byte & 0b00001111;
+    println!("short opcode number: {:x} @{:x}", op, self.pc.pc());
+    let operand_type = (first_byte & 0b00110000) >> 4;
+    let operand = self.read_operand_of_type(operand_type);
+    match operand {
+      Operand::Omitted => self.process_0op(op),
+      _ => self.process_1op(op, operand),
+    }
+  }
+
+  fn process_0op(&mut self, op: u8) -> Result<()> {
+    unimplemented!();
+  }
+
+  fn process_1op(&mut self, op: u8, operand: Operand) -> Result<()> {
+    try!(match op {
+      0x00 => ops::oneops::jz_0x00(self, operand),
+      _ => {
+        panic!("Unknown short opcode: {:x} @{:x}", op, self.pc.pc());
+      }
+    });
+    Ok(())
   }
 
   fn process_long_opcode(&mut self, first_byte: u8) -> Result<()> {
@@ -161,8 +182,9 @@ impl ZMachine {
     });
     let operands = Operands::Two(first, second);
     try!(match opcode_number {
-      1 => ops::twoops::je_0x01(self, operands),
-      20 => ops::twoops::add_0x14(self, operands),
+      0x01 => ops::twoops::je_0x01(self, operands),
+      0x14 => ops::twoops::add_0x14(self, operands),
+      0x15 => ops::twoops::sub_0x15(self, operands),
       _ => {
         panic!("Unknown long opcode: {:x}/{:x} @{:x}",
                opcode_number,

@@ -140,6 +140,10 @@ pub mod test {
       }
     }
 
+    pub fn current_pc(&self) -> usize {
+      self.pc
+    }
+
     pub fn set_result_location(&mut self, location: VariableRef) {
       self.set_pc_bytes(vec![VariableRef::encode(location)]);
     }
@@ -147,6 +151,15 @@ pub mod test {
     pub fn set_pc_bytes(&mut self, bytes: Vec<u8>) {
       self.pcbytes = bytes;
       self.pc = 0;
+    }
+
+    pub fn set_jump_offset_byte(&mut self, offset: u8, polarity: bool) {
+      let mut byte = 0b01000000u8;
+      if polarity {
+        byte |= 0b10000000;
+      }
+      byte |= offset & 0b00111111;
+      self.set_pc_bytes(vec![byte]);
     }
   }
 
