@@ -1,6 +1,5 @@
 use result::{Error, Result};
 use zmachine::opcodes::{OpcodeRunner, Operand, Operands};
-use zmachine::ops::twoops::je_0x01;
 
 pub fn storew_0x01<T>(runner: &mut T, operands: Operands) -> Result<()>
   where T: OpcodeRunner {
@@ -8,10 +7,10 @@ pub fn storew_0x01<T>(runner: &mut T, operands: Operands) -> Result<()>
     if arr[0..2].iter().any(|o| *o == Operand::Omitted) {
       return Err(Error::BadOperands("3 operands required".to_string(), Operands::Var(arr)));
     }
-    let array = arr[0].value(runner);
-    let word_index = arr[1].value(runner);
+    let array = arr[0].value(runner) as usize;
+    let word_index = arr[1].value(runner) as usize;
     let val = arr[2].value(runner);
-    println!("THAT VAL: {:x}/{:x}/{:x}", array, word_index, val);
+    runner.write_memory(array + 2 * word_index, val);
   } else {
     return Err(Error::BadOperands("3 operands required".to_string(), operands));
   }

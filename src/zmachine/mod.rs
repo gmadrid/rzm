@@ -229,6 +229,10 @@ impl ZMachine {
 }
 
 impl OpcodeRunner for ZMachine {
+  fn write_memory(&mut self, byteaddress: usize, val: u16) {
+    self.memory.set_u16_at_index(byteaddress, val);
+  }
+
   fn read_pc_byte(&mut self) -> u8 {
     self.next_pc_byte()
   }

@@ -30,6 +30,11 @@ impl Memory {
     BigEndian::read_u16(&self.bytes[index..])
   }
 
+
+  pub fn set_u16_at_index(&mut self, index: usize, val: u16) {
+    BigEndian::write_u16(&mut self.bytes[index..], val);
+  }
+
   pub fn flag1(&self) -> u8 {
     self.u8_at_index(FLAG1_INDEX)
   }

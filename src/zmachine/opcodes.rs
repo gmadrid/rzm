@@ -12,6 +12,8 @@ pub trait OpcodeRunner: Sized {
   fn read_global(&self, global_idx: u8) -> u16;
   fn write_global(&mut self, global_idx: u8, val: u16);
 
+  fn write_memory(&mut self, byteaddress: usize, val: u16);
+
   fn result_location(&mut self) -> VariableRef;
 
   fn write_result(&mut self, value: u16) {
@@ -99,6 +101,7 @@ pub mod test {
   use super::{OpcodeRunner, VariableRef};
 
   pub struct TestRunner {
+    pub heap: Vec<u8>,
     pub stack: Vec<u16>,
     pub locals: [u16; 15],
     pub globals: [u16; 240],
@@ -109,6 +112,7 @@ pub mod test {
   impl TestRunner {
     pub fn new() -> TestRunner {
       TestRunner {
+        heap: vec![1000; 0],
         stack: Vec::new(),
         locals: [0; 15],
         globals: [0; 240],
@@ -151,6 +155,10 @@ pub mod test {
       let val = BigEndian::read_u16(&self.pcbytes[self.pc..]);
       self.pc += 2;
       val
+    }
+
+    fn write_memory(&mut self, byteaddress: usize, val: u16) {
+      BigEndian::write_u16(&mut self.heap[byteaddress..], val)
     }
 
     fn offset_pc(&mut self, offset: i16) {
