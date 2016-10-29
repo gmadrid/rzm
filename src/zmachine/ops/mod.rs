@@ -3,6 +3,7 @@ use zmachine::opcodes::{OpcodeRunner, Operands};
 
 pub mod oneops;
 pub mod twoops;
+pub mod varops;
 
 const BRANCH_POLARITY_MASK: u8 = 0b10000000;
 const BRANCH_LENGTH_MASK: u8 = 0b01000000;

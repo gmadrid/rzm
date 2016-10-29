@@ -63,20 +63,6 @@ impl VariableRef {
 }
 
 #[derive(Debug)]
-pub struct Operation {
-  pub opcode: u8,
-  pub operands: Operands,
-}
-
-#[derive(Debug)]
-enum OpForm {
-  Long,
-  Short,
-  Variable,
-  Extended,
-}
-
-#[derive(Debug)]
 pub enum Operands {
   None,
   One,
@@ -91,15 +77,6 @@ pub enum Operand {
   SmallConstant(u8),
   Variable(VariableRef),
   Omitted,
-}
-
-impl Operation {
-  pub fn new(opcode: u8, operands: Operands) -> Operation {
-    Operation {
-      opcode: opcode,
-      operands: operands,
-    }
-  }
 }
 
 impl Operand {

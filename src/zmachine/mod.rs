@@ -8,7 +8,7 @@ mod pc;
 mod stack;
 
 use self::memory::Memory;
-use self::opcodes::{OpcodeRunner, Operand, Operands, Operation, VariableRef};
+use self::opcodes::{OpcodeRunner, Operand, Operands, VariableRef};
 use self::pc::PC;
 use self::stack::Stack;
 
@@ -99,16 +99,18 @@ impl ZMachine {
 
   fn process_variable_opcode(&mut self, first_byte: u8) -> Result<()> {
     let opcode_number = first_byte & 0b00011111;
+    println!("var opcode number: {:x} @{:x}",
+             opcode_number,
+             self.pc.pc() - 1usize);
     let operands = if (first_byte & 0b00100000) == 0 {
       self.read_2_operands()
     } else {
       self.read_var_operands()
     };
-    let operation = Operation::new(first_byte, operands);
-    println!("OPERATION: {:?}", operation);
 
     try!(match opcode_number {
-      0 => self.call_var_224(operation),
+      0 => self.call_var_224(operands),
+      1 => ops::varops::storew_0x01(self, operands),
       _ => Err(Error::UnknownOpcode(opcode_number, self.pc.pc())),
     });
 
@@ -142,7 +144,7 @@ impl ZMachine {
 
   fn process_short_opcode(&mut self, first_byte: u8) -> Result<()> {
     let op = first_byte & 0b00001111;
-    println!("short opcode number: {:x} @{:x}", op, self.pc.pc());
+    println!("short opcode number: {:x} @{:x}", op, self.pc.pc() - 1usize);
     let operand_type = (first_byte & 0b00110000) >> 4;
     let operand = self.read_operand_of_type(operand_type);
     match operand {
@@ -159,7 +161,7 @@ impl ZMachine {
     try!(match op {
       0x00 => ops::oneops::jz_0x00(self, operand),
       _ => {
-        panic!("Unknown short opcode: {:x} @{:x}", op, self.pc.pc());
+        panic!("Unknown short 1op opcode: {:x} @{:x}", op, self.pc.pc());
       }
     });
     Ok(())
@@ -169,7 +171,7 @@ impl ZMachine {
     let opcode_number = first_byte & 0b00011111;
     println!("long opcode number: {:x} @{:x}",
              opcode_number,
-             self.pc.pc());
+             self.pc.pc() - 1usize);
     let first = self.read_operand_of_type(if first_byte & 0b01000000 == 0 {
       0b01
     } else {
@@ -195,13 +197,13 @@ impl ZMachine {
     Ok(())
   }
 
-  fn call_var_224(&mut self, operation: Operation) -> Result<()> {
+  fn call_var_224(&mut self, operands: Operands) -> Result<()> {
     // TODO IMPORTANT, what about the result location. You need to read this
     // or the PC will be wrong.
     let result_location = self.next_pc_byte();
 
     // What about addresses in variables
-    if let Operands::Var(operands) = operation.operands {
+    if let Operands::Var(operands) = operands {
       let ret_pc = self.pc.pc();
 
       let packed_addr = operands[0].value(self);
@@ -221,8 +223,7 @@ impl ZMachine {
 
       Ok(())
     } else {
-      panic!("Non VAR operands received by call_var_224: {:?}",
-             operation.operands);
+      panic!("Non VAR operands received by call_var_224: {:?}", operands);
     }
   }
 }
