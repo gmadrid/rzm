@@ -1,9 +1,6 @@
-use result::{Error, Result};
+use result::Result;
 use zmachine::opcodes::{OpcodeRunner, Operands};
 use zmachine::ops::branch_binop;
-
-const LABEL_POLARITY_MASK: u8 = 0b10000000;
-const LABEL_LENGTH_MASK: u8 = 0b01000000;
 
 pub fn je_0x01<T>(runner: &mut T, operands: Operands) -> Result<()>
   where T: OpcodeRunner {
@@ -77,8 +74,7 @@ mod test {
 
   #[test]
   fn test_je() {
-    let mut runner = TestRunner::new();
-
+    // TODO write these tests
     // test ret false
     // test ret true
   }

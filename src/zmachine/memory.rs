@@ -9,6 +9,12 @@ pub struct Memory {
   bytes: Vec<u8>,
 }
 
+impl From<Vec<u8>> for Memory {
+  fn from(vec: Vec<u8>) -> Memory {
+    Memory::new(vec)
+  }
+}
+
 impl Memory {
   fn new(bytes: Vec<u8>) -> Memory {
     Memory { bytes: bytes }
@@ -72,70 +78,70 @@ impl Memory {
   }
 }
 
-impl From<Vec<u8>> for Memory {
-  fn from(vec: Vec<u8>) -> Memory {
-    Memory::new(vec)
+#[cfg(test)]
+mod test {
+  use byteorder::{BigEndian, ByteOrder};
+  use super::Memory;
+
+  #[test]
+  fn test_from() {
+    let memory = Memory::from(vec![0, 1, 2, 3, 4, 5]);
+    assert_eq!(6, memory.size());
   }
-}
 
-#[test]
-fn test_from() {
-  let memory: Memory = From::from(vec![0, 1, 2, 3, 4, 5]);
-  assert_eq!(6, memory.size());
-}
+  #[test]
+  fn test_memory() {
+    let mut memory: Memory = From::from(vec![0, 1, 2, 3, 4, 5]);
+    assert_eq!(6, memory.size());
 
-#[test]
-fn test_memory() {
-  let mut memory: Memory = From::from(vec![0, 1, 2, 3, 4, 5]);
-  assert_eq!(6, memory.size());
+    assert_eq!(2, memory.u8_at_index(2));
+    assert_eq!(3, memory.u8_at_index(3));
+    assert_eq!(5, memory.u8_at_index(5));
 
-  assert_eq!(2, memory.u8_at_index(2));
-  assert_eq!(3, memory.u8_at_index(3));
-  assert_eq!(5, memory.u8_at_index(5));
+    assert_eq!(0x0102, memory.u16_at_index(1));
+    assert_eq!(0x0405, memory.u16_at_index(4));
 
-  assert_eq!(0x0102, memory.u16_at_index(1));
-  assert_eq!(0x0405, memory.u16_at_index(4));
+    memory.set_index_to_u8(4, 8);
+    assert_eq!(0x0805, memory.u16_at_index(4));
+  }
 
-  memory.set_index_to_u8(4, 8);
-  assert_eq!(0x0805, memory.u16_at_index(4));
-}
+  #[test]
+  fn test_globals() {
+    // 608 = 0x80 (global base) + 2 * 0xf0 (number of globals)
+    let mut memory = Memory::from(vec![0; 608]);
 
-#[test]
-fn test_globals() {
-  // 608 = 0x80 (global base) + 2 * 0xf0 (number of globals)
-  let mut memory = Memory::from(vec![0; 608]);
+    // Set up the memory so that the global table is at 0x80 and has
+    // the value 0x84 at global 2 (0x84)
+    let global_offset = 0x80usize;
+    let val = 0x94u16;
+    BigEndian::write_u16(&mut memory.bytes[super::GLOBAL_TABLE_INDEX..],
+                         global_offset as u16);
+    BigEndian::write_u16(&mut memory.bytes[global_offset + 2 * 2..], val);
 
-  // Set up the memory so that the global table is at 0x80 and has
-  // the value 0x84 at global 2 (0x84)
-  let global_offset = 0x80usize;
-  let val = 0x84u16;
-  BigEndian::write_u16(&mut memory.bytes[GLOBAL_TABLE_INDEX..],
-                       global_offset as u16);
-  BigEndian::write_u16(&mut memory.bytes[global_offset + 2 * 2..], val);
+    assert_eq!(val, memory.read_global(2));
 
-  assert_eq!(val, memory.read_global(2));
+    memory.write_global(0, 0x0809);
+    assert_eq!(0x0809, memory.read_global(0));
 
-  memory.write_global(0, 0x0809);
-  assert_eq!(0x0809, memory.read_global(0));
+    memory.write_global(239, 0x0708);
+    assert_eq!(0x0708, memory.read_global(239));
+  }
 
-  memory.write_global(239, 0x0708);
-  assert_eq!(0x0708, memory.read_global(239));
-}
+  #[test]
+  #[should_panic]
+  fn test_globals_overflow_read() {
+    // 608 = 0x80 (global base) + 2 * 0xf0 (number of globals)
+    let memory = Memory::from(vec![0; 608]);
 
-#[test]
-#[should_panic]
-fn test_globals_overflow_read() {
-  // 608 = 0x80 (global base) + 2 * 0xf0 (number of globals)
-  let memory = Memory::from(vec![0; 608]);
+    memory.read_global(240);
+  }
 
-  memory.read_global(240);
-}
+  #[test]
+  #[should_panic]
+  fn test_globals_overflow_write() {
+    // 608 = 0x80 (global base) + 2 * 0xf0 (number of globals)
+    let mut memory = Memory::from(vec![0; 608]);
 
-#[test]
-#[should_panic]
-fn test_globals_overflow_write() {
-  // 608 = 0x80 (global base) + 2 * 0xf0 (number of globals)
-  let mut memory = Memory::from(vec![0; 608]);
-
-  memory.write_global(240, 0);
+    memory.write_global(240, 0);
+  }
 }

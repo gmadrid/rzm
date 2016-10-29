@@ -1,4 +1,4 @@
-use result::{Error, Result};
+use result::Result;
 use zmachine::opcodes::{OpcodeRunner, Operand, Operands};
 use zmachine::ops::twoops::je_0x01;
 
