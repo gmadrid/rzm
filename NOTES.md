@@ -8,6 +8,4 @@ Need to do:
 * test for storew
 * add at least one test for jz
 * add at least one test for sub (try hitting all of the sign possibilities)
-* get call working correctly and handling arguments
-* get ret working
 * get ret from a branch working

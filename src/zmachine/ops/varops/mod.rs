@@ -1,9 +1,5 @@
-pub mod storew_0x01;
+mod call_0x00;
+mod storew_0x01;
 
+pub use self::call_0x00::call_0x00;
 pub use self::storew_0x01::storew_0x01;
-// pub mod add_0x14;
-// pub mod je_0x01;
-
-// pub use self::add_0x14::add_0x14;
-// pub use self::add_0x14::sub_0x15;
-// pub use self::je_0x01::je_0x01;

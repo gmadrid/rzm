@@ -109,7 +109,7 @@ impl ZMachine {
     };
 
     try!(match opcode_number {
-      0 => self.call_var_224(operands),
+      0 => ops::varops::call_0x00(self, operands),
       1 => ops::varops::storew_0x01(self, operands),
       _ => Err(Error::UnknownOpcode(opcode_number, self.pc.pc())),
     });
@@ -118,7 +118,6 @@ impl ZMachine {
   }
 
   fn read_2_operands(&mut self) -> Operands {
-
     unimplemented!()
   }
 
@@ -160,6 +159,7 @@ impl ZMachine {
   fn process_1op(&mut self, op: u8, operand: Operand) -> Result<()> {
     try!(match op {
       0x00 => ops::oneops::jz_0x00(self, operand),
+      0x0b => ops::oneops::ret_0x0b(self, operand),
       _ => {
         panic!("Unknown short 1op opcode: {:x} @{:x}", op, self.pc.pc());
       }
@@ -196,36 +196,6 @@ impl ZMachine {
     });
     Ok(())
   }
-
-  fn call_var_224(&mut self, operands: Operands) -> Result<()> {
-    // TODO IMPORTANT, what about the result location. You need to read this
-    // or the PC will be wrong.
-    let result_location = self.next_pc_byte();
-
-    // What about addresses in variables
-    if let Operands::Var(operands) = operands {
-      let ret_pc = self.pc.pc();
-
-      let packed_addr = operands[0].value(self);
-      self.pc.set_pc_to_packed_addr(packed_addr as usize);
-      println!("packed addr{:#x}", packed_addr * 2);
-
-      let num_args = self.next_pc_byte();
-      println!("num args {:?}", num_args);
-
-      // TODO: need to properly handle argument passing.
-      self.stack.new_frame(ret_pc, num_args, result_location, &operands[1..]);
-
-      for _ in 0..num_args {
-        let arg = self.next_pc_word();
-        println!("arg: {}", arg);
-      }
-
-      Ok(())
-    } else {
-      panic!("Non VAR operands received by call_var_224: {:?}", operands);
-    }
-  }
 }
 
 impl OpcodeRunner for ZMachine {
@@ -241,6 +211,14 @@ impl OpcodeRunner for ZMachine {
     self.next_pc_word()
   }
 
+  fn current_pc(&self) -> usize {
+    self.pc.pc()
+  }
+
+  fn set_current_pc(&mut self, pc: usize) {
+    self.pc.set_pc(pc);
+  }
+
   fn offset_pc(&mut self, offset: i16) {
     let new_pc = (self.pc.pc() as i32 + offset as i32) as usize;
     self.pc.set_pc(new_pc);
@@ -252,6 +230,14 @@ impl OpcodeRunner for ZMachine {
 
   fn push_stack(&mut self, val: u16) {
     self.stack.push_u16(val);
+  }
+
+  fn new_frame(&mut self, ret_pc: usize, num_locals: u8, result_location: u8) {
+    self.stack.new_frame(ret_pc, num_locals, result_location);
+  }
+
+  fn pop_frame(&mut self, return_val: u16) -> (usize, VariableRef) {
+    self.stack.pop_frame()
   }
 
   fn read_local(&self, local_idx: u8) -> u16 {

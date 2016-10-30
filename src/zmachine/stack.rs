@@ -1,6 +1,6 @@
 use byteorder::{BigEndian, ByteOrder};
 use std::u16;
-use super::opcodes::Operand;
+use super::opcodes::VariableRef;
 
 // Each stack frame:
 //    +------------------------------------------------------+
@@ -15,6 +15,7 @@ use super::opcodes::Operand;
 //    |                                                      |
 //    |                                                      |
 //
+const PC_OFFSET: usize = 0x02;
 const NUM_LOCALS_OFFSET: usize = 0x06;
 const RESULT_LOCATION_OFFSET: usize = 0x07;
 const FIRST_LOCAL_OFFSET: usize = 0x08;
@@ -47,11 +48,9 @@ impl Stack {
     stack
   }
 
-  pub fn new_frame(&mut self,
-                   pc: usize,
-                   num_locals: u8,
-                   result_location: u8,
-                   operands: &[Operand]) {
+  // Allocate a new stack frame, adding it to the call stack.
+  // Also allocate space for local variables, setting them all to zero.
+  pub fn new_frame(&mut self, pc: usize, num_locals: u8, result_location: u8) {
     let new_fp = self.sp;
     let old_fp = self.fp;
     self.push_u16(old_fp as u16);
@@ -62,14 +61,26 @@ impl Stack {
       self.push_u16(0);
     }
 
-    for (i, operand) in operands.iter().enumerate() {
-      if i >= num_locals as usize || Operand::Omitted == *operand {
-        break;
-      }
-    }
-
     self.fp = new_fp;
     self.base_sp = self.sp;
+  }
+
+  pub fn pop_frame(&mut self) -> (usize, VariableRef) {
+    // Read these values before resetting the fp.
+    let old_fp = BigEndian::read_u16(&self.stack[self.fp..]);
+    let old_pc = BigEndian::read_u32(&self.stack[self.fp + PC_OFFSET..]);
+    let old_sp = self.fp;
+    let return_var = VariableRef::decode(self.stack[self.fp + RESULT_LOCATION_OFFSET]);
+
+    self.fp = old_fp as usize;
+    self.sp = old_sp;
+
+    // Need to get the number of locals in the new frame to reset the base_sp.
+    let num_locals = self.stack[self.fp + NUM_LOCALS_OFFSET];
+    self.base_sp = self.fp + FIRST_LOCAL_OFFSET + 2 * num_locals as usize;
+
+    // Return the old pc value and the result location.
+    (old_pc as usize, return_var)
   }
 
   fn offset_for_local(&self, local_idx: u8) -> usize {
@@ -209,7 +220,7 @@ mod test {
   fn test_local() {
     let mut stack = Stack::new(100);
     let num_locals = 5;
-    stack.new_frame(0x2345, num_locals, 0, &[]);
+    stack.new_frame(0x2345, num_locals, 0);
 
     for i in 0..num_locals {
       assert_eq!(0, stack.read_local(i));

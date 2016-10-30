@@ -1,10 +1,14 @@
 pub trait OpcodeRunner: Sized {
   fn read_pc_byte(&mut self) -> u8;
   fn read_pc_word(&mut self) -> u16;
+  fn current_pc(&self) -> usize;
+  fn set_current_pc(&mut self, pc: usize);
   fn offset_pc(&mut self, offset: i16);
 
   fn pop_stack(&mut self) -> u16;
   fn push_stack(&mut self, val: u16);
+  fn new_frame(&mut self, ret_pc: usize, num_locals: u8, result_location: u8);
+  fn pop_frame(&mut self, return_val: u16) -> (usize, VariableRef);
 
   fn read_local(&self, local_idx: u8) -> u16;
   fn write_local(&mut self, local_idx: u8, val: u16);
@@ -121,10 +125,6 @@ pub mod test {
       }
     }
 
-    pub fn current_pc(&self) -> usize {
-      self.pc
-    }
-
     pub fn set_result_location(&mut self, location: VariableRef) {
       self.set_pc_bytes(vec![VariableRef::encode(location)]);
     }
@@ -168,12 +168,20 @@ pub mod test {
       val
     }
 
-    fn write_memory(&mut self, byteaddress: usize, val: u16) {
-      BigEndian::write_u16(&mut self.heap[byteaddress..], val)
+    fn current_pc(&self) -> usize {
+      self.pc
+    }
+
+    fn set_current_pc(&mut self, pc: usize) {
+      self.pc = pc;
     }
 
     fn offset_pc(&mut self, offset: i16) {
       self.pc = ((self.pc as i32) + (offset as i32)) as usize;
+    }
+
+    fn write_memory(&mut self, byteaddress: usize, val: u16) {
+      BigEndian::write_u16(&mut self.heap[byteaddress..], val)
     }
 
     fn pop_stack(&mut self) -> u16 {
@@ -182,6 +190,15 @@ pub mod test {
 
     fn push_stack(&mut self, val: u16) {
       self.stack.push(val);
+    }
+
+    fn new_frame(&mut self, ret_pc: usize, num_locals: u8, result_location: u8) {
+      // not sure what to do with this
+    }
+
+    fn pop_frame(&mut self, return_val: u16) -> (usize, VariableRef) {
+      // not sure what to do with this either
+      (0, VariableRef::Stack)
     }
 
     fn read_local(&self, local_idx: u8) -> u16 {
