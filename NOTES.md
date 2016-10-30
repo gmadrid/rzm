@@ -25,26 +25,25 @@ From the ZMachine standards doc (Appendix E)
     9.   new_line     52553       
     10.  test_attr    46627       
 
-This table is obviously for all machine versions, but it's a reasonable guideline for importance. 
-My current technique has been to implement whatever is crashing a Zork run, but at some point, 
-I'll get to a prompt....
+This table is obviously for all machine versions, but it's a reasonable guideline for importance. My current technique has been to implement whatever is crashing a Zork run, but at some point, I'll get to a prompt....
 
 My next ops will probably be:
- 1. loadw
- 2. jump
- 3. put_prop
- 4. store
- 5. test_attr
- 6. new_line
- 7. insert_obj
- 8. ret_popped
- 9. push
-10. jg
-11. loadb
-12. print
-13. and
-14. print_num
-15. inc_chk
-16. print_char
-17. rtrue
+
+     1. loadw
+     2. jump
+     3. put_prop
+     4. store
+     5. test_attr
+     6. new_line
+     7. insert_obj
+     8. ret_popped
+     9. push
+    10. jg
+    11. loadb
+    12. print
+    13. and
+    14. print_num
+    15. inc_chk
+    16. print_char
+    17. rtrue
 
