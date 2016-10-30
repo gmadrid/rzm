@@ -15,7 +15,6 @@ fn signed_binop<F, T>(runner: &mut T, operands: Operands, binop: F) -> Result<()
 
     // First, treat the input bits as signed, then sign extend to 32 bits.
     // This is so that if we overflow, rust will not panic.
-    // TODO: see if just casting the u16 as i32 will sign extend or not.
     let wide_lhs = lhs as i16 as i32;
     let wide_rhs = rhs as i16 as i32;
     let value = binop(wide_lhs, wide_rhs) as u16;
