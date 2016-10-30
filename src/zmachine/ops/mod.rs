@@ -1,5 +1,5 @@
 use result::{Error, Result};
-use zmachine::opcodes::{OpcodeRunner, Operands};
+use zmachine::opcodes::{OpcodeRunner, Operand};
 
 pub mod oneops;
 pub mod twoops;
@@ -22,43 +22,39 @@ fn fourteen_bit_signed(b1: u8, b2: u8) -> i16 {
   }
 }
 
-fn branch_binop<F, T>(runner: &mut T, operands: Operands, pred: F) -> Result<()>
+fn branch_binop<F, T>(runner: &mut T, op1: Operand, op2: Operand, pred: F) -> Result<()>
   where F: Fn(i16, i16) -> bool,
         T: OpcodeRunner {
-  if let Operands::Two(op1, op2) = operands {
-    // Rust will panic if we overflow, so do arithmetic as i32 and downcast.
-    let lhs = op1.value(runner) as i16;
-    let rhs = op2.value(runner) as i16;
-    let cmp = pred(lhs, rhs);
+  // Rust will panic if we overflow, so do arithmetic as i32 and downcast.
+  let lhs = op1.value(runner) as i16;
+  let rhs = op2.value(runner) as i16;
+  let cmp = pred(lhs, rhs);
 
-    let first_label_byte = runner.read_pc_byte();
-    let offset: i16;
-    if first_label_byte & BRANCH_LENGTH_MASK == 0 {
-      // two-byte, 14-bit signed offset
-      let second_label_byte = runner.read_pc_byte();
-      offset = fourteen_bit_signed(first_label_byte, second_label_byte);
-    } else {
-      // one-byte, 6-bit unsigned offset
-      offset = (first_label_byte & 0b00111111) as i16;
-    }
-
-    // Branch on false iff LABEL_POLARITY_MASK is 0.
-    let branch_on = (first_label_byte & BRANCH_POLARITY_MASK) != 0;
-    println!("je {:x} == {:x} when {}", lhs, rhs, branch_on);
-
-    if cmp == branch_on {
-      if offset == 0 {
-        // return false from the current routine
-        unimplemented!();
-      } else if offset == 1 {
-        // return true from the current routine
-        unimplemented!()
-      } else {
-        runner.offset_pc(offset - 2);
-      }
-    }
+  let first_label_byte = runner.read_pc_byte();
+  let offset: i16;
+  if first_label_byte & BRANCH_LENGTH_MASK == 0 {
+    // two-byte, 14-bit signed offset
+    let second_label_byte = runner.read_pc_byte();
+    offset = fourteen_bit_signed(first_label_byte, second_label_byte);
   } else {
-    return Err(Error::BadOperands("add expects 2OP operands".to_string(), operands));
+    // one-byte, 6-bit unsigned offset
+    offset = (first_label_byte & 0b00111111) as i16;
+  }
+
+  // Branch on false iff LABEL_POLARITY_MASK is 0.
+  let branch_on = (first_label_byte & BRANCH_POLARITY_MASK) != 0;
+  println!("je {:x} == {:x} when {}", lhs, rhs, branch_on);
+
+  if cmp == branch_on {
+    if offset == 0 {
+      // return false from the current routine
+      unimplemented!();
+    } else if offset == 1 {
+      // return true from the current routine
+      unimplemented!()
+    } else {
+      runner.offset_pc(offset - 2);
+    }
   }
   Ok(())
 }

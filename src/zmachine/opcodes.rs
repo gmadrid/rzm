@@ -68,15 +68,6 @@ impl VariableRef {
   }
 }
 
-#[derive(Debug)]
-pub enum Operands {
-  None,
-  One,
-  Two(Operand, Operand),
-  //  Var(Operand, Operand, Operand, Operand),
-  Var([Operand; 4]),
-}
-
 #[derive(Debug,Eq,PartialEq)]
 pub enum Operand {
   LargeConstant(u16),

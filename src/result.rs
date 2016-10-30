@@ -1,14 +1,12 @@
 use clap;
 use std::io;
 use std::result;
-use zmachine::opcodes::Operands;
 
 #[derive(Debug)]
 pub enum Error {
   Clap(clap::Error),
   IO(io::Error),
 
-  BadOperands(String, Operands),
   CouldNotReadHeader,
   UnknownOpcode(u8, usize),
   ZFileTooShort,

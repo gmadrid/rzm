@@ -8,7 +8,7 @@ mod pc;
 mod stack;
 
 use self::memory::Memory;
-use self::opcodes::{OpcodeRunner, Operand, Operands, VariableRef};
+use self::opcodes::{OpcodeRunner, Operand, VariableRef};
 use self::pc::PC;
 use self::stack::Stack;
 
@@ -102,32 +102,30 @@ impl ZMachine {
     println!("var opcode number: {:x} @{:x}",
              opcode_number,
              self.pc.pc() - 1usize);
-    let operands = if (first_byte & 0b00100000) == 0 {
-      self.read_2_operands()
+    if (first_byte & 0b00100000) == 0 {
+      let (lhs, rhs) = self.read_2_operands();
+      self.dispatch_2op(opcode_number, lhs, rhs)
     } else {
-      self.read_var_operands()
-    };
-
-    try!(match opcode_number {
-      0 => ops::varops::call_0x00(self, operands),
-      1 => ops::varops::storew_0x01(self, operands),
-      _ => Err(Error::UnknownOpcode(opcode_number, self.pc.pc())),
-    });
-
-    Ok(())
+      let operands = self.read_var_operands();
+      match opcode_number {
+        0 => ops::varops::call_0x00(self, operands),
+        1 => ops::varops::storew_0x01(self, operands),
+        _ => Err(Error::UnknownOpcode(opcode_number, self.pc.pc())),
+      }
+    }
   }
 
-  fn read_2_operands(&mut self) -> Operands {
+  fn read_2_operands(&mut self) -> (Operand, Operand) {
     unimplemented!()
   }
 
-  fn read_var_operands(&mut self) -> Operands {
+  fn read_var_operands(&mut self) -> [Operand; 4] {
     let operand_types = self.next_pc_byte();
     let operand1 = self.read_operand_of_type((operand_types & 0b11000000) >> 6);
     let operand2 = self.read_operand_of_type((operand_types & 0b00110000) >> 4);
     let operand3 = self.read_operand_of_type((operand_types & 0b00001100) >> 2);
     let operand4 = self.read_operand_of_type((operand_types & 0b00000011) >> 0);
-    Operands::Var([operand1, operand2, operand3, operand4])
+    [operand1, operand2, operand3, operand4]
   }
 
   fn read_operand_of_type(&mut self, operand_type: u8) -> Operand {
@@ -182,19 +180,16 @@ impl ZMachine {
     } else {
       0b10
     });
-    let operands = Operands::Two(first, second);
-    try!(match opcode_number {
-      0x01 => ops::twoops::je_0x01(self, operands),
-      0x14 => ops::twoops::add_0x14(self, operands),
-      0x15 => ops::twoops::sub_0x15(self, operands),
-      _ => {
-        panic!("Unknown long opcode: {:x}/{:x} @{:x}",
-               opcode_number,
-               first_byte,
-               self.pc.pc())
-      }
-    });
-    Ok(())
+    self.dispatch_2op(opcode_number, first, second)
+  }
+
+  fn dispatch_2op(&mut self, opcode: u8, lhs: Operand, rhs: Operand) -> Result<()> {
+    match opcode {
+      0x01 => ops::twoops::je_0x01(self, lhs, rhs),
+      0x14 => ops::twoops::add_0x14(self, lhs, rhs),
+      0x15 => ops::twoops::sub_0x15(self, lhs, rhs),
+      _ => panic!("Unknown long opcode: {:x} @{:x}", opcode, self.pc.pc()),
+    }
   }
 }
 
