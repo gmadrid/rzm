@@ -2,6 +2,7 @@ use byteorder::{BigEndian, ByteOrder};
 
 const FLAG1_INDEX: usize = 0x01;
 const STARTING_PC_INDEX: usize = 0x06;
+const PROPERTY_TABLE_INDEX: usize = 0x0a;
 const GLOBAL_TABLE_INDEX: usize = 0x0c;
 const FILE_LENGTH_INDEX: usize = 0x1a;
 
@@ -20,6 +21,7 @@ impl Memory {
     Memory { bytes: bytes }
   }
 
+  #[cfg(test)]
   pub fn size(&self) -> usize {
     self.bytes.len()
   }
@@ -55,6 +57,10 @@ impl Memory {
 
   pub fn starting_pc(&self) -> usize {
     self.u16_at_index(STARTING_PC_INDEX) as usize
+  }
+
+  pub fn property_table_offset(&self) -> usize {
+    self.u16_at_index(PROPERTY_TABLE_INDEX) as usize
   }
 
   pub fn global_base_byteaddress(&self) -> usize {

@@ -5,9 +5,11 @@ mod memory;
 pub mod opcodes;
 mod ops;
 mod pc;
+mod object_table;
 mod stack;
 
 use self::memory::Memory;
+use self::object_table::ObjectTable;
 use self::opcodes::{OpcodeRunner, Operand, VariableRef};
 use self::pc::PC;
 use self::stack::Stack;
@@ -51,6 +53,8 @@ impl ZMachine {
     }
 
     let memory = Memory::from(zbytes);
+    ObjectTable::new().dump(&memory);
+
     let zmachine = ZMachine::from(memory);
 
     let expected_file_length = zmachine.memory.file_length();

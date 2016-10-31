@@ -29,8 +29,8 @@ This table is obviously for all machine versions, but it's a reasonable guidelin
 
 My next ops will probably be:
 
-     1. loadw
-     2. jump
+     1. loadw        Done
+     2. jump         Done
      3. put_prop
      4. store
      5. test_attr

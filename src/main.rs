@@ -17,7 +17,7 @@ fn real_main() -> Result<()> {
   let f = try!(File::open(path));
 
   let mut zmachine = try!(ZMachine::from_reader(f));
-  try!(zmachine.run());
+  //  try!(zmachine.run());
 
   Ok(())
 }
