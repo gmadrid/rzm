@@ -16,6 +16,7 @@ pub trait OpcodeRunner: Sized {
   fn read_global(&self, global_idx: u8) -> u16;
   fn write_global(&mut self, global_idx: u8, val: u16);
 
+  fn read_memory(&self, byteaddress: usize) -> u16;
   fn write_memory(&mut self, byteaddress: usize, val: u16);
 
   fn result_location(&mut self) -> VariableRef;
@@ -169,6 +170,10 @@ pub mod test {
 
     fn offset_pc(&mut self, offset: i16) {
       self.pc = ((self.pc as i32) + (offset as i32)) as usize;
+    }
+
+    fn read_memory(&self, byteaddress: usize) -> u16 {
+      BigEndian::read_u16(&self.heap[byteaddress..])
     }
 
     fn write_memory(&mut self, byteaddress: usize, val: u16) {

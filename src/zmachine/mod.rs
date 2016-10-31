@@ -158,6 +158,7 @@ impl ZMachine {
     try!(match op {
       0x00 => ops::oneops::jz_0x00(self, operand),
       0x0b => ops::oneops::ret_0x0b(self, operand),
+      0x0c => ops::oneops::jump_0x0c(self, operand),
       _ => {
         panic!("Unknown short 1op opcode: {:x} @{:x}", op, self.pc.pc());
       }
@@ -186,6 +187,7 @@ impl ZMachine {
   fn dispatch_2op(&mut self, opcode: u8, lhs: Operand, rhs: Operand) -> Result<()> {
     match opcode {
       0x01 => ops::twoops::je_0x01(self, lhs, rhs),
+      0x0f => ops::twoops::loadw_0x0f(self, lhs, rhs),
       0x14 => ops::twoops::add_0x14(self, lhs, rhs),
       0x15 => ops::twoops::sub_0x15(self, lhs, rhs),
       _ => panic!("Unknown long opcode: {:x} @{:x}", opcode, self.pc.pc()),
@@ -194,6 +196,10 @@ impl ZMachine {
 }
 
 impl OpcodeRunner for ZMachine {
+  fn read_memory(&self, byteaddress: usize) -> u16 {
+    self.memory.u16_at_index(byteaddress)
+  }
+
   fn write_memory(&mut self, byteaddress: usize, val: u16) {
     self.memory.set_u16_at_index(byteaddress, val);
   }
