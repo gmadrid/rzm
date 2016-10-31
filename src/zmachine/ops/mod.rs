@@ -8,6 +8,14 @@ pub mod varops;
 const BRANCH_POLARITY_MASK: u8 = 0b10000000;
 const BRANCH_LENGTH_MASK: u8 = 0b01000000;
 
+fn ret_value<T>(runner: &mut T, value: u16) -> Result<()>
+  where T: OpcodeRunner {
+  let (pc, result_var) = runner.pop_frame(value);
+  runner.write_to_variable(result_var, value);
+  runner.set_current_pc(pc);
+  Ok(())
+}
+
 fn fourteen_bit_signed(b1: u8, b2: u8) -> i16 {
   // TODO: this is convoluted. Rewrite.
   let first = b1 & 0b00111111;
@@ -48,10 +56,10 @@ fn branch_binop<F, T>(runner: &mut T, op1: Operand, op2: Operand, pred: F) -> Re
   if cmp == branch_on {
     if offset == 0 {
       // return false from the current routine
-      unimplemented!();
+      try!(ret_value(runner, 0));
     } else if offset == 1 {
       // return true from the current routine
-      unimplemented!()
+      try!(ret_value(runner, 1));
     } else {
       runner.offset_pc(offset - 2);
     }
