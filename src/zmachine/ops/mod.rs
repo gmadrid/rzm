@@ -1,5 +1,10 @@
-use result::{Error, Result};
+use result::Result;
 use zmachine::opcodes::{OpcodeRunner, Operand};
+
+mod binop;
+mod branch;
+mod call;
+mod properties;
 
 pub mod oneops;
 pub mod twoops;
