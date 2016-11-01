@@ -1,16 +1,33 @@
-use clap::{App, AppSettings, ArgMatches};
+use clap::{App, AppSettings, Arg, ArgMatches};
 use result::{Error, Result};
+use std::borrow::Cow;
 use std::env;
 use std::ffi::OsString;
+use std::path::Path;
 
-pub fn parse<'a>() -> Result<ArgMatches<'a>> {
-  parse_from(env::args_os())
+const ZFILE: &'static str = "ZFILE";
+const STACK_SIZE: &'static str = "stacksize";
+const DEFAULT_STACK_SIZE: &'static str = "61440";
+
+pub struct Args<'a> {
+  matches: ArgMatches<'a>,
+}
+
+impl<'a> Args<'a> {
+  pub fn parse() -> Result<Args<'a>> {
+    let matches = try!(parse_from(env::args_os()));
+    Ok(Args { matches: matches })
+  }
+
+  pub fn zfile(&self) -> Cow<Path> {
+    Cow::Borrowed(Path::new(self.matches.value_of(ZFILE).unwrap()))
+  }
 }
 
 fn parse_from<'a, I, T>(itr: I) -> Result<ArgMatches<'a>>
   where I: IntoIterator<Item = T>,
         T: Into<OsString> {
-  App::new("imt")
+  App::new("rzm")
   // App configuration
     .about("Collection of image tools in one command")
     .author(crate_authors!())
@@ -18,6 +35,16 @@ fn parse_from<'a, I, T>(itr: I) -> Result<ArgMatches<'a>>
     .setting(AppSettings::StrictUtf8)
     .setting(AppSettings::UnifiedHelpMessage)
     .setting(AppSettings::VersionlessSubcommands)
+    .arg(Arg::with_name(ZFILE)
+      .required(true)
+      .index(1))
+    .arg(Arg::with_name(STACK_SIZE)
+      .long(STACK_SIZE)
+      .visible_alias("ss")
+      .takes_value(true)
+      .multiple(false)
+      .number_of_values(1)
+      .default_value(DEFAULT_STACK_SIZE))
 
     // Process it.
     .get_matches_from_safe(itr)

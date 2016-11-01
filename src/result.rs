@@ -7,6 +7,10 @@ pub enum Error {
   BoardParseError,
   Clap(clap::Error),
   IO(io::Error),
+
+  CouldNotReadHeader,
+  UnknownOpcode(u8, usize),
+  ZFileTooShort,
 }
 
 pub type Result<T> = result::Result<T, Error>;
