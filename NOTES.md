@@ -31,7 +31,7 @@ My next ops will probably be:
 
      1. loadw        Done
      2. jump         Done
-     3. put_prop
+     3. put_prop     Done
      4. store
      5. test_attr
      6. new_line

@@ -1,5 +1,7 @@
 mod call_0x00;
+mod put_prop_0x03;
 mod storew_0x01;
 
 pub use self::call_0x00::call_0x00;
+pub use self::put_prop_0x03::put_prop_0x03;
 pub use self::storew_0x01::storew_0x01;

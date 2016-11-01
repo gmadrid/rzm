@@ -53,7 +53,7 @@ impl ZMachine {
     }
 
     let memory = Memory::from(zbytes);
-    ObjectTable::new().dump(&memory);
+    ObjectTable::new(&memory).dump(&memory);
 
     let zmachine = ZMachine::from(memory);
 
@@ -112,8 +112,9 @@ impl ZMachine {
     } else {
       let operands = self.read_var_operands();
       match opcode_number {
-        0 => ops::varops::call_0x00(self, operands),
-        1 => ops::varops::storew_0x01(self, operands),
+        0x00 => ops::varops::call_0x00(self, operands),
+        0x01 => ops::varops::storew_0x01(self, operands),
+        0x03 => ops::varops::put_prop_0x03(self, operands),
         _ => Err(Error::UnknownOpcode(opcode_number, self.pc.pc())),
       }
     }
@@ -235,6 +236,11 @@ impl OpcodeRunner for ZMachine {
 
   fn push_stack(&mut self, val: u16) {
     self.stack.push_u16(val);
+  }
+
+  fn put_property(&mut self, object_index: u16, property_number: u16, value: u16) {
+    ObjectTable::new(&self.memory)
+      .put_property(&mut self.memory, object_index, property_number, value);
   }
 
   fn new_frame(&mut self, ret_pc: usize, num_locals: u8, result_location: u8) {
