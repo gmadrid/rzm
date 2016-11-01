@@ -105,6 +105,7 @@ impl ZMachine {
     // println!("var opcode number: {:x} @{:x}",
     //          opcode_number,
     //          self.pc.pc() - 1usize);
+    let start_pc = self.pc.pc() - 1usize;
     if (first_byte & 0b00100000) == 0 {
       let (lhs, rhs) = self.read_2_operands();
       self.dispatch_2op(opcode_number, lhs, rhs)
@@ -114,7 +115,7 @@ impl ZMachine {
         0x00 => ops::varops::call_0x00(self, operands),
         0x01 => ops::varops::storew_0x01(self, operands),
         0x03 => ops::varops::put_prop_0x03(self, operands),
-        _ => Err(Error::UnknownOpcode(opcode_number, self.pc.pc())),
+        _ => Err(Error::UnknownOpcode(opcode_number, start_pc)),
       }
     }
   }
@@ -127,7 +128,7 @@ impl ZMachine {
     // We ignore the next two operands, but they should be Omitted.
     // TODO: check that they are omitted.
 
-    println!("VAR 2OP: {:?}/{:?}", lhs, rhs);
+    //    println!("VAR 2OP: {:?}/{:?}", lhs, rhs);
     (lhs, rhs)
   }
 
