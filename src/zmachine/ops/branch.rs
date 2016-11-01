@@ -78,6 +78,9 @@ pub fn jump_0x0c<T>(runner: &mut T, operand: Operand) -> Result<()>
 #[cfg(test)]
 mod test {
   use super::fourteen_bit_signed;
+  use super::je_0x01;
+  use zmachine::opcodes::{OpcodeRunner, Operand, VariableRef};
+  use zmachine::opcodes::test::TestRunner;
 
   #[test]
   fn test_14_bits() {
@@ -87,13 +90,6 @@ mod test {
     assert_eq!(-1, fourteen_bit_signed(0b00111111, 0b11111111));
     assert_eq!(-8192, fourteen_bit_signed(0b00100000, 0b00000000));
   }
-}
-
-#[cfg(test)]
-mod test2 {
-  use super::je_0x01;
-  use zmachine::opcodes::{OpcodeRunner, Operand, VariableRef};
-  use zmachine::opcodes::test::TestRunner;
 
   #[test]
   fn test_je_false() {
