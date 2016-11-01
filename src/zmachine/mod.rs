@@ -120,7 +120,15 @@ impl ZMachine {
   }
 
   fn read_2_operands(&mut self) -> (Operand, Operand) {
-    unimplemented!()
+    let operand_types = self.next_pc_byte();
+    let lhs = self.read_operand_of_type((operand_types & 0b11000000) >> 6);
+    let rhs = self.read_operand_of_type((operand_types & 0b00110000) >> 4);
+
+    // We ignore the next two operands, but they should be Omitted.
+    // TODO: check that they are omitted.
+
+    println!("VAR 2OP: {:?}/{:?}", lhs, rhs);
+    (lhs, rhs)
   }
 
   fn read_var_operands(&mut self) -> [Operand; 4] {
@@ -198,9 +206,11 @@ impl ZMachine {
   fn dispatch_2op(&mut self, opcode: u8, lhs: Operand, rhs: Operand) -> Result<()> {
     match opcode {
       0x01 => ops::twoops::je_0x01(self, lhs, rhs),
+      0x09 => ops::twoops::and_0x09(self, lhs, rhs),
       0x0a => ops::twoops::test_attr_0x0a(self, lhs, rhs),
       0x0d => ops::twoops::store_0x0d(self, lhs, rhs),
       0x0f => ops::twoops::loadw_0x0f(self, lhs, rhs),
+      0x10 => ops::twoops::loadb_0x10(self, lhs, rhs),
       0x14 => ops::twoops::add_0x14(self, lhs, rhs),
       0x15 => ops::twoops::sub_0x15(self, lhs, rhs),
       _ => panic!("Unknown long opcode: {:x} @{:x}", opcode, self.pc.pc()),
@@ -215,6 +225,10 @@ impl OpcodeRunner for ZMachine {
 
   fn write_memory(&mut self, byteaddress: usize, val: u16) {
     self.memory.set_u16_at_index(byteaddress, val);
+  }
+
+  fn read_memory_u8(&self, byteaddress: usize) -> u8 {
+    self.memory.u8_at_index(byteaddress)
   }
 
   fn read_pc_byte(&mut self) -> u8 {

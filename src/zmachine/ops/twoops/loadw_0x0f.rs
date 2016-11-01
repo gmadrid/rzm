@@ -19,3 +19,13 @@ pub fn store_0x0d<T>(runner: &mut T, var_op: Operand, value: Operand) -> Result<
   runner.write_to_variable(dst_var, val);
   Ok(())
 }
+
+pub fn loadb_0x10<T>(runner: &mut T, array_op: Operand, byte_index_op: Operand) -> Result<()>
+  where T: OpcodeRunner {
+  let array = array_op.value(runner);
+  let byte_index = byte_index_op.value(runner);
+
+  let result = runner.read_memory_u8(array as usize + byte_index as usize);
+  runner.write_result(result as u16);
+  Ok(())
+}

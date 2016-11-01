@@ -16,8 +16,10 @@ pub trait OpcodeRunner: Sized {
   fn read_global(&self, global_idx: u8) -> u16;
   fn write_global(&mut self, global_idx: u8, val: u16);
 
+  // TODO rename this as read_memory_u16
   fn read_memory(&self, byteaddress: usize) -> u16;
   fn write_memory(&mut self, byteaddress: usize, val: u16);
+  fn read_memory_u8(&self, byteaddress: usize) -> u8;
 
   fn attributes(&mut self, object_number: u16) -> u32;
   fn put_property(&mut self, object_index: u16, property_number: u16, value: u16);
@@ -183,6 +185,10 @@ pub mod test {
 
     fn write_memory(&mut self, byteaddress: usize, val: u16) {
       BigEndian::write_u16(&mut self.heap[byteaddress..], val)
+    }
+
+    fn read_memory_u8(&self, byteaddress: usize) -> u8 {
+      self.heap[byteaddress]
     }
 
     fn pop_stack(&mut self) -> u16 {
