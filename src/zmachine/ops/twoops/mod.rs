@@ -1,11 +1,7 @@
-mod je_0x01;
 mod loadw_0x0f;
 
-// pub use self::add_0x14::add_0x14;
-// pub use self::add_0x14::sub_0x15;
-
-pub use self::je_0x01::je_0x01;
 pub use self::loadw_0x0f::loadw_0x0f;
 pub use self::loadw_0x0f::store_0x0d;
 pub use super::binop::add_0x14;
 pub use super::binop::sub_0x15;
+pub use super::branch::je_0x01;
