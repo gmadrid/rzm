@@ -45,15 +45,15 @@ pub fn call_0x00<T>(runner: &mut T, operands: [Operand; 4]) -> Result<()>
     }
     runner.write_local(i as u8, *val);
   }
-  for i in 0..num_locals {
-    println!("Local {} after call: {:x}", i, runner.read_local(i));
-  }
+  // for i in 0..num_locals {
+  //   println!("Local {} after call: {:x}", i, runner.read_local(i));
+  // }
   Ok(())
 }
 
 pub fn ret_0x0b<T>(runner: &mut T, operand: Operand) -> Result<()>
   where T: OpcodeRunner {
   let value = operand.value(runner);
-  println!("ret {:?}: {:x}", operand, value);
+//  println!("ret {:?}: {:x}", operand, value);
   ret_value(runner, value)
 }

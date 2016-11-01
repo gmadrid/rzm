@@ -5,10 +5,16 @@ mod binop;
 mod branch;
 mod call;
 mod properties;
+mod text;
 
 pub mod oneops;
 pub mod twoops;
 pub mod varops;
+
+pub mod zeroops {
+  pub use super::text::print_0x02;
+  pub use super::text::new_line_0x0b;
+}
 
 fn ret_value<T>(runner: &mut T, value: u16) -> Result<()>
   where T: OpcodeRunner {

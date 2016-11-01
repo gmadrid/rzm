@@ -93,7 +93,6 @@ impl ZMachine {
     let top_two_bits = first_byte & 0b11000000;
 
     // TODO: (v5) handle 0xbe - extended opcodes
-    println!("\nNEW OPCODE");
     match top_two_bits {
       0b11000000 => self.process_variable_opcode(first_byte),
       0b10000000 => self.process_short_opcode(first_byte),
@@ -103,9 +102,9 @@ impl ZMachine {
 
   fn process_variable_opcode(&mut self, first_byte: u8) -> Result<()> {
     let opcode_number = first_byte & 0b00011111;
-    println!("var opcode number: {:x} @{:x}",
-             opcode_number,
-             self.pc.pc() - 1usize);
+    // println!("var opcode number: {:x} @{:x}",
+    //          opcode_number,
+    //          self.pc.pc() - 1usize);
     if (first_byte & 0b00100000) == 0 {
       let (lhs, rhs) = self.read_2_operands();
       self.dispatch_2op(opcode_number, lhs, rhs)
@@ -146,7 +145,7 @@ impl ZMachine {
 
   fn process_short_opcode(&mut self, first_byte: u8) -> Result<()> {
     let op = first_byte & 0b00001111;
-    println!("short opcode number: {:x} @{:x}", op, self.pc.pc() - 1usize);
+    // println!("short opcode number: {:x} @{:x}", op, self.pc.pc() - 1usize);
     let operand_type = (first_byte & 0b00110000) >> 4;
     let operand = self.read_operand_of_type(operand_type);
     match operand {
@@ -157,7 +156,8 @@ impl ZMachine {
 
   fn process_0op(&mut self, op: u8) -> Result<()> {
     try!(match op {
-      0xff => Ok(()) as Result<()>,
+      0x02 => ops::zeroops::print_0x02(self),
+      0x0b => ops::zeroops::new_line_0x0b(self),
       _ => {
         panic!("Unknown short 0op opcode: {:x} @{:x}", op, self.pc.pc() - 1);
       }
@@ -179,9 +179,9 @@ impl ZMachine {
 
   fn process_long_opcode(&mut self, first_byte: u8) -> Result<()> {
     let opcode_number = first_byte & 0b00011111;
-    println!("long opcode number: {:x} @{:x}",
-             opcode_number,
-             self.pc.pc() - 1usize);
+    // println!("long opcode number: {:x} @{:x}",
+    //          opcode_number,
+    //          self.pc.pc() - 1usize);
     let first = self.read_operand_of_type(if first_byte & 0b01000000 == 0 {
       0b01
     } else {
@@ -253,6 +253,14 @@ impl OpcodeRunner for ZMachine {
   fn put_property(&mut self, object_index: u16, property_number: u16, value: u16) {
     ObjectTable::new(&self.memory)
       .put_property(&mut self.memory, object_index, property_number, value);
+  }
+
+  fn abbrev_addr(&self, abbrev_table: u8, abbrev_index: u8) -> usize {
+    let abbrev_table_offset = self.memory.abbrev_table_offset();
+    let offset = abbrev_table_offset + (32 * (abbrev_table as usize - 1) + abbrev_index as usize) * 2;
+    let abbrev_addr = self.memory.u16_at_index(offset);
+    // *2 because this is a word address.
+    abbrev_addr as usize * 2
   }
 
   fn new_frame(&mut self, ret_pc: usize, num_locals: u8, result_location: u8) {

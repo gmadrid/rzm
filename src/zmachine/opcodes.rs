@@ -22,6 +22,8 @@ pub trait OpcodeRunner: Sized {
   fn attributes(&mut self, object_number: u16) -> u32;
   fn put_property(&mut self, object_index: u16, property_number: u16, value: u16);
 
+  fn abbrev_addr(&self, abbrev_table: u8, abbrev_index: u8) -> usize;
+
   fn result_location(&mut self) -> VariableRef;
 
   fn write_result(&mut self, value: u16) {
@@ -205,6 +207,10 @@ pub mod test {
     }
 
     fn put_property(&mut self, object_index: u16, property_number: u16, value: u16) {
+      unimplemented!()
+    }
+
+    fn abbrev_addr(&self, abbrev_table: u8, abbrev_index: u8) -> usize {
       unimplemented!()
     }
 

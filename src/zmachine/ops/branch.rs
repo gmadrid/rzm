@@ -40,7 +40,7 @@ pub fn branch_binop<F, T>(runner: &mut T, op1: Operand, op2: Operand, pred: F) -
 
   // Branch on false iff LABEL_POLARITY_MASK is 0.
   let branch_on = (first_label_byte & BRANCH_POLARITY_MASK) != 0;
-  println!("je {:x} == {:x} when {}", lhs, rhs, branch_on);
+//  println!("je {:x} == {:x} when {}", lhs, rhs, branch_on);
 
   if cmp == branch_on {
     if offset == 0 {

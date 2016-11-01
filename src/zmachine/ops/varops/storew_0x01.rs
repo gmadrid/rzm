@@ -9,11 +9,11 @@ pub fn storew_0x01<T>(runner: &mut T, operands: [Operand; 4]) -> Result<()>
   let array = operands[0].value(runner) as usize;
   let word_index = operands[1].value(runner) as usize;
   let val = operands[2].value(runner);
-  println!("storew {:x}/{:x}/{:x} == {:?}",
-           array,
-           word_index,
-           val,
-           operands[2]);
+  // println!("storew {:x}/{:x}/{:x} == {:?}",
+  //          array,
+  //          word_index,
+  //          val,
+  //          operands[2]);
   runner.write_memory(array + 2 * word_index, val);
 
   Ok(())
