@@ -16,6 +16,7 @@
 //
 
 use result::Result;
+use super::branch::branch_binop;
 use zmachine::opcodes::{OpcodeRunner, Operand};
 
 pub fn put_prop_0x03<T>(runner: &mut T, operands: [Operand; 4]) -> Result<()>
@@ -28,4 +29,25 @@ pub fn put_prop_0x03<T>(runner: &mut T, operands: [Operand; 4]) -> Result<()>
   runner.put_property(object_index, property_number, new_value);
 
   Ok(())
+}
+
+pub fn test_attr_0x0a<T>(runner: &mut T,
+                         object_index: Operand,
+                         attr_number: Operand)
+                         -> Result<()>
+  where T: OpcodeRunner {
+  let object_index = object_index.value(runner);
+  let attrs = runner.attributes(object_index);
+
+  let attr_number = attr_number.value(runner);
+
+  // attribute bits are 0..31 - the reverse of what I expect.
+  let mask = 1u32 << (31u8 - attr_number as u8);
+  let masked = attrs & mask;
+  let val = masked != 0;
+
+  branch_binop(runner,
+               Operand::SmallConstant(val as u8),
+               Operand::SmallConstant(0),
+               |l, _| l != 0)
 }

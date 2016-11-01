@@ -23,7 +23,7 @@ From the ZMachine standards doc (Appendix E)
     7.   rtrue        66125       
     8.   jump         56534       
     9.   new_line     52553       
-    10.  test_attr    46627       
+    10.  test_attr    46627       Done
 
 This table is obviously for all machine versions, but it's a reasonable guideline for importance. My current technique has been to implement whatever is crashing a Zork run, but at some point, I'll get to a prompt....
 
@@ -33,7 +33,7 @@ My next ops will probably be:
      2. jump         Done
      3. put_prop     Done
      4. store        Done
-     5. test_attr
+     5. test_attr    Done
      6. new_line
      7. insert_obj
      8. ret_popped

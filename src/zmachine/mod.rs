@@ -156,7 +156,13 @@ impl ZMachine {
   }
 
   fn process_0op(&mut self, op: u8) -> Result<()> {
-    unimplemented!();
+    try!(match op {
+      0xff => Ok(()) as Result<()>,
+      _ => {
+        panic!("Unknown short 0op opcode: {:x} @{:x}", op, self.pc.pc() - 1);
+      }
+    });
+    Ok(())
   }
 
   fn process_1op(&mut self, op: u8, operand: Operand) -> Result<()> {
@@ -165,7 +171,7 @@ impl ZMachine {
       0x0b => ops::oneops::ret_0x0b(self, operand),
       0x0c => ops::oneops::jump_0x0c(self, operand),
       _ => {
-        panic!("Unknown short 1op opcode: {:x} @{:x}", op, self.pc.pc());
+        panic!("Unknown short 1op opcode: {:x} @{:x}", op, self.pc.pc() - 1);
       }
     });
     Ok(())
@@ -192,6 +198,7 @@ impl ZMachine {
   fn dispatch_2op(&mut self, opcode: u8, lhs: Operand, rhs: Operand) -> Result<()> {
     match opcode {
       0x01 => ops::twoops::je_0x01(self, lhs, rhs),
+      0x0a => ops::twoops::test_attr_0x0a(self, lhs, rhs),
       0x0d => ops::twoops::store_0x0d(self, lhs, rhs),
       0x0f => ops::twoops::loadw_0x0f(self, lhs, rhs),
       0x14 => ops::twoops::add_0x14(self, lhs, rhs),
@@ -237,6 +244,10 @@ impl OpcodeRunner for ZMachine {
 
   fn push_stack(&mut self, val: u16) {
     self.stack.push_u16(val);
+  }
+
+  fn attributes(&mut self, object_number: u16) -> u32 {
+    ObjectTable::new(&self.memory).attributes(&self.memory, object_number)
   }
 
   fn put_property(&mut self, object_index: u16, property_number: u16, value: u16) {

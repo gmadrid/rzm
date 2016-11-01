@@ -19,6 +19,7 @@ pub trait OpcodeRunner: Sized {
   fn read_memory(&self, byteaddress: usize) -> u16;
   fn write_memory(&mut self, byteaddress: usize, val: u16);
 
+  fn attributes(&mut self, object_number: u16) -> u32;
   fn put_property(&mut self, object_index: u16, property_number: u16, value: u16);
 
   fn result_location(&mut self) -> VariableRef;
@@ -199,7 +200,13 @@ pub mod test {
       (0, VariableRef::Stack)
     }
 
-    fn put_property(&mut self, object_index: u16, property_number: u16, value: u16) {}
+    fn attributes(&mut self, object_number: u16) -> u32 {
+      unimplemented!()
+    }
+
+    fn put_property(&mut self, object_index: u16, property_number: u16, value: u16) {
+      unimplemented!()
+    }
 
     fn read_local(&self, local_idx: u8) -> u16 {
       self.locals[local_idx as usize]

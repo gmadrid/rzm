@@ -19,7 +19,7 @@ fn fourteen_bit_signed(b1: u8, b2: u8) -> i16 {
   }
 }
 
-fn branch_binop<F, T>(runner: &mut T, op1: Operand, op2: Operand, pred: F) -> Result<()>
+pub fn branch_binop<F, T>(runner: &mut T, op1: Operand, op2: Operand, pred: F) -> Result<()>
   where F: Fn(i16, i16) -> bool,
         T: OpcodeRunner {
   // Rust will panic if we overflow, so do arithmetic as i32 and downcast.

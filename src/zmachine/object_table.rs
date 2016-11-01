@@ -17,6 +17,11 @@ impl ObjectTable {
     // }
   }
 
+  pub fn attributes(&self, memory: &Memory, object_number: u16) -> u32 {
+    let object_offset = self.table_offset + 31 * 2 + (object_number as usize - 1) * 9;
+    memory.u32_at_index(object_offset)
+  }
+
   pub fn put_property(&mut self,
                       memory: &mut Memory,
                       object_index: u16,

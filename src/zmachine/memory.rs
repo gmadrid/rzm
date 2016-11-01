@@ -43,6 +43,11 @@ impl Memory {
     BigEndian::write_u16(&mut self.bytes[index..], val);
   }
 
+  pub fn u32_at_index(&self, index: usize) -> u32 {
+    // TODO: test this.
+    BigEndian::read_u32(&self.bytes[index..])
+  }
+
   pub fn flag1(&self) -> u8 {
     self.u8_at_index(FLAG1_INDEX)
   }
