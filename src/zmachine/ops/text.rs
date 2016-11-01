@@ -73,12 +73,12 @@ fn decode_text<T>(runner: &mut T, src: TextSource) -> String
 pub fn print_0x02<T>(runner: &mut T) -> Result<()>
   where T: OpcodeRunner {
   let s = decode_text(runner, TextSource::PC);
-  println!("{}", s);
+  print!("{}", s);
   Ok(())
 }
 
 pub fn new_line_0x0b<T>(runner: &mut T) -> Result<()>
   where T: OpcodeRunner {
-  println!("\n");
+  print!("\n");
   Ok(())
 }
