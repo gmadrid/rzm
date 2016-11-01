@@ -257,7 +257,8 @@ impl OpcodeRunner for ZMachine {
 
   fn abbrev_addr(&self, abbrev_table: u8, abbrev_index: u8) -> usize {
     let abbrev_table_offset = self.memory.abbrev_table_offset();
-    let offset = abbrev_table_offset + (32 * (abbrev_table as usize - 1) + abbrev_index as usize) * 2;
+    let offset = abbrev_table_offset +
+                 (32 * (abbrev_table as usize - 1) + abbrev_index as usize) * 2;
     let abbrev_addr = self.memory.u16_at_index(offset);
     // *2 because this is a word address.
     abbrev_addr as usize * 2

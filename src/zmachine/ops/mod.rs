@@ -12,8 +12,8 @@ pub mod twoops;
 pub mod varops;
 
 pub mod zeroops {
-  pub use super::text::print_0x02;
   pub use super::text::new_line_0x0b;
+  pub use super::text::print_0x02;
 }
 
 fn ret_value<T>(runner: &mut T, value: u16) -> Result<()>

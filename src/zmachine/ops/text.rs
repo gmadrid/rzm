@@ -78,7 +78,7 @@ pub fn print_0x02<T>(runner: &mut T) -> Result<()>
 }
 
 pub fn new_line_0x0b<T>(runner: &mut T) -> Result<()>
-where T: OpcodeRunner {
+  where T: OpcodeRunner {
   println!("\n");
   Ok(())
 }
