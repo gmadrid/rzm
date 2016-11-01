@@ -192,6 +192,7 @@ impl ZMachine {
   fn dispatch_2op(&mut self, opcode: u8, lhs: Operand, rhs: Operand) -> Result<()> {
     match opcode {
       0x01 => ops::twoops::je_0x01(self, lhs, rhs),
+      0x0d => ops::twoops::store_0x0d(self, lhs, rhs),
       0x0f => ops::twoops::loadw_0x0f(self, lhs, rhs),
       0x14 => ops::twoops::add_0x14(self, lhs, rhs),
       0x15 => ops::twoops::sub_0x15(self, lhs, rhs),

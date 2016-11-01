@@ -32,7 +32,7 @@ My next ops will probably be:
      1. loadw        Done
      2. jump         Done
      3. put_prop     Done
-     4. store
+     4. store        Done
      5. test_attr
      6. new_line
      7. insert_obj
@@ -46,4 +46,3 @@ My next ops will probably be:
     15. inc_chk
     16. print_char
     17. rtrue
-
