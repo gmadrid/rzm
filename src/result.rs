@@ -8,7 +8,7 @@ pub enum Error {
   IO(io::Error),
 
   CouldNotReadHeader,
-  UnknownOpcode(u8, usize),
+  UnknownOpcode(&'static str, u8, usize),
   ZFileTooShort,
 }
 

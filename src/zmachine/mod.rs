@@ -108,14 +108,16 @@ impl ZMachine {
     let start_pc = self.pc.pc() - 1usize;
     if (first_byte & 0b00100000) == 0 {
       let (lhs, rhs) = self.read_2_operands();
-      self.dispatch_2op(opcode_number, lhs, rhs)
+      self.dispatch_2op(start_pc, opcode_number, lhs, rhs)
     } else {
       let operands = self.read_var_operands();
       match opcode_number {
         0x00 => ops::varops::call_0x00(self, operands),
         0x01 => ops::varops::storew_0x01(self, operands),
         0x03 => ops::varops::put_prop_0x03(self, operands),
-        _ => Err(Error::UnknownOpcode(opcode_number, start_pc)),
+        0x05 => ops::varops::print_char_0x05(self, operands),
+        0x06 => ops::varops::print_num_0x06(self, operands),
+        _ => Err(Error::UnknownOpcode("VAR", opcode_number, start_pc)),
       }
     }
   }
@@ -165,6 +167,7 @@ impl ZMachine {
 
   fn process_0op(&mut self, op: u8) -> Result<()> {
     try!(match op {
+      0x00 => ops::zeroops::rtrue_0x00(self),
       0x02 => ops::zeroops::print_0x02(self),
       0x0b => ops::zeroops::new_line_0x0b(self),
       _ => {
@@ -187,6 +190,7 @@ impl ZMachine {
   }
 
   fn process_long_opcode(&mut self, first_byte: u8) -> Result<()> {
+    let start_pc = self.pc.pc() - 1;
     let opcode_number = first_byte & 0b00011111;
     // println!("long opcode number: {:x} @{:x}",
     //          opcode_number,
@@ -201,12 +205,18 @@ impl ZMachine {
     } else {
       0b10
     });
-    self.dispatch_2op(opcode_number, first, second)
+    self.dispatch_2op(start_pc, opcode_number, first, second)
   }
 
-  fn dispatch_2op(&mut self, opcode: u8, lhs: Operand, rhs: Operand) -> Result<()> {
+  fn dispatch_2op(&mut self,
+                  start_pc: usize,
+                  opcode: u8,
+                  lhs: Operand,
+                  rhs: Operand)
+                  -> Result<()> {
     match opcode {
       0x01 => ops::twoops::je_0x01(self, lhs, rhs),
+      0x05 => ops::twoops::inc_chk_0x05(self, lhs, rhs),
       0x09 => ops::twoops::and_0x09(self, lhs, rhs),
       0x0a => ops::twoops::test_attr_0x0a(self, lhs, rhs),
       0x0d => ops::twoops::store_0x0d(self, lhs, rhs),
@@ -214,7 +224,7 @@ impl ZMachine {
       0x10 => ops::twoops::loadb_0x10(self, lhs, rhs),
       0x14 => ops::twoops::add_0x14(self, lhs, rhs),
       0x15 => ops::twoops::sub_0x15(self, lhs, rhs),
-      _ => panic!("Unknown long opcode: {:x} @{:x}", opcode, self.pc.pc()),
+      _ => panic!("Unknown long opcode: {:x} @{:x}", opcode, start_pc),
     }
   }
 }

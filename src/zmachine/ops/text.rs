@@ -77,6 +77,27 @@ pub fn print_0x02<T>(runner: &mut T) -> Result<()>
   Ok(())
 }
 
+pub fn print_num_0x06<T>(runner: &mut T, operands: [Operand; 4]) -> Result<()>
+  where T: OpcodeRunner {
+  // We only care about the first operand.
+  let value = operands[0].value(runner);
+  print!("{}", value);
+  Ok(())
+}
+
+pub fn print_char_0x05<T>(runner: &mut T, operands: [Operand; 4]) -> Result<()>
+  where T: OpcodeRunner {
+  let ch = operands[0].value(runner);
+  match ch {
+    13 => print!("\n"),
+    32...126 => print!("{}", ch as u8 as char),
+    _ => {
+      println!("UNKNOWN CHARACTER");
+    }
+  }
+  Ok(())
+}
+
 pub fn new_line_0x0b<T>(runner: &mut T) -> Result<()>
   where T: OpcodeRunner {
   print!("\n");

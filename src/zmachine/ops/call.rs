@@ -57,3 +57,8 @@ pub fn ret_0x0b<T>(runner: &mut T, operand: Operand) -> Result<()>
   //  println!("ret {:?}: {:x}", operand, value);
   ret_value(runner, value)
 }
+
+pub fn rtrue_0x00<T>(runner: &mut T) -> Result<()>
+  where T: OpcodeRunner {
+  ret_value(runner, 1)
+}

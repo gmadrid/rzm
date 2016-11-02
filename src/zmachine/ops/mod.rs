@@ -12,6 +12,7 @@ pub mod twoops;
 pub mod varops;
 
 pub mod zeroops {
+  pub use super::call::rtrue_0x00;
   pub use super::text::new_line_0x0b;
   pub use super::text::print_0x02;
 }

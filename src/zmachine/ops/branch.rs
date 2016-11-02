@@ -1,6 +1,6 @@
 use result::Result;
 use super::ret_value;
-use zmachine::opcodes::{OpcodeRunner, Operand};
+use zmachine::opcodes::{OpcodeRunner, Operand, VariableRef};
 
 const BRANCH_POLARITY_MASK: u8 = 0b10000000;
 const BRANCH_LENGTH_MASK: u8 = 0b01000000;
@@ -64,6 +64,19 @@ pub fn jz_0x00<T>(runner: &mut T, operand: Operand) -> Result<()>
 pub fn je_0x01<T>(runner: &mut T, lhs: Operand, rhs: Operand) -> Result<()>
   where T: OpcodeRunner {
   branch_binop(runner, lhs, rhs, |l, r| l == r)
+}
+
+pub fn inc_chk_0x05<T>(runner: &mut T, var_op: Operand, value: Operand) -> Result<()>
+  where T: OpcodeRunner {
+  let encoded = var_op.value(runner);
+  let variable = VariableRef::decode(encoded as u8);
+  let var_value = runner.read_variable(variable);
+  let cmp_value = value.value(runner);
+  runner.write_to_variable(variable, var_value + 1);
+  branch_binop(runner,
+               Operand::LargeConstant(var_value + 1),
+               value,
+               |l, r| l > r)
 }
 
 pub fn jump_0x0c<T>(runner: &mut T, operand: Operand) -> Result<()>
