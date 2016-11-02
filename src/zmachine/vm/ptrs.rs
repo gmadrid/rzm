@@ -12,7 +12,12 @@
 #[derive(Clone,Copy,Debug)]
 pub struct BytePtr {
   val: u16,
-  checked: bool,
+}
+
+impl BytePtr {
+  fn new(val: u16) -> BytePtr {
+    BytePtr { val: val }
+  }
 }
 
 /**
@@ -24,6 +29,12 @@ pub struct WordPtr {
   val: u16,
 }
 
+impl WordPtr {
+  fn new(val: u16) -> WordPtr {
+    WordPtr { val: val }
+  }
+}
+
 /**
  * Specifies the location of a routine or string in high memory.
  * Interpreted differently on every version of the ZMachine.
@@ -31,6 +42,12 @@ pub struct WordPtr {
 #[derive(Clone,Copy,Debug)]
 pub struct PackedAddr {
   val: u16,
+}
+
+impl PackedAddr {
+  fn new(val: u16) -> PackedAddr {
+    PackedAddr { val: val }
+  }
 }
 
 /**
@@ -41,6 +58,12 @@ pub struct PackedAddr {
 #[derive(Clone,Copy,Debug)]
 pub struct RawPtr {
   val: usize,
+}
+
+impl From<RawPtr> for usize {
+  fn from(rp: RawPtr) -> usize {
+    rp.val
+  }
 }
 
 impl From<BytePtr> for RawPtr {
@@ -60,5 +83,31 @@ impl From<PackedAddr> for RawPtr {
   fn from(pa: PackedAddr) -> RawPtr {
     // The v3 behavior.
     RawPtr { val: pa.val as usize * 2 }
+  }
+}
+
+#[cfg(test)]
+mod test {
+  use super::*;
+
+  #[test]
+  fn test_bp_convert() {
+    let bp = BytePtr::new(10);
+    let rp: RawPtr = bp.into();
+    assert_eq!(10usize, rp.into());
+  }
+
+  #[test]
+  fn test_wp_convert() {
+    let wp = WordPtr::new(25);
+    let rp: RawPtr = wp.into();
+    assert_eq!(50usize, rp.into());
+  }
+
+  #[test]
+  fn test_pa_convert() {
+    let pa = PackedAddr::new(83);
+    let rp: RawPtr = pa.into();
+    assert_eq!(166usize, rp.into());
   }
 }

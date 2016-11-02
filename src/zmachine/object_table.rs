@@ -1,4 +1,4 @@
-use super::memory::Memory;
+use super::vm::Memory;
 
 pub struct ObjectTable<'a> {
   memory: &'a mut Memory,

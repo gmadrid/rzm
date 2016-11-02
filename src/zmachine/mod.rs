@@ -1,7 +1,6 @@
 use result::{Error, Result};
 use std::io::Read;
 
-mod memory;
 pub mod opcodes;
 mod ops;
 mod pc;
@@ -9,11 +8,11 @@ mod object_table;
 mod stack;
 mod vm;
 
-use self::memory::Memory;
 use self::object_table::ObjectTable;
 use self::opcodes::{OpcodeRunner, Operand, VariableRef};
 use self::pc::PC;
 use self::stack::Stack;
+use self::vm::Memory;
 
 const HEADER_SIZE: usize = 64;
 

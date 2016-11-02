@@ -1,4 +1,4 @@
-use super::memory::Memory;
+use super::vm::Memory;
 
 pub struct PC {
   pc: usize,
@@ -37,7 +37,7 @@ impl PC {
 #[cfg(test)]
 mod test {
   use super::PC;
-  use super::super::memory::Memory;
+  use super::super::vm::Memory;
 
   #[test]
   fn test_pc() {
