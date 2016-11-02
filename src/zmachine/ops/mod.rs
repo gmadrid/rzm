@@ -4,11 +4,42 @@ use zmachine::opcodes::{OpcodeRunner, Operand};
 mod binop;
 mod branch;
 mod call;
+mod load;
 mod properties;
+mod text;
 
-pub mod oneops;
-pub mod twoops;
-pub mod varops;
+pub mod zeroops {
+  pub use super::call::rtrue_0x00;
+  pub use super::text::new_line_0x0b;
+  pub use super::text::print_0x02;
+}
+
+pub mod oneops {
+  pub use super::branch::jump_0x0c;
+  pub use super::branch::jz_0x00;
+  pub use super::call::ret_0x0b;
+}
+
+pub mod twoops {
+  pub use super::binop::add_0x14;
+  pub use super::binop::and_0x09;
+  pub use super::binop::sub_0x15;
+  pub use super::branch::inc_chk_0x05;
+  pub use super::branch::je_0x01;
+  pub use super::load::loadb_0x10;
+  pub use super::load::loadw_0x0f;
+  pub use super::load::store_0x0d;
+  pub use super::properties::insert_obj_0x0e;
+  pub use super::properties::test_attr_0x0a;
+}
+
+pub mod varops {
+  pub use super::call::call_0x00;
+  pub use super::load::storew_0x01;
+  pub use super::properties::put_prop_0x03;
+  pub use super::text::print_char_0x05;
+  pub use super::text::print_num_0x06;
+}
 
 fn ret_value<T>(runner: &mut T, value: u16) -> Result<()>
   where T: OpcodeRunner {

@@ -1,6 +1,6 @@
 use result::Result;
 use super::ret_value;
-use zmachine::opcodes::{OpcodeRunner, Operand};
+use zmachine::opcodes::{OpcodeRunner, Operand, VariableRef};
 
 const BRANCH_POLARITY_MASK: u8 = 0b10000000;
 const BRANCH_LENGTH_MASK: u8 = 0b01000000;
@@ -19,7 +19,7 @@ fn fourteen_bit_signed(b1: u8, b2: u8) -> i16 {
   }
 }
 
-fn branch_binop<F, T>(runner: &mut T, op1: Operand, op2: Operand, pred: F) -> Result<()>
+pub fn branch_binop<F, T>(runner: &mut T, op1: Operand, op2: Operand, pred: F) -> Result<()>
   where F: Fn(i16, i16) -> bool,
         T: OpcodeRunner {
   // Rust will panic if we overflow, so do arithmetic as i32 and downcast.
@@ -40,7 +40,7 @@ fn branch_binop<F, T>(runner: &mut T, op1: Operand, op2: Operand, pred: F) -> Re
 
   // Branch on false iff LABEL_POLARITY_MASK is 0.
   let branch_on = (first_label_byte & BRANCH_POLARITY_MASK) != 0;
-  println!("je {:x} == {:x} when {}", lhs, rhs, branch_on);
+  //  println!("je {:x} == {:x} when {}", lhs, rhs, branch_on);
 
   if cmp == branch_on {
     if offset == 0 {
@@ -64,6 +64,19 @@ pub fn jz_0x00<T>(runner: &mut T, operand: Operand) -> Result<()>
 pub fn je_0x01<T>(runner: &mut T, lhs: Operand, rhs: Operand) -> Result<()>
   where T: OpcodeRunner {
   branch_binop(runner, lhs, rhs, |l, r| l == r)
+}
+
+pub fn inc_chk_0x05<T>(runner: &mut T, var_op: Operand, value: Operand) -> Result<()>
+  where T: OpcodeRunner {
+  let encoded = var_op.value(runner);
+  let variable = VariableRef::decode(encoded as u8);
+  let var_value = runner.read_variable(variable);
+  let cmp_value = value.value(runner);
+  runner.write_to_variable(variable, var_value + 1);
+  branch_binop(runner,
+               Operand::LargeConstant(var_value + 1),
+               value,
+               |l, r| l > r)
 }
 
 pub fn jump_0x0c<T>(runner: &mut T, operand: Operand) -> Result<()>

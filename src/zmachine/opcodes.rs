@@ -16,10 +16,16 @@ pub trait OpcodeRunner: Sized {
   fn read_global(&self, global_idx: u8) -> u16;
   fn write_global(&mut self, global_idx: u8, val: u16);
 
+  // TODO rename this as read_memory_u16
   fn read_memory(&self, byteaddress: usize) -> u16;
   fn write_memory(&mut self, byteaddress: usize, val: u16);
+  fn read_memory_u8(&self, byteaddress: usize) -> u8;
 
+  fn attributes(&mut self, object_number: u16) -> u32;
   fn put_property(&mut self, object_index: u16, property_number: u16, value: u16);
+  fn insert_obj(&mut self, object_index: u16, dest_index: u16);
+
+  fn abbrev_addr(&self, abbrev_table: u8, abbrev_index: u8) -> usize;
 
   fn result_location(&mut self) -> VariableRef;
 
@@ -182,6 +188,10 @@ pub mod test {
       BigEndian::write_u16(&mut self.heap[byteaddress..], val)
     }
 
+    fn read_memory_u8(&self, byteaddress: usize) -> u8 {
+      self.heap[byteaddress]
+    }
+
     fn pop_stack(&mut self) -> u16 {
       self.stack.pop().unwrap()
     }
@@ -199,7 +209,21 @@ pub mod test {
       (0, VariableRef::Stack)
     }
 
-    fn put_property(&mut self, object_index: u16, property_number: u16, value: u16) {}
+    fn attributes(&mut self, object_number: u16) -> u32 {
+      unimplemented!()
+    }
+
+    fn put_property(&mut self, object_index: u16, property_number: u16, value: u16) {
+      unimplemented!()
+    }
+
+    fn abbrev_addr(&self, abbrev_table: u8, abbrev_index: u8) -> usize {
+      unimplemented!()
+    }
+
+    fn insert_obj(&mut self, object_index: u16, dest_index: u16) {
+      unimplemented!()
+    }
 
     fn read_local(&self, local_idx: u8) -> u16 {
       self.locals[local_idx as usize]

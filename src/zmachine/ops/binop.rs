@@ -32,6 +32,13 @@ pub fn sub_0x15<T>(runner: &mut T, lhs: Operand, rhs: Operand) -> Result<()>
   signed_binop(runner, lhs, rhs, |l, r| l - r)
 }
 
+pub fn and_0x09<T>(runner: &mut T, lhs: Operand, rhs: Operand) -> Result<()>
+  where T: OpcodeRunner {
+  // TODO: convert this to use unsigned_binop
+  signed_binop(runner, lhs, rhs, |l, r| l & r)
+}
+
+
 #[cfg(test)]
 mod test {
   use super::add_0x14;

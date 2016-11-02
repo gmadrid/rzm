@@ -4,6 +4,7 @@ const FLAG1_INDEX: usize = 0x01;
 const STARTING_PC_INDEX: usize = 0x06;
 const PROPERTY_TABLE_INDEX: usize = 0x0a;
 const GLOBAL_TABLE_INDEX: usize = 0x0c;
+const ABBREV_TABLE_INDEX: usize = 0x18;
 const FILE_LENGTH_INDEX: usize = 0x1a;
 
 pub struct Memory {
@@ -43,6 +44,11 @@ impl Memory {
     BigEndian::write_u16(&mut self.bytes[index..], val);
   }
 
+  pub fn u32_at_index(&self, index: usize) -> u32 {
+    // TODO: test this.
+    BigEndian::read_u32(&self.bytes[index..])
+  }
+
   pub fn flag1(&self) -> u8 {
     self.u8_at_index(FLAG1_INDEX)
   }
@@ -61,6 +67,10 @@ impl Memory {
 
   pub fn property_table_offset(&self) -> usize {
     self.u16_at_index(PROPERTY_TABLE_INDEX) as usize
+  }
+
+  pub fn abbrev_table_offset(&self) -> usize {
+    self.u16_at_index(ABBREV_TABLE_INDEX) as usize
   }
 
   pub fn global_base_byteaddress(&self) -> usize {
