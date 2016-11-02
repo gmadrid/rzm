@@ -1,11 +1,12 @@
 use byteorder::{BigEndian, ByteOrder};
+use super::ptrs::{BytePtr, RawPtr};
 
-const FLAG1_INDEX: usize = 0x01;
-const STARTING_PC_INDEX: usize = 0x06;
-const PROPERTY_TABLE_INDEX: usize = 0x0a;
-const GLOBAL_TABLE_INDEX: usize = 0x0c;
-const ABBREV_TABLE_INDEX: usize = 0x18;
-const FILE_LENGTH_INDEX: usize = 0x1a;
+const FLAG1_INDEX: u16 = 0x01;
+const STARTING_PC_INDEX: u16 = 0x06;
+const PROPERTY_TABLE_INDEX: u16 = 0x0a;
+const GLOBAL_TABLE_INDEX: u16 = 0x0c;
+const ABBREV_TABLE_INDEX: u16 = 0x18;
+const FILE_LENGTH_INDEX: u16 = 0x1a;
 
 pub struct Memory {
   bytes: Vec<u8>,
@@ -22,26 +23,24 @@ impl Memory {
     Memory { bytes: bytes }
   }
 
-  #[cfg(test)]
-  pub fn size(&self) -> usize {
-    self.bytes.len()
+  pub fn u8_at<P>(&self, ptr: P) -> u8
+    where P: Into<RawPtr> {
+    self.bytes[ptr.into().ptr()]
   }
 
-  pub fn u8_at_index(&self, index: usize) -> u8 {
-    self.bytes[index]
+  pub fn set_u8_at<P>(&mut self, val: u8, ptr: P)
+    where P: Into<RawPtr> {
+    self.bytes[ptr.into().ptr()] = val;
   }
 
-  pub fn set_index_to_u8(&mut self, index: usize, val: u8) {
-    self.bytes[index] = val;
+  pub fn u16_at<P>(&self, ptr: P) -> u16
+    where P: Into<RawPtr> {
+    BigEndian::read_u16(&self.bytes[ptr.into().ptr()..])
   }
 
-  pub fn u16_at_index(&self, index: usize) -> u16 {
-    BigEndian::read_u16(&self.bytes[index..])
-  }
-
-
-  pub fn set_u16_at_index(&mut self, index: usize, val: u16) {
-    BigEndian::write_u16(&mut self.bytes[index..], val);
+  pub fn set_u16_at<P>(&mut self, val: u16, ptr: P)
+    where P: Into<RawPtr> {
+    BigEndian::write_u16(&mut self.bytes[ptr.into().ptr()..], val);
   }
 
   pub fn u32_at_index(&self, index: usize) -> u32 {
@@ -50,47 +49,49 @@ impl Memory {
   }
 
   pub fn flag1(&self) -> u8 {
-    self.u8_at_index(FLAG1_INDEX)
+    self.u8_at(BytePtr::new(FLAG1_INDEX))
   }
 
   pub fn set_flag1(&mut self, val: u8) {
-    self.set_index_to_u8(FLAG1_INDEX, val);
+    self.set_u8_at(val, BytePtr::new(FLAG1_INDEX));
   }
 
   pub fn file_length(&self) -> u32 {
-    self.u16_at_index(FILE_LENGTH_INDEX) as u32 * 2
+    self.u16_at(BytePtr::new(FILE_LENGTH_INDEX)) as u32 * 2
   }
 
-  pub fn starting_pc(&self) -> usize {
-    self.u16_at_index(STARTING_PC_INDEX) as usize
+  pub fn starting_pc(&self) -> BytePtr {
+    BytePtr::new(self.u16_at(BytePtr::new(STARTING_PC_INDEX)))
   }
 
-  pub fn property_table_offset(&self) -> usize {
-    self.u16_at_index(PROPERTY_TABLE_INDEX) as usize
+  pub fn property_table_ptr(&self) -> BytePtr {
+    BytePtr::new(self.u16_at(BytePtr::new(PROPERTY_TABLE_INDEX)))
   }
 
-  pub fn abbrev_table_offset(&self) -> usize {
-    self.u16_at_index(ABBREV_TABLE_INDEX) as usize
+  pub fn abbrev_table_ptr(&self) -> BytePtr {
+    BytePtr::new(self.u16_at(BytePtr::new(ABBREV_TABLE_INDEX)))
   }
 
-  pub fn global_base_byteaddress(&self) -> usize {
-    self.u16_at_index(GLOBAL_TABLE_INDEX) as usize
+  pub fn global_base_ptr(&self) -> BytePtr {
+    BytePtr::new(self.u16_at(BytePtr::new(GLOBAL_TABLE_INDEX)))
   }
 
-  fn global_offset(&self, global_idx: u8) -> usize {
+  fn global_ptr(&self, global_idx: u8) -> BytePtr {
     assert!(global_idx < 240, "Max global is 239: {}", global_idx);
-    let base = self.global_base_byteaddress();
+    let base = self.global_base_ptr();
     base + global_idx as usize * 2
   }
 
   pub fn read_global(&self, global_idx: u8) -> u16 {
-    let offset = self.global_offset(global_idx);
-    BigEndian::read_u16(&self.bytes[offset..])
+    let ptr = self.global_ptr(global_idx);
+    self.u16_at(ptr)
+    //    BigEndian::read_u16(&self.bytes[offset..])
   }
 
   pub fn write_global(&mut self, global_idx: u8, val: u16) {
-    let offset = self.global_offset(global_idx);
-    BigEndian::write_u16(&mut self.bytes[offset..], val);
+    let ptr = self.global_ptr(global_idx);
+    self.set_u16_at(val, ptr);
+    //    BigEndian::write_u16(&mut self.bytes[offset..], val);
   }
 }
 
@@ -98,19 +99,19 @@ impl Memory {
 mod test {
   use byteorder::{BigEndian, ByteOrder};
   use super::Memory;
+  use super::super::ptrs::{BytePtr, RawPtr};
 
   #[test]
   fn test_from() {
     let memory = Memory::from(vec![0, 1, 2, 3, 4, 5]);
-    assert_eq!(6, memory.size());
+    assert_eq!(6, memory.bytes.len());
   }
 
   #[test]
   fn test_memory() {
     let mut memory: Memory = From::from(vec![0, 1, 2, 3, 4, 5]);
-    assert_eq!(6, memory.size());
 
-    assert_eq!(2, memory.u8_at_index(2));
+    assert_eq!(2, memory.u8_at(BytePtr::new(2)));
     assert_eq!(3, memory.u8_at_index(3));
     assert_eq!(5, memory.u8_at_index(5));
 

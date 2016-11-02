@@ -15,7 +15,7 @@ pub struct BytePtr {
 }
 
 impl BytePtr {
-  fn new(val: u16) -> BytePtr {
+  pub fn new(val: u16) -> BytePtr {
     BytePtr { val: val }
   }
 }
@@ -45,7 +45,7 @@ pub struct PackedAddr {
 }
 
 impl PackedAddr {
-  fn new(val: u16) -> PackedAddr {
+  pub fn new(val: u16) -> PackedAddr {
     PackedAddr { val: val }
   }
 }
@@ -58,6 +58,16 @@ impl PackedAddr {
 #[derive(Clone,Copy,Debug)]
 pub struct RawPtr {
   val: usize,
+}
+
+impl RawPtr {
+  pub fn ptr(&self) -> usize {
+    self.val
+  }
+
+  pub fn inc_by(&mut self, addend: usize) {
+    self.val += addend;
+  }
 }
 
 impl From<RawPtr> for usize {
