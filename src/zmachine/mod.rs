@@ -7,6 +7,7 @@ mod ops;
 mod pc;
 mod object_table;
 mod stack;
+mod vm;
 
 use self::memory::Memory;
 use self::object_table::ObjectTable;
