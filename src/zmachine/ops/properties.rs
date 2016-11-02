@@ -31,6 +31,15 @@ pub fn put_prop_0x03<T>(runner: &mut T, operands: [Operand; 4]) -> Result<()>
   Ok(())
 }
 
+pub fn insert_obj_0x0e<T>(runner: &mut T, object_op: Operand, dest_op: Operand) -> Result<()>
+  where T: OpcodeRunner {
+  let object_index = object_op.value(runner);
+  let dest_index = dest_op.value(runner);
+
+  runner.insert_obj(object_index, dest_index);
+  Ok(())
+}
+
 pub fn test_attr_0x0a<T>(runner: &mut T,
                          object_index: Operand,
                          attr_number: Operand)

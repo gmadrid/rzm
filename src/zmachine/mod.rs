@@ -53,8 +53,6 @@ impl ZMachine {
     }
 
     let memory = Memory::from(zbytes);
-    ObjectTable::new(&memory).dump(&memory);
-
     let zmachine = ZMachine::from(memory);
 
     let expected_file_length = zmachine.memory.file_length();
@@ -220,6 +218,7 @@ impl ZMachine {
       0x09 => ops::twoops::and_0x09(self, lhs, rhs),
       0x0a => ops::twoops::test_attr_0x0a(self, lhs, rhs),
       0x0d => ops::twoops::store_0x0d(self, lhs, rhs),
+      0x0e => ops::twoops::insert_obj_0x0e(self, lhs, rhs),
       0x0f => ops::twoops::loadw_0x0f(self, lhs, rhs),
       0x10 => ops::twoops::loadb_0x10(self, lhs, rhs),
       0x14 => ops::twoops::add_0x14(self, lhs, rhs),
@@ -272,12 +271,15 @@ impl OpcodeRunner for ZMachine {
   }
 
   fn attributes(&mut self, object_number: u16) -> u32 {
-    ObjectTable::new(&self.memory).attributes(&self.memory, object_number)
+    ObjectTable::new(&mut self.memory).attributes(object_number)
   }
 
   fn put_property(&mut self, object_index: u16, property_number: u16, value: u16) {
-    ObjectTable::new(&self.memory)
-      .put_property(&mut self.memory, object_index, property_number, value);
+    ObjectTable::new(&mut self.memory).put_property(object_index, property_number, value);
+  }
+
+  fn insert_obj(&mut self, object_index: u16, dest_index: u16) {
+    ObjectTable::new(&mut self.memory).insert_obj(object_index, dest_index);
   }
 
   fn abbrev_addr(&self, abbrev_table: u8, abbrev_index: u8) -> usize {

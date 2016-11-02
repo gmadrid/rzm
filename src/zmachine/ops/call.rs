@@ -54,7 +54,6 @@ pub fn call_0x00<T>(runner: &mut T, operands: [Operand; 4]) -> Result<()>
 pub fn ret_0x0b<T>(runner: &mut T, operand: Operand) -> Result<()>
   where T: OpcodeRunner {
   let value = operand.value(runner);
-  //  println!("ret {:?}: {:x}", operand, value);
   ret_value(runner, value)
 }
 

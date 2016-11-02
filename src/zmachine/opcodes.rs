@@ -23,6 +23,7 @@ pub trait OpcodeRunner: Sized {
 
   fn attributes(&mut self, object_number: u16) -> u32;
   fn put_property(&mut self, object_index: u16, property_number: u16, value: u16);
+  fn insert_obj(&mut self, object_index: u16, dest_index: u16);
 
   fn abbrev_addr(&self, abbrev_table: u8, abbrev_index: u8) -> usize;
 
@@ -217,6 +218,10 @@ pub mod test {
     }
 
     fn abbrev_addr(&self, abbrev_table: u8, abbrev_index: u8) -> usize {
+      unimplemented!()
+    }
+
+    fn insert_obj(&mut self, object_index: u16, dest_index: u16) {
       unimplemented!()
     }
 
