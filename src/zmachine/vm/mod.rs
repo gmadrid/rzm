@@ -1,5 +1,7 @@
 mod memory;
+mod pc;
 mod ptrs;
+mod stack;
 
 pub use self::memory::Memory;
 pub use self::ptrs::BytePtr;

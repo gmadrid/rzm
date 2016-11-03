@@ -1,6 +1,6 @@
 use byteorder::{BigEndian, ByteOrder};
 use std::u16;
-use super::opcodes::VariableRef;
+use super::super::opcodes::VariableRef;
 
 // Each stack frame:
 //    +------------------------------------------------------+
@@ -50,13 +50,13 @@ impl Stack {
 
   // Allocate a new stack frame, adding it to the call stack.
   // Also allocate space for local variables, setting them all to zero.
-  pub fn new_frame(&mut self, pc: usize, num_locals: u8, result_location: u8) {
+  pub fn new_frame(&mut self, pc: usize, num_locals: u8, result_location: VariableRef) {
     let new_fp = self.sp;
     let old_fp = self.fp;
     self.push_u16(old_fp as u16);
     self.push_u32(pc as u32);
     self.push_u8(num_locals);
-    self.push_u8(result_location);
+    self.push_u8(VariableRef::encode(result_location));
     for _ in 0..num_locals {
       self.push_u16(0);
     }
@@ -131,8 +131,10 @@ impl Stack {
 
 #[cfg(test)]
 mod test {
+  use byteorder::{BigEndian, ByteOrder};
   use std::u16;
-  use super::Stack;
+  use super::{FIRST_LOCAL_OFFSET, Stack};
+  use super::super::super::opcodes::VariableRef;
 
   #[test]
   fn test_capacity() {
@@ -220,7 +222,7 @@ mod test {
   fn test_local() {
     let mut stack = Stack::new(100);
     let num_locals = 5;
-    stack.new_frame(0x2345, num_locals, 0);
+    stack.new_frame(0x2345, num_locals, VariableRef::Local(3));
 
     for i in 0..num_locals {
       assert_eq!(0, stack.read_local(i));
@@ -232,5 +234,36 @@ mod test {
 
     stack.write_local(4, 0xccee);
     assert_eq!(0xccee, stack.read_local(4));
+  }
+
+  #[test]
+  fn test_frames() {
+    let mut stack = Stack::new(256);
+
+    // The stack is initialized with a base stack frame with no locals.
+    assert_eq!(FIRST_LOCAL_OFFSET, stack.sp);
+    let old_fp = stack.fp;
+    let result_location = VariableRef::Local(3);
+
+    stack.new_frame(0x8888, 5, result_location);
+    // Check that the new values are as expected.
+    assert_eq!(FIRST_LOCAL_OFFSET, stack.fp);
+    assert_eq!(FIRST_LOCAL_OFFSET * 2 + 5 * 2, stack.sp);
+    assert_eq!(stack.sp, stack.base_sp);
+
+    // Now check that the stack contents are correct.
+    assert_eq!(old_fp,
+               BigEndian::read_u16(&stack.stack[stack.fp..]) as usize);
+    assert_eq!(0x8888,
+               BigEndian::read_u32(&stack.stack[stack.fp + super::PC_OFFSET..]));
+    assert_eq!(5, stack.stack[stack.fp + super::NUM_LOCALS_OFFSET]);
+    assert_eq!(VariableRef::encode(result_location),
+               stack.stack[stack.fp + super::RESULT_LOCATION_OFFSET]);
+
+    // Check that stuff is restored after popping.
+    let (popped_pc, popped_location) = stack.pop_frame();
+    assert_eq!(stack.fp, old_fp);
+    assert_eq!(0x8888, popped_pc);
+    assert_eq!(result_location, popped_location);
   }
 }

@@ -18,6 +18,10 @@ impl BytePtr {
   pub fn new(val: u16) -> BytePtr {
     BytePtr { val: val }
   }
+
+  pub fn inc_by(&self, addend: u16) -> BytePtr {
+    BytePtr { val: self.val + addend }
+  }
 }
 
 /**
@@ -54,6 +58,8 @@ impl PackedAddr {
  * A pointer into memory. Can refer to any location in memory: static, dynamic,
  * or high memory.
  * Used by the Memory module to refer to bytes in memory.
+ * It is no accident that you cannot create a RawPtr directly. The intent is to
+ * require the user to define the ptr type before using.
  */
 #[derive(Clone,Copy,Debug)]
 pub struct RawPtr {

@@ -1,5 +1,5 @@
-use super::vm::Memory;
-use super::vm::RawPtr;
+use super::Memory;
+use super::RawPtr;
 
 pub struct PC {
   pc: RawPtr,
@@ -36,8 +36,8 @@ impl PC {
 #[cfg(test)]
 mod test {
   use super::PC;
-  use super::super::vm::{BytePtr, PackedAddr};
-  use super::super::vm::Memory;
+  use super::super::{BytePtr, PackedAddr};
+  use super::super::Memory;
 
   #[test]
   fn test_pc() {

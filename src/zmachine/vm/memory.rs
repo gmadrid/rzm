@@ -79,7 +79,7 @@ impl Memory {
   fn global_ptr(&self, global_idx: u8) -> BytePtr {
     assert!(global_idx < 240, "Max global is 239: {}", global_idx);
     let base = self.global_base_ptr();
-    base + global_idx as usize * 2
+    base.inc_by(global_idx as u16 * 2)
   }
 
   pub fn read_global(&self, global_idx: u8) -> u16 {
@@ -112,14 +112,14 @@ mod test {
     let mut memory: Memory = From::from(vec![0, 1, 2, 3, 4, 5]);
 
     assert_eq!(2, memory.u8_at(BytePtr::new(2)));
-    assert_eq!(3, memory.u8_at_index(3));
-    assert_eq!(5, memory.u8_at_index(5));
+    assert_eq!(3, memory.u8_at(BytePtr::new(3)));
+    assert_eq!(5, memory.u8_at(BytePtr::new(5)));
 
-    assert_eq!(0x0102, memory.u16_at_index(1));
-    assert_eq!(0x0405, memory.u16_at_index(4));
+    assert_eq!(0x0102, memory.u16_at(BytePtr::new(1)));
+    assert_eq!(0x0405, memory.u16_at(BytePtr::new(4)));
 
-    memory.set_index_to_u8(4, 8);
-    assert_eq!(0x0805, memory.u16_at_index(4));
+    memory.set_u8_at(8, BytePtr::new(4));
+    assert_eq!(0x0805, memory.u16_at(BytePtr::new(4)));
   }
 
   #[test]
@@ -131,7 +131,7 @@ mod test {
     // the value 0x84 at global 2 (0x84)
     let global_offset = 0x80usize;
     let val = 0x94u16;
-    BigEndian::write_u16(&mut memory.bytes[super::GLOBAL_TABLE_INDEX..],
+    BigEndian::write_u16(&mut memory.bytes[super::GLOBAL_TABLE_INDEX as usize..],
                          global_offset as u16);
     BigEndian::write_u16(&mut memory.bytes[global_offset + 2 * 2..], val);
 
