@@ -59,7 +59,8 @@ impl PackedAddr {
  * or high memory.
  * Used by the Memory module to refer to bytes in memory.
  * It is no accident that you cannot create a RawPtr directly. The intent is to
- * require the user to define the ptr type before using.
+ * require the user to define the ptr type upon creation and help prevent using
+ * a ptr in the wrong context.
  */
 #[derive(Clone,Copy,Debug)]
 pub struct RawPtr {
