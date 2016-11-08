@@ -1,6 +1,8 @@
+// YES
+
 use byteorder::{BigEndian, ByteOrder};
 use std::u16;
-use super::super::opcodes::VariableRef;
+use super::vm::VariableRef;
 
 // Each stack frame:
 //    +------------------------------------------------------+
@@ -134,7 +136,7 @@ mod test {
   use byteorder::{BigEndian, ByteOrder};
   use std::u16;
   use super::{FIRST_LOCAL_OFFSET, Stack};
-  use super::super::super::opcodes::VariableRef;
+  use super::super::vm::VariableRef;
 
   #[test]
   fn test_capacity() {

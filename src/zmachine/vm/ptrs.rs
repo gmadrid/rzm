@@ -1,3 +1,4 @@
+// YES
 /**
  * The ZMachine uses three types of pointers:
  *   BytePtr: an offset from the base of memory.
