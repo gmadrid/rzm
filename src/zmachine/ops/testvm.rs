@@ -26,6 +26,18 @@ impl TestVM {
       pcbytes: Vec::new(),
     }
   }
+
+  pub fn set_heap(&mut self, heap: Vec<u8>) {
+    self.heap = heap;
+  }
+
+  pub fn set_pc(&mut self, pc: usize) {
+    self.pc = pc;
+  }
+
+  pub fn set_pcbytes(&mut self, pcbytes: Vec<u8>) {
+    self.pcbytes = pcbytes;
+  }
 }
 
 impl VM for TestVM {

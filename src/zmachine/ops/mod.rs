@@ -6,7 +6,8 @@ mod binop;
 // mod call;
 mod load;
 // mod properties;
-// mod text;
+mod text;
+
 #[cfg(test)]
 mod testvm;
 
