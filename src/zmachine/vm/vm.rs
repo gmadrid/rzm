@@ -1,7 +1,7 @@
 // YES
 
 use result::Result;
-use super::ptrs::{BytePtr, WordPtr};
+use super::ptrs::{BytePtr, RawPtr, WordPtr};
 
 /// Trait for an abstract mid-level virtual machine for running the ZMachine.
 ///
@@ -75,12 +75,12 @@ pub trait VM: Sized {
   /// NOTE: prefer write_variable().
   fn write_global(&mut self, global_idx: u8, val: u16) -> Result<()>;
 
-  /// Read the word at `byteaddress` in the vm's memory.
-  fn read_memory(&self, byteaddress: BytePtr) -> Result<u16>;
-  /// Write `val` at `byteaddress` in the vm's memory.
-  fn write_memory(&mut self, byteaddress: BytePtr, val: u16) -> Result<()>;
+  /// Read the word at `ptr` in the vm's memory.
+  fn read_memory<T>(&self, ptr: T) -> Result<u16> where T: Into<RawPtr>;
+  /// Write `val` at `ptr` in the vm's memory.
+  fn write_memory<T>(&mut self, ptr: T, val: u16) -> Result<()> where T: Into<RawPtr>;
   /// Read the single byte at `byteaddress` in the vm's memory.
-  fn read_memory_u8(&self, byteaddress: BytePtr) -> Result<u8>;
+  fn read_memory_u8<T>(&self, ptr: T) -> Result<u8> where T: Into<RawPtr>;
 
   /// Return all of the attributes for the object with number `object_number`.
   fn attributes(&mut self, object_number: u16) -> Result<u32>;
@@ -92,13 +92,6 @@ pub trait VM: Sized {
 
   /// Return the address as a WordPtr of the specified abbrev.
   fn abbrev_addr(&self, abbrev_table: u8, abbrev_index: u8) -> Result<WordPtr>;
-
-  //  fn result_location(&mut self) -> VariableRef;
-
-  // fn write_result(&mut self, value: u16) {
-  //   let result_location = self.result_location();
-  //   self.write_to_variable(result_location, value);
-  // }
 
   /// Read the value from the specified variable.
   fn read_variable(&mut self, variable: VariableRef) -> Result<u16> {

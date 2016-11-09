@@ -2,7 +2,7 @@ use result::{Error, Result};
 use std::io::Read;
 
 pub mod opcodes;
-// mod ops;
+mod ops;
 // mod object_table;
 mod vm;
 // use self::object_table::ObjectTable;
