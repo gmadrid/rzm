@@ -12,6 +12,7 @@ Need to do:
   * test text with abbrevs
   * add an output abstraction and stop using print!
   * get rid of all panics!
+  * logging
 
 
 From the ZMachine standards doc (Appendix E)

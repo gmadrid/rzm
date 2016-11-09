@@ -2,10 +2,10 @@ use result::Result;
 use zmachine::vm::{VM, VariableRef};
 
 mod binop;
-// mod branch;
-// mod call;
+mod branch;
+mod call;
 mod load;
-// mod properties;
+mod properties;
 mod text;
 
 #[cfg(test)]

@@ -16,46 +16,44 @@
 //
 
 use result::Result;
-use super::branch::branch_binop;
-use zmachine::opcodes::{OpcodeRunner, Operand};
+use zmachine::ops::Operand;
+use zmachine::ops::branch::branch_binop;
+use zmachine::vm::VM;
 
-pub fn put_prop_0x03<T>(runner: &mut T, operands: [Operand; 4]) -> Result<()>
-  where T: OpcodeRunner {
+pub fn put_prop_0x03<T>(vm: &mut T, operands: [Operand; 4]) -> Result<()>
+  where T: VM {
   // TODO: Check all of these for Omitted.
-  let object_index = operands[0].value(runner);
-  let property_number = operands[1].value(runner);
-  let new_value = operands[2].value(runner);
+  let object_index = try!(operands[0].value(vm));
+  let property_number = try!(operands[1].value(vm));
+  let new_value = try!(operands[2].value(vm));
 
-  runner.put_property(object_index, property_number, new_value);
+  try!(vm.put_property(object_index, property_number, new_value));
 
   Ok(())
 }
 
-pub fn insert_obj_0x0e<T>(runner: &mut T, object_op: Operand, dest_op: Operand) -> Result<()>
-  where T: OpcodeRunner {
-  let object_index = object_op.value(runner);
-  let dest_index = dest_op.value(runner);
+pub fn insert_obj_0x0e<T>(vm: &mut T, object_op: Operand, dest_op: Operand) -> Result<()>
+  where T: VM {
+  let object_index = try!(object_op.value(vm));
+  let dest_index = try!(dest_op.value(vm));
 
-  runner.insert_obj(object_index, dest_index);
+  try!(vm.insert_obj(object_index, dest_index));
   Ok(())
 }
 
-pub fn test_attr_0x0a<T>(runner: &mut T,
-                         object_index: Operand,
-                         attr_number: Operand)
-                         -> Result<()>
-  where T: OpcodeRunner {
-  let object_index = object_index.value(runner);
-  let attrs = runner.attributes(object_index);
+pub fn test_attr_0x0a<T>(vm: &mut T, object_index: Operand, attr_number: Operand) -> Result<()>
+  where T: VM {
+  let object_index = try!(object_index.value(vm));
+  let attrs = try!(vm.attributes(object_index));
 
-  let attr_number = attr_number.value(runner);
+  let attr_number = try!(attr_number.value(vm));
 
   // attribute bits are 0..31 - the reverse of what I expect.
   let mask = 1u32 << (31u8 - attr_number as u8);
   let masked = attrs & mask;
   let val = masked != 0;
 
-  branch_binop(runner,
+  branch_binop(vm,
                Operand::SmallConstant(val as u8),
                Operand::SmallConstant(0),
                |l, _| l != 0)

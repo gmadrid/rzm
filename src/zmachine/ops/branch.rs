@@ -1,6 +1,6 @@
 use result::Result;
-use super::ret_value;
-use zmachine::opcodes::{OpcodeRunner, Operand, VariableRef};
+use zmachine::ops::Operand;
+use zmachine::vm::{VM, VariableRef};
 
 const BRANCH_POLARITY_MASK: u8 = 0b10000000;
 const BRANCH_LENGTH_MASK: u8 = 0b01000000;
@@ -19,19 +19,19 @@ fn fourteen_bit_signed(b1: u8, b2: u8) -> i16 {
   }
 }
 
-pub fn branch_binop<F, T>(runner: &mut T, op1: Operand, op2: Operand, pred: F) -> Result<()>
+pub fn branch_binop<F, T>(vm: &mut T, op1: Operand, op2: Operand, pred: F) -> Result<()>
   where F: Fn(i16, i16) -> bool,
-        T: OpcodeRunner {
+        T: VM {
   // Rust will panic if we overflow, so do arithmetic as i32 and downcast.
-  let lhs = op1.value(runner) as i16;
-  let rhs = op2.value(runner) as i16;
+  let lhs = try!(op1.value(vm)) as i16;
+  let rhs = try!(op2.value(vm)) as i16;
   let cmp = pred(lhs, rhs);
 
-  let first_label_byte = runner.read_pc_byte();
+  let first_label_byte = vm.read_pc_byte();
   let offset: i16;
   if first_label_byte & BRANCH_LENGTH_MASK == 0 {
     // two-byte, 14-bit signed offset
-    let second_label_byte = runner.read_pc_byte();
+    let second_label_byte = vm.read_pc_byte();
     offset = fourteen_bit_signed(first_label_byte, second_label_byte);
   } else {
     // one-byte, 6-bit unsigned offset
@@ -45,46 +45,46 @@ pub fn branch_binop<F, T>(runner: &mut T, op1: Operand, op2: Operand, pred: F) -
   if cmp == branch_on {
     if offset == 0 {
       // return false from the current routine
-      try!(ret_value(runner, 0));
+      try!(vm.ret_value(0));
     } else if offset == 1 {
       // return true from the current routine
-      try!(ret_value(runner, 1));
+      try!(vm.ret_value(1));
     } else {
-      runner.offset_pc(offset - 2);
+      vm.offset_pc(offset - 2);
     }
   }
   Ok(())
 }
 
-pub fn jz_0x00<T>(runner: &mut T, operand: Operand) -> Result<()>
-  where T: OpcodeRunner {
-  je_0x01(runner, operand, Operand::SmallConstant(0))
+pub fn jz_0x00<T>(vm: &mut T, operand: Operand) -> Result<()>
+  where T: VM {
+  je_0x01(vm, operand, Operand::SmallConstant(0))
 }
 
-pub fn je_0x01<T>(runner: &mut T, lhs: Operand, rhs: Operand) -> Result<()>
-  where T: OpcodeRunner {
-  branch_binop(runner, lhs, rhs, |l, r| l == r)
+pub fn je_0x01<T>(vm: &mut T, lhs: Operand, rhs: Operand) -> Result<()>
+  where T: VM {
+  branch_binop(vm, lhs, rhs, |l, r| l == r)
 }
 
-pub fn inc_chk_0x05<T>(runner: &mut T, var_op: Operand, value: Operand) -> Result<()>
-  where T: OpcodeRunner {
-  let encoded = var_op.value(runner);
+pub fn inc_chk_0x05<T>(vm: &mut T, var_op: Operand, value: Operand) -> Result<()>
+  where T: VM {
+  let encoded = try!(var_op.value(vm));
   let variable = VariableRef::decode(encoded as u8);
-  let var_value = runner.read_variable(variable);
-  let cmp_value = value.value(runner);
-  runner.write_to_variable(variable, var_value + 1);
-  branch_binop(runner,
+  let var_value = try!(vm.read_variable(variable));
+  let cmp_value = try!(value.value(vm));
+  try!(vm.write_variable(variable, var_value + 1));
+  branch_binop(vm,
                Operand::LargeConstant(var_value + 1),
                value,
                |l, r| l > r)
 }
 
-pub fn jump_0x0c<T>(runner: &mut T, operand: Operand) -> Result<()>
-  where T: OpcodeRunner {
-  let value = operand.value(runner) as i16 as isize;
-  let current_pc = runner.current_pc();
+pub fn jump_0x0c<T>(vm: &mut T, operand: Operand) -> Result<()>
+  where T: VM {
+  let value = try!(operand.value(vm)) as i16 as isize;
+  let current_pc = vm.current_pc();
   let new_pc = ((current_pc as isize) + value) as usize - 2;
-  runner.set_current_pc(new_pc);
+  try!(vm.set_current_pc(new_pc));
   Ok(())
 }
 
@@ -92,8 +92,9 @@ pub fn jump_0x0c<T>(runner: &mut T, operand: Operand) -> Result<()>
 mod test {
   use super::fourteen_bit_signed;
   use super::je_0x01;
-  use zmachine::opcodes::{OpcodeRunner, Operand, VariableRef};
-  use zmachine::opcodes::test::TestRunner;
+  use zmachine::ops::Operand;
+  use zmachine::ops::testvm::TestVM;
+  use zmachine::vm::{VM, VariableRef};
 
   #[test]
   fn test_14_bits() {
@@ -106,65 +107,66 @@ mod test {
 
   #[test]
   fn test_je_false() {
-    let mut runner = TestRunner::new();
-    runner.set_jump_offset_byte(6, false);
-    je_0x01(&mut runner,
+    let mut vm = TestVM::new();
+    vm.set_jump_offset_byte(6, false);
+    je_0x01(&mut vm,
             Operand::SmallConstant(0x03),
             Operand::SmallConstant(0x03))
       .unwrap();
-    assert_eq!(1, runner.current_pc());
+    assert_eq!(1, vm.current_pc());
 
-    runner.set_jump_offset_byte(6, false);
-    je_0x01(&mut runner,
+    vm.set_jump_offset_byte(6, false);
+    je_0x01(&mut vm,
             Operand::LargeConstant(0x03),
             Operand::SmallConstant(0x04))
       .unwrap();
-    assert_eq!(5, runner.current_pc());
+    assert_eq!(5, vm.current_pc());
   }
 
   #[test]
   fn test_je_true() {
-    let mut runner = TestRunner::new();
-    runner.set_jump_offset_byte(8, true);
-    runner.write_local(3, 0x45);
-    runner.push_stack(0x44);
-    je_0x01(&mut runner,
+    let mut vm = TestVM::new();
+    vm.set_jump_offset_byte(8, true);
+    vm.write_local(3, 0x45);
+    vm.push_stack(0x44);
+    je_0x01(&mut vm,
             Operand::Variable(VariableRef::Stack),
             Operand::Variable(VariableRef::Local(3)))
       .unwrap();
-    assert_eq!(1, runner.current_pc());
+    assert_eq!(1, vm.current_pc());
 
-    runner.set_jump_offset_byte(8, true);
-    runner.write_local(3, 0x45);
-    runner.write_global(200, 0x45);
-    je_0x01(&mut runner,
+    vm.set_jump_offset_byte(8, true);
+    vm.write_local(3, 0x45);
+    vm.write_global(200, 0x45);
+    je_0x01(&mut vm,
             Operand::Variable(VariableRef::Global(200)),
             Operand::Variable(VariableRef::Local(3)))
       .unwrap();
-    assert_eq!(7, runner.current_pc());
+    assert_eq!(7, vm.current_pc());
   }
 
   #[test]
   fn test_je_two_bytes() {
-    let mut runner = TestRunner::new();
+    // TODO: check that these are testing correctly.
+    let mut vm = TestVM::new();
     // TODO: write these tests
-    runner.set_jump_offset_word(400, true);
-    je_0x01(&mut runner,
+    vm.set_jump_offset_word(400, true);
+    je_0x01(&mut vm,
             Operand::SmallConstant(4),
             Operand::SmallConstant(4))
       .unwrap();
-    assert_eq!(400, runner.current_pc());
+    assert_eq!(400, vm.current_pc());
 
     let mut vec = vec![0u8; 500];
-    runner.set_jump_offset_word(-400, true);
-    vec.append(&mut runner.pcbytes);
-    runner.set_pc_bytes(vec);
-    runner.pc = 500;
-    je_0x01(&mut runner,
+    vm.set_jump_offset_word(-400, true);
+    vec.append(&mut vm.pcbytes);
+    vm.set_pcbytes(vec);
+    vm.pc = 500;
+    je_0x01(&mut vm,
             Operand::SmallConstant(6),
             Operand::SmallConstant(6))
       .unwrap();
-    assert_eq!(100, runner.current_pc());
+    assert_eq!(100, vm.current_pc());
   }
 
   #[test]

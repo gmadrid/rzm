@@ -27,9 +27,9 @@ pub trait VM: Sized {
   /// Advance the PC past the next word, returning that word.
   fn read_pc_word(&mut self) -> u16;
   /// Return the current value of the PC.
-  fn current_pc(&self) -> usize;
+  fn current_pc(&self) -> usize;  // TODO: make this take a RawPtr.
   /// Set the PC to the supplied value.
-  fn set_current_pc(&mut self, pc: usize) -> Result<()>;
+  fn set_current_pc(&mut self, pc: usize) -> Result<()>;  // TODO: make RawPtr
   /// Add the `offset`, treated as a 14-bit signed int, to the PC.
   fn offset_pc(&mut self, offset: i16) -> Result<()>;
 
@@ -46,7 +46,7 @@ pub trait VM: Sized {
   /// Pop the current frame, the stack to its state before the frame was created.
   /// Returns the `ret_pc` and `result_location` values that were passed to the
   /// matching `new_frame` call.
-  fn pop_frame(&mut self, return_val: u16) -> Result<(usize, VariableRef)>;
+  fn pop_frame(&mut self) -> Result<(usize, VariableRef)>;
 
   /// Pop a word value off the stack, returning that word.
   /// NOTE: prefer read_variable().
@@ -109,6 +109,16 @@ pub trait VM: Sized {
       VariableRef::Local(idx) => self.write_local(idx, value),
       VariableRef::Global(idx) => self.write_global(idx, value),
     }
+  }
+
+  /// Convenience call for returning a value from a function call.
+  /// Pops the last frame, stores `value` into the result var from the
+  /// previous frame, and resets the pc from the value in the previous frame.
+  fn ret_value(&mut self, value: u16) -> Result<()> {
+    let (pc, result_var) = try!(self.pop_frame());
+    try!(self.write_variable(result_var, value));
+    try!(self.set_current_pc(pc));
+    Ok(())
   }
 }
 

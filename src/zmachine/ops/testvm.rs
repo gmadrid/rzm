@@ -1,6 +1,6 @@
 use byteorder::{BigEndian, ByteOrder};
 use result::Result;
-use super::super::vm::{BytePtr, RawPtr, VM, VariableRef, WordPtr};
+use zmachine::vm::{BytePtr, RawPtr, VM, VariableRef, WordPtr};
 
 /// All opcodes are implemented in terms of the VM trait.
 /// This means that we can test all of the opcodes without creating an
@@ -37,6 +37,27 @@ impl TestVM {
 
   pub fn set_pcbytes(&mut self, pcbytes: Vec<u8>) {
     self.pcbytes = pcbytes;
+    self.pc = 0;
+  }
+
+  pub fn set_jump_offset_byte(&mut self, offset: u8, polarity: bool) {
+    let mut byte = 0b01000000u8;
+    if polarity {
+      byte |= 0b10000000;
+    }
+    byte |= offset & 0b00111111;
+    self.set_pcbytes(vec![byte]);
+  }
+
+  pub fn set_jump_offset_word(&mut self, offset: i16, polarity: bool) {
+    let mut word = 0u16;
+    if polarity {
+      word |= 0b1000000000000000;
+    }
+    word |= (offset as u16) & 0b0011111111111111;
+    let mut vec = vec![0u8, 0u8];
+    BigEndian::write_u16(vec.as_mut_slice(), word as u16);
+    self.set_pcbytes(vec);
   }
 }
 
@@ -75,7 +96,7 @@ impl VM for TestVM {
     unimplemented!()
   }
 
-  fn pop_frame(&mut self, return_val: u16) -> Result<(usize, VariableRef)> {
+  fn pop_frame(&mut self) -> Result<(usize, VariableRef)> {
     unimplemented!()
   }
 
