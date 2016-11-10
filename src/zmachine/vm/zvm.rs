@@ -80,7 +80,7 @@ impl ZMachine {
     let opcode_number = first_byte & 0b00011111;
     let start_pc: usize = self.pc.pc().into();
     let start_pc = start_pc - 1usize;
-    println!("var opcode number: {:x} @{:x}", opcode_number, start_pc);
+    //    println!("var opcode number: {:x} @{:x}", opcode_number, start_pc);
     if (first_byte & 0b00100000) == 0 {
       let (lhs, rhs) = self.read_2_operands();
       self.dispatch_2op(start_pc, opcode_number, lhs, rhs)
@@ -127,7 +127,7 @@ impl ZMachine {
     // We ignore the next two operands, but they should be Omitted.
     // TODO: check that they are omitted.
 
-    println!("VAR 2OP: {:?}/{:?}", lhs, rhs);
+    //    println!("VAR 2OP: {:?}/{:?}", lhs, rhs);
     (lhs, rhs)
   }
 
@@ -136,7 +136,7 @@ impl ZMachine {
     // TODO: figure out how to write this better.
     let start_pc: usize = self.pc.pc().into();
     let start_pc = start_pc - 1usize;
-    println!("short opcode number: {:x} @{:x}", op, start_pc);
+    //    println!("short opcode number: {:x} @{:x}", op, start_pc);
     let operand_type = (first_byte & 0b00110000) >> 4;
     let operand = self.read_operand_of_type(operand_type);
     match operand {
@@ -174,7 +174,7 @@ impl ZMachine {
     let start_pc: usize = self.pc.pc().into();
     let start_pc = start_pc - 1;
     let opcode_number = first_byte & 0b00011111;
-    println!("long opcode number: {:x} @{:x}", opcode_number, start_pc);
+    //    println!("long opcode number: {:x} @{:x}", opcode_number, start_pc);
     let first = self.read_operand_of_type(if first_byte & 0b01000000 == 0 {
       0b01
     } else {
@@ -308,7 +308,7 @@ impl VM for ZMachine {
   }
 
   fn attributes(&mut self, object_number: u16) -> Result<u32> {
-    unimplemented!()
+    Ok(ObjectTable::new(&mut self.memory).attributes(object_number))
   }
 
   fn put_property(&mut self, object_number: u16, property_index: u16, value: u16) -> Result<()> {
@@ -317,10 +317,15 @@ impl VM for ZMachine {
   }
 
   fn insert_obj(&mut self, object_number: u16, dest_number: u16) -> Result<()> {
-    unimplemented!()
+    ObjectTable::new(&mut self.memory).insert_obj(object_number, dest_number);
+    Ok(())
   }
 
   fn abbrev_addr(&self, abbrev_table: u8, abbrev_index: u8) -> Result<WordPtr> {
-    unimplemented!()
+    let abbrev_table_ptr = self.memory.abbrev_table_ptr();
+    let abbrev_entry_ptr =
+      abbrev_table_ptr.inc_by(32 * (abbrev_table as u16 - 1) + abbrev_index as u16 * 2);
+    let abbrev_addr = self.memory.u16_at(abbrev_entry_ptr);
+    Ok(WordPtr::new(abbrev_addr))
   }
 }

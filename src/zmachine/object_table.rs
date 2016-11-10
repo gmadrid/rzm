@@ -1,13 +1,14 @@
 use super::vm::Memory;
+use zmachine::vm::BytePtr;
 
 pub struct ObjectTable<'a> {
   memory: &'a mut Memory,
   base: ObjectTableBase,
 }
 
-// Byteaddress of the base of the property table (from the file header).
+// Ptr to the base of the property table (from the file header).
 struct ObjectTableBase {
-  offset: usize,
+  ptr: BytePtr,
 }
 
 impl ObjectTableBase {
@@ -16,44 +17,44 @@ impl ObjectTableBase {
     // Subtract one from object_number because objects are 1-indexed.
     ObjectBase {
       number: object_number,
-      offset: self.offset + 31 * 2 + (object_number as usize - 1) * 9,
+      ptr: self.ptr.inc_by(31 * 2 + (object_number - 1) * 9),
     }
   }
 }
 
-// Byteaddress for the Object
+// Ptr to an Object
 struct ObjectBase {
   number: u16,
-  offset: usize,
+  ptr: BytePtr,
 }
 
 impl ObjectBase {
   fn attributes(&self, memory: &Memory) -> u32 {
-    memory.u32_at_index(self.offset)
+    memory.u32_at(self.ptr)
   }
 
   fn parent(&self, memory: &Memory) -> u16 {
-    memory.u8_at(self.offset + 4) as u16
+    memory.u8_at(self.ptr.inc_by(4)) as u16
   }
 
   fn set_parent(&self, parent_number: u16, memory: &mut Memory) {
-    memory.set_index_to_u8(self.offset + 4, parent_number as u8);
+    memory.set_u8_at(parent_number as u8, self.ptr.inc_by(4));
   }
 
   fn sibling(&self, memory: &Memory) -> u16 {
-    memory.u8_at_index(self.offset + 5) as u16
+    memory.u8_at(self.ptr.inc_by(5)) as u16
   }
 
   fn set_sibling(&self, sibling_number: u16, memory: &mut Memory) {
-    memory.set_index_to_u8(self.offset + 5, sibling_number as u8);
+    memory.set_u8_at(sibling_number as u8, self.ptr.inc_by(5))
   }
 
   fn child(&self, memory: &Memory) -> u16 {
-    memory.u8_at_index(self.offset + 6) as u16
+    memory.u8_at(self.ptr.inc_by(6)) as u16
   }
 
   fn set_child(&self, child_number: u16, memory: &mut Memory) {
-    memory.set_index_to_u8(self.offset + 6, child_number as u8);
+    memory.set_u8_at(child_number as u8, self.ptr.inc_by(6));
   }
 
   fn remove_from_parent(&self, table: &ObjectTableBase, memory: &mut Memory) {
@@ -83,10 +84,10 @@ impl ObjectBase {
 
 impl<'a> ObjectTable<'a> {
   pub fn new(memory: &mut Memory) -> ObjectTable {
-    let table_offset = memory.property_table_offset();
+    let table_offset = memory.property_table_ptr();
     ObjectTable {
       memory: memory,
-      base: ObjectTableBase { offset: table_offset },
+      base: ObjectTableBase { ptr: table_offset },
     }
   }
 
@@ -118,16 +119,15 @@ impl<'a> ObjectTable<'a> {
   pub fn put_property(&mut self, object_number: u16, property_index: u16, value: u16) {
     let object = self.base.object_with_number(object_number);
 
-    let prop_header_offset = self.memory.u16_at_index(object.offset + 7) as usize;
-
-    let text_length = self.memory.u8_at_index(prop_header_offset);
+    let prop_header_ptr = BytePtr::new(self.memory.u16_at(object.ptr.inc_by(7)));
+    let text_length = self.memory.u8_at(prop_header_ptr);
 
     // 1 to skip the size byte, 2 * text length to skip the description
-    let mut prop_offset = prop_header_offset + 1 + 2 * text_length as usize;
+    let mut prop_ptr = prop_header_ptr.inc_by((1 + 2 * text_length) as u16);
 
     let mut i = 0;
     loop {
-      let size_byte = self.memory.u8_at_index(prop_offset);
+      let size_byte = self.memory.u8_at(prop_ptr);
       if size_byte == 0 {
         // We've run off the end of the property table.
         break;
@@ -136,11 +136,11 @@ impl<'a> ObjectTable<'a> {
       let prop_size = size_byte / 32 + 1;
       if prop_num as u16 == property_index {
         // skip the size byte.
-        let value_offset = prop_offset + 1;
+        let value_ptr = prop_ptr.inc_by(1);
         if prop_size == 2 {
-          self.memory.set_u16_at_index(value_offset, value);
+          self.memory.set_u16_at(value, value_ptr);
         } else if prop_size == 1 {
-          self.memory.set_index_to_u8(value_offset, value as u8);
+          self.memory.set_u8_at(value as u8, value_ptr);
         } else {
           panic!("{:?}", "prop data size must be 0 or 1");
         }
@@ -148,7 +148,7 @@ impl<'a> ObjectTable<'a> {
       }
 
       // Spec says (size_byte / 32) + 1, plus another to skip the size byte.
-      prop_offset += ((size_byte / 32) + 2) as usize;
+      prop_ptr = prop_ptr.inc_by((size_byte / 32 + 2) as u16);
       i += 1;
       if i > 10 {
         break;

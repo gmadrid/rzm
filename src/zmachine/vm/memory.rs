@@ -45,9 +45,10 @@ impl Memory {
     BigEndian::write_u16(&mut self.bytes[ptr.into().ptr()..], val);
   }
 
-  pub fn u32_at_index(&self, index: usize) -> u32 {
+  pub fn u32_at<P>(&self, ptr: P) -> u32
+    where P: Into<RawPtr> {
     // TODO: test this.
-    BigEndian::read_u32(&self.bytes[index..])
+    BigEndian::read_u32(&self.bytes[ptr.into().ptr()..])
   }
 
   pub fn flag1(&self) -> u8 {

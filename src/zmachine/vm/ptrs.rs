@@ -35,7 +35,7 @@ pub struct WordPtr {
 }
 
 impl WordPtr {
-  fn new(val: u16) -> WordPtr {
+  pub fn new(val: u16) -> WordPtr {
     WordPtr { val: val }
   }
 }
