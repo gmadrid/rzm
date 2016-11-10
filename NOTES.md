@@ -4,11 +4,15 @@ Need to do:
   
 
 # Next
-* add more testing to je
-* test for storew
-* add at least one test for jz
-* add at least one test for sub (try hitting all of the sign possibilities)
-* get ret from a branch working
+  * add more testing to je
+  * test for storew
+  * add at least one test for jz
+  * add at least one test for sub (try hitting all of the sign possibilities)
+  * get ret from a branch working
+  * test text with abbrevs
+  * add an output abstraction and stop using print!
+  * get rid of all panics!
+  * logging
 
 
 From the ZMachine standards doc (Appendix E)

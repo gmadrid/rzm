@@ -1,5 +1,5 @@
 use result::Result;
-use zmachine::opcodes::{OpcodeRunner, Operand};
+use zmachine::vm::{VM, VariableRef};
 
 mod binop;
 mod branch;
@@ -7,6 +7,31 @@ mod call;
 mod load;
 mod properties;
 mod text;
+
+#[cfg(test)]
+mod testvm;
+
+#[derive(Debug,Eq,PartialEq)]
+pub enum Operand {
+  LargeConstant(u16),
+  SmallConstant(u8),
+  Variable(VariableRef),
+  Omitted,
+}
+
+impl Operand {
+  pub fn value<T>(&self, runner: &mut T) -> Result<u16>
+    where T: VM {
+    match *self {
+      Operand::LargeConstant(val) => Ok(val),
+      Operand::SmallConstant(val) => Ok(val as u16),
+      Operand::Variable(variable) => runner.read_variable(variable),
+      Operand::Omitted => {
+        panic!("Cannot read Omitted operand: {:?}", *self);
+      }
+    }
+  }
+}
 
 pub mod zeroops {
   pub use super::call::rtrue_0x00;
@@ -39,12 +64,4 @@ pub mod varops {
   pub use super::properties::put_prop_0x03;
   pub use super::text::print_char_0x05;
   pub use super::text::print_num_0x06;
-}
-
-fn ret_value<T>(runner: &mut T, value: u16) -> Result<()>
-  where T: OpcodeRunner {
-  let (pc, result_var) = runner.pop_frame(value);
-  runner.write_to_variable(result_var, value);
-  runner.set_current_pc(pc);
-  Ok(())
 }
