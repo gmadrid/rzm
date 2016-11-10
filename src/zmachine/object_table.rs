@@ -33,7 +33,7 @@ impl ObjectBase {
   }
 
   fn parent(&self, memory: &Memory) -> u16 {
-    memory.u8_at_index(self.offset + 4) as u16
+    memory.u8_at(self.offset + 4) as u16
   }
 
   fn set_parent(&self, parent_number: u16, memory: &mut Memory) {

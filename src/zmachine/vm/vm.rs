@@ -1,7 +1,7 @@
 // YES
 
 use result::Result;
-use super::ptrs::{BytePtr, RawPtr, WordPtr};
+use super::ptrs::{RawPtr, WordPtr};
 
 /// Trait for an abstract mid-level virtual machine for running the ZMachine.
 ///

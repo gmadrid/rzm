@@ -69,6 +69,11 @@ pub struct RawPtr {
 }
 
 impl RawPtr {
+  // Please don't use this. This is just here for PC until I can fix it.
+  pub fn new(val: usize) -> RawPtr {
+    RawPtr { val: val }
+  }
+
   pub fn ptr(&self) -> usize {
     self.val
   }

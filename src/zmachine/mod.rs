@@ -3,78 +3,12 @@ use std::io::Read;
 
 pub mod opcodes;
 mod ops;
-// mod object_table;
+mod object_table;
 mod vm;
-// use self::object_table::ObjectTable;
-// use self::opcodes::{OpcodeRunner, Operand, VariableRef};
-// use self::pc::PC;
-// use self::stack::Stack;
-// use self::vm::Memory;
-//
-// const HEADER_SIZE: usize = 64;
-//
-// pub struct ZMachine {
-// memory: Memory,
-// pc: PC,
-// stack: Stack,
-// }
-//
-// impl From<Vec<u8>> for ZMachine {
-// WARNING: From::from cannot fail, so this does no consistency checking.
-// fn from(vec: Vec<u8>) -> ZMachine {
-// let memory = Memory::from(vec);
-// ZMachine::from(memory)
-// }
-// }
-//
-// impl From<Memory> for ZMachine {
-// WARNING: From::from cannot fail, so this does no consistency checking.
-// fn from(memory: Memory) -> ZMachine {
-// let pc = PC::new(memory.starting_pc());
-// let mut zmachine = ZMachine {
-// memory: memory,
-// pc: pc,
-// stack: Stack::new(0xfff0),
-// };
-// zmachine.reset_interpreter_flags();
-// zmachine
-// }
-// }
-//
-// impl ZMachine {
-// pub fn from_reader<T: Read>(mut reader: T) -> Result<ZMachine> {
-// let mut zbytes = Vec::<u8>::new();
-// let bytes_read = try!(reader.read_to_end(&mut zbytes));
-// if bytes_read < HEADER_SIZE {
-// return Err(Error::CouldNotReadHeader);
-// }
-//
-// let memory = Memory::from(zbytes);
-// let zmachine = ZMachine::from(memory);
-//
-// let expected_file_length = zmachine.memory.file_length();
-// if expected_file_length != 0 && expected_file_length > bytes_read as u32 {
-// It's okay for the memory too be too big, but not too small.
-// return Err(Error::ZFileTooShort);
-// }
-//
-// Ok(zmachine)
-// }
-//
-// fn reset_interpreter_flags(&mut self) {
-// The interpreter sets flags in the header to express its capabilities to the game.
-// let flag1_mask = !0b01110000;  // no status line, no split screen, fixed-width font
-// let old_val = self.memory.flag1();
-// self.memory.set_flag1(old_val & flag1_mask);
-// }
-//
-// pub fn run(&mut self) -> Result<()> {
-// TODO: check version number
-// loop {
-// try!(self.process_opcode());
-// }
-// }
-//
+
+pub use self::vm::zvm::ZMachine;
+
+
 // fn next_pc_byte(&mut self) -> u8 {
 // self.pc.next_byte(&self.memory)
 // }
