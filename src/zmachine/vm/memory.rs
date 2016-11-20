@@ -10,6 +10,7 @@ const GLOBAL_TABLE_INDEX: u16 = 0x0c;
 const ABBREV_TABLE_INDEX: u16 = 0x18;
 const FILE_LENGTH_INDEX: u16 = 0x1a;
 
+#[derive(Eq,PartialEq)]
 pub struct Memory {
   bytes: Vec<u8>,
 }
@@ -49,6 +50,11 @@ impl Memory {
     where P: Into<RawPtr> {
     // TODO: test this.
     BigEndian::read_u32(&self.bytes[ptr.into().ptr()..])
+  }
+
+  pub fn set_u32_at<P>(&mut self, ptr: P, attrs: u32)
+    where P: Into<RawPtr> {
+    BigEndian::write_u32(&mut self.bytes[ptr.into().ptr()..], attrs);
   }
 
   pub fn flag1(&self) -> u8 {
