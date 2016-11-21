@@ -30,6 +30,7 @@ fn decode_text<T>(vm: &mut T, src: TextSource) -> Result<String>
 
   let mut offset = 0;
   loop {
+    // TODO: create a Trait for reading words to simplify this code.
     let word = try!(if from_pc {
       Ok(vm.read_pc_word())
     } else {

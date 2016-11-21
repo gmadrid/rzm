@@ -79,7 +79,7 @@ pub trait VM: Sized {
   fn read_memory<T>(&self, ptr: T) -> Result<u16> where T: Into<RawPtr>;
   /// Write `val` at `ptr` in the vm's memory.
   fn write_memory<T>(&mut self, ptr: T, val: u16) -> Result<()> where T: Into<RawPtr>;
-  /// Read the single byte at `byteaddress` in the vm's memory.
+  /// Read the single byte at `ptr` in the vm's memory.
   fn read_memory_u8<T>(&self, ptr: T) -> Result<u8> where T: Into<RawPtr>;
 
   /// Return all of the attributes for the object with number `object_number`.
