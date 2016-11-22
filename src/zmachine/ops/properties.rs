@@ -23,30 +23,30 @@ use zmachine::vm::VM;
 pub fn put_prop_0x03<T>(vm: &mut T, operands: [Operand; 4]) -> Result<()>
   where T: VM {
   // TODO: Check all of these for Omitted.
-  let object_index = try!(operands[0].value(vm));
-  let property_number = try!(operands[1].value(vm));
-  let new_value = try!(operands[2].value(vm));
+  let object_index = operands[0].value(vm)?;
+  let property_number = operands[1].value(vm)?;
+  let new_value = operands[2].value(vm)?;
 
-  try!(vm.put_property(object_index, property_number, new_value));
+  vm.put_property(object_index, property_number, new_value)?;
 
   Ok(())
 }
 
 pub fn insert_obj_0x0e<T>(vm: &mut T, object_op: Operand, dest_op: Operand) -> Result<()>
   where T: VM {
-  let object_index = try!(object_op.value(vm));
-  let dest_index = try!(dest_op.value(vm));
+  let object_index = object_op.value(vm)?;
+  let dest_index = dest_op.value(vm)?;
 
-  try!(vm.insert_obj(object_index, dest_index));
+  vm.insert_obj(object_index, dest_index)?;
   Ok(())
 }
 
 pub fn test_attr_0x0a<T>(vm: &mut T, object_index: Operand, attr_number: Operand) -> Result<()>
   where T: VM {
-  let object_index = try!(object_index.value(vm));
-  let attrs = try!(vm.attributes(object_index));
+  let object_index = object_index.value(vm)?;
+  let attrs = vm.attributes(object_index)?;
 
-  let attr_number = try!(attr_number.value(vm));
+  let attr_number = attr_number.value(vm)?;
 
   // attribute bits are 0..31 - the reverse of what I expect.
   let mask = 1u32 << (31u8 - attr_number as u8);

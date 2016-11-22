@@ -115,9 +115,9 @@ pub trait VM: Sized {
   /// Pops the last frame, stores `value` into the result var from the
   /// previous frame, and resets the pc from the value in the previous frame.
   fn ret_value(&mut self, value: u16) -> Result<()> {
-    let (pc, result_var) = try!(self.pop_frame());
-    try!(self.write_variable(result_var, value));
-    try!(self.set_current_pc(pc));
+    let (pc, result_var) = self.pop_frame()?;
+    self.write_variable(result_var, value)?;
+    self.set_current_pc(pc)?;
     Ok(())
   }
 }

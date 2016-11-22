@@ -9,21 +9,21 @@ pub fn storew_0x01<T>(vm: &mut T, operands: [Operand; 4]) -> Result<()>
   if operands[0..2].iter().any(|o| *o == Operand::Omitted) {
     panic!("3 operands required: {:?}", operands);
   }
-  let array_val = try!(operands[0].value(vm));
-  let word_index_val = try!(operands[1].value(vm));
+  let array_val = operands[0].value(vm)?;
+  let word_index_val = operands[1].value(vm)?;
   let word_ptr = BytePtr::new(array_val).inc_by(word_index_val * 2);
-  let val = try!(operands[2].value(vm));
-  try!(vm.write_memory(word_ptr, val));
+  let val = operands[2].value(vm)?;
+  vm.write_memory(word_ptr, val)?;
 
   Ok(())
 }
 
 pub fn store_0x0d<T>(vm: &mut T, encoded_var_op: Operand, value_op: Operand) -> Result<()>
   where T: VM {
-  let encoded_var_val = try!(encoded_var_op.value(vm));
+  let encoded_var_val = encoded_var_op.value(vm)?;
   let dst_var = VariableRef::decode(encoded_var_val as u8);
-  let val = try!(value_op.value(vm));
-  try!(vm.write_variable(dst_var, val));
+  let val = value_op.value(vm)?;
+  vm.write_variable(dst_var, val)?;
   Ok(())
 }
 
@@ -33,12 +33,12 @@ pub fn loadw_0x0f<T>(vm: &mut T,
                      result_ref: VariableRef)
                      -> Result<()>
   where T: VM {
-  let array_val = try!(array_op.value(vm));
-  let word_index_val = try!(word_index_op.value(vm));
+  let array_val = array_op.value(vm)?;
+  let word_index_val = word_index_op.value(vm)?;
 
-  let result = try!(vm.read_memory(BytePtr::new(array_val).inc_by(word_index_val * 2)));
+  let result = vm.read_memory(BytePtr::new(array_val).inc_by(word_index_val * 2))?;
 
-  try!(vm.write_variable(result_ref, result));
+  vm.write_variable(result_ref, result)?;
   Ok(())
 }
 
@@ -48,12 +48,12 @@ pub fn loadb_0x10<T>(vm: &mut T,
                      result_ref: VariableRef)
                      -> Result<()>
   where T: VM {
-  let array_val = try!(array_op.value(vm));
-  let byte_index_val = try!(byte_index_op.value(vm));
+  let array_val = array_op.value(vm)?;
+  let byte_index_val = byte_index_op.value(vm)?;
 
-  let result = try!(vm.read_memory_u8(BytePtr::new(array_val).inc_by(byte_index_val)));
+  let result = vm.read_memory_u8(BytePtr::new(array_val).inc_by(byte_index_val))?;
 
-  try!(vm.write_variable(result_ref, result as u16));
+  vm.write_variable(result_ref, result as u16)?;
   Ok(())
 }
 

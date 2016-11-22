@@ -12,11 +12,11 @@ use std::fs::File;
 use zmachine::ZMachine;
 
 fn real_main() -> Result<()> {
-  let args = try!(Args::parse());
+  let args = Args::parse()?;
   let path = args.zfile();
-  let f = try!(File::open(path));
-  let mut zmachine = try!(ZMachine::from_reader(f));
-  try!(zmachine.run());
+  let f = File::open(path)?;
+  let mut zmachine = ZMachine::from_reader(f)?;
+  zmachine.run()?;
   Ok(())
 }
 
