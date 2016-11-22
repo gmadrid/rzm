@@ -97,8 +97,8 @@ impl ZObject for MemoryMappedObject {
 
 #[cfg(test)]
 mod tests {
-  use super::{MemoryMappedObjectTable, ZObjectTable};
-  use zmachine::vm::BytePtr;
+  use super::{MemoryMappedObject, MemoryMappedObjectTable, ZObject, ZObjectTable};
+  use zmachine::vm::{BytePtr, Memory};
 
   #[test]
   fn test_mm_object_table() {
@@ -120,6 +120,41 @@ mod tests {
     let object = object_table.object_with_number(6);
     assert_eq!(6, object.number);
     assert_eq!(BytePtr::new(107), object.ptr);
+  }
+
+  #[test]
+  fn test_mm_objects() {
+    // Again, we have kept this very simple. We only need to test that all
+    // fields can be read and written.
+    // But now, we have to create a Memory object to map to.
+    // This requires knowledge of the spec.
+    let mut memory = Memory::from(vec![0x00, 0x00, 0x00, 0x00 /* some padding */, 0x34,
+                                       0x56, 0x78, 0x9a /* attributes */,
+                                       0x12 /* parent */, 0x13 /* sibling */,
+                                       0x23 /* child */, 0x65, 0x43 /* property ptr */]);
+    let ptr = BytePtr::new(0x04);  // skip the padding
+    let obj = MemoryMappedObject {
+      number: 3,
+      ptr: ptr,
+    };
+
+    assert_eq!(0x3456789a, obj.attributes(&memory));
+    assert_eq!(0x12, obj.parent(&memory));
+    assert_eq!(0x13, obj.sibling(&memory));
+    assert_eq!(0x23, obj.child(&memory));
+    // assert_eq!(0x6543, obj.property_table());
+
+    obj.set_attributes(0x55667788, &mut memory);
+    obj.set_parent(0x11, &mut memory);
+    obj.set_sibling(0x77, &mut memory);
+    obj.set_child(0xcc, &mut memory);
+    // obj.set_property_table(0x8844, &mut memory);
+
+    assert_eq!(0x55667788, obj.attributes(&memory));
+    assert_eq!(0x11, obj.parent(&memory));
+    assert_eq!(0x77, obj.sibling(&memory));
+    assert_eq!(0xcc, obj.child(&memory));
+    // assert_eq!(0x8843, obj.property_table());
   }
 }
 
