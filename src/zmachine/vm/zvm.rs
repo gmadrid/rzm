@@ -1,6 +1,5 @@
 use result::{Error, Result};
 use std::io::Read;
-use zmachine::object_table::ObjectTable;
 use zmachine::ops;
 use zmachine::ops::Operand;
 use zmachine::vm::{RawPtr, VM, VariableRef, WordPtr};
@@ -306,17 +305,20 @@ impl VM for ZMachine {
   }
 
   fn attributes(&mut self, object_number: u16) -> Result<u32> {
-    Ok(ObjectTable::new(&mut self.memory).attributes(object_number))
+    //    Ok(ObjectTable::new(&mut self.memory).attributes(object_number))
+    unimplemented!()
   }
 
   fn put_property(&mut self, object_number: u16, property_index: u16, value: u16) -> Result<()> {
-    ObjectTable::new(&mut self.memory).put_property(object_number, property_index, value);
-    Ok(())
+    // ObjectTable::new(&mut self.memory).put_property(object_number, property_index, value);
+    // Ok(())
+    unimplemented!()
   }
 
   fn insert_obj(&mut self, object_number: u16, dest_number: u16) -> Result<()> {
-    ObjectTable::new(&mut self.memory).insert_obj(object_number, dest_number);
-    Ok(())
+    // ObjectTable::new(&mut self.memory).insert_obj(object_number, dest_number);
+    // Ok(())
+    unimplemented!()
   }
 
   fn abbrev_addr(&self, abbrev_table: u8, abbrev_index: u8) -> Result<WordPtr> {
