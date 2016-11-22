@@ -273,35 +273,45 @@ mod tests {
     ]
       .as_slice());
 
-    let mut object_table = ObjectTable::new(&mut memory);
+    {
+      let mut object_table = ObjectTable::new(&mut memory);
 
-    assert_eq!(17, object_table.attributes(1));
-    assert_eq!(35, object_table.attributes(2));
-    assert_eq!(17, object_table.attributes(3));
-    assert_eq!(0xfedcba98u32, object_table.attributes(4));
+      assert_eq!(17, object_table.attributes(1));
+      assert_eq!(35, object_table.attributes(2));
+      assert_eq!(17, object_table.attributes(3));
+      assert_eq!(0xfedcba98u32, object_table.attributes(4));
 
-    assert_eq!(1, object_table.parent(1));
-    assert_eq!(4, object_table.parent(2));
-    assert_eq!(7, object_table.parent(3));
-    assert_eq!(10, object_table.parent(4));
+      assert_eq!(1, object_table.parent(1));
+      assert_eq!(4, object_table.parent(2));
+      assert_eq!(7, object_table.parent(3));
+      assert_eq!(10, object_table.parent(4));
 
-    assert_eq!(2, object_table.sibling(1));
-    assert_eq!(5, object_table.sibling(2));
-    assert_eq!(8, object_table.sibling(3));
-    assert_eq!(11, object_table.sibling(4));
+      assert_eq!(2, object_table.sibling(1));
+      assert_eq!(5, object_table.sibling(2));
+      assert_eq!(8, object_table.sibling(3));
+      assert_eq!(11, object_table.sibling(4));
 
-    assert_eq!(3, object_table.child(1));
-    assert_eq!(6, object_table.child(2));
-    assert_eq!(9, object_table.child(3));
-    assert_eq!(12, object_table.child(4));
+      assert_eq!(3, object_table.child(1));
+      assert_eq!(6, object_table.child(2));
+      assert_eq!(9, object_table.child(3));
+      assert_eq!(12, object_table.child(4));
 
-    object_table.set_attributes(1, 0x54453443);
-    assert_eq!(0x54453443, object_table.attributes(1));
-    object_table.set_parent(2, 3);
-    assert_eq!(3, object_table.parent(2));
-    object_table.set_sibling(1, 2);
-    assert_eq!(2, object_table.sibling(1));
-    object_table.set_child(3, 1);
-    assert_eq!(1, object_table.child(3));
+      object_table.set_attributes(1, 0x54453443);
+      assert_eq!(0x54453443, object_table.attributes(1));
+      object_table.set_parent(2, 3);
+      assert_eq!(3, object_table.parent(2));
+      object_table.set_sibling(1, 3);
+      assert_eq!(3, object_table.sibling(1));
+      object_table.set_child(3, 1);
+      assert_eq!(1, object_table.child(3));
+    }
+    let match_memory = build_test_object_table(vec![
+      ObjectDesc::new(0x54453443, 1u8, 3u8, 3u8),
+      ObjectDesc::new(35u32, 3u8, 5u8, 6u8),
+      ObjectDesc::new(17u32, 7u8, 8u8, 1u8 ),
+      ObjectDesc::new(0xfedcba98u32, 10u8, 11u8, 12u8 ),
+      ]
+      .as_slice());
+    assert!(match_memory == memory);
   }
 }
