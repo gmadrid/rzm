@@ -305,6 +305,7 @@ mod tests {
       object_table.set_child(3, 1);
       assert_eq!(1, object_table.child(3));
     }
+
     let match_memory = build_test_object_table(vec![
       ObjectDesc::new(0x54453443, 1u8, 3u8, 3u8),
       ObjectDesc::new(35u32, 3u8, 5u8, 6u8),
