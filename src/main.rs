@@ -1,15 +1,12 @@
-extern crate byteorder;
 #[macro_use]
 extern crate clap;
+extern crate rzm;
 
 mod args;
-mod result;
-mod zmachine;
 
 use args::Args;
-use result::{Error, Result};
+use rzm::{Error, Result, ZMachine};
 use std::fs::File;
-use zmachine::ZMachine;
 
 fn real_main() -> Result<()> {
   let args = Args::parse()?;

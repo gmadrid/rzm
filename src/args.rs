@@ -1,5 +1,5 @@
 use clap::{App, AppSettings, Arg, ArgMatches};
-use result::{Error, Result};
+use rzm::{Error, Result};
 use std::borrow::Cow;
 use std::env;
 use std::ffi::OsString;
