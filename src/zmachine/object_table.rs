@@ -1,59 +1,66 @@
-use super::memory::Memory;
+use zmachine::vm::{BytePtr, Memory};
 
 pub struct ObjectTable<'a> {
   memory: &'a mut Memory,
   base: ObjectTableBase,
 }
 
-// Byteaddress of the base of the property table (from the file header).
+// Ptr to the base of the property table (from the file header).
+#[derive(Debug)]
 struct ObjectTableBase {
-  offset: usize,
+  ptr: BytePtr,
 }
 
 impl ObjectTableBase {
   fn object_with_number(&self, object_number: u16) -> ObjectBase {
     // 31 * 2 to skip the defaults table.
     // Subtract one from object_number because objects are 1-indexed.
+    // TODO: check for 0.
     ObjectBase {
       number: object_number,
-      offset: self.offset + 31 * 2 + (object_number as usize - 1) * 9,
+      ptr: self.ptr.inc_by(31 * 2 + (object_number - 1) * 9),
     }
   }
 }
 
-// Byteaddress for the Object
+// Ptr to an Object
+#[derive(Debug)]
 struct ObjectBase {
   number: u16,
-  offset: usize,
+  ptr: BytePtr,
 }
 
 impl ObjectBase {
   fn attributes(&self, memory: &Memory) -> u32 {
-    memory.u32_at_index(self.offset)
+    memory.u32_at(self.ptr)
+  }
+
+  fn set_attributes(&self, attrs: u32, memory: &mut Memory) {
+    memory.set_u32_at(self.ptr, attrs);
   }
 
   fn parent(&self, memory: &Memory) -> u16 {
-    memory.u8_at_index(self.offset + 4) as u16
+    memory.u8_at(self.ptr.inc_by(4)) as u16
   }
 
   fn set_parent(&self, parent_number: u16, memory: &mut Memory) {
-    memory.set_index_to_u8(self.offset + 4, parent_number as u8);
+    memory.set_u8_at(parent_number as u8, self.ptr.inc_by(4));
   }
 
   fn sibling(&self, memory: &Memory) -> u16 {
-    memory.u8_at_index(self.offset + 5) as u16
+    memory.u8_at(self.ptr.inc_by(5)) as u16
   }
 
   fn set_sibling(&self, sibling_number: u16, memory: &mut Memory) {
-    memory.set_index_to_u8(self.offset + 5, sibling_number as u8);
+    memory.set_u8_at(sibling_number as u8, self.ptr.inc_by(5))
   }
 
   fn child(&self, memory: &Memory) -> u16 {
-    memory.u8_at_index(self.offset + 6) as u16
+    memory.u8_at(self.ptr.inc_by(6)) as u16
   }
 
   fn set_child(&self, child_number: u16, memory: &mut Memory) {
-    memory.set_index_to_u8(self.offset + 6, child_number as u8);
+    memory.set_u8_at(child_number as u8, self.ptr.inc_by(6));
   }
 
   fn remove_from_parent(&self, table: &ObjectTableBase, memory: &mut Memory) {
@@ -83,10 +90,91 @@ impl ObjectBase {
 
 impl<'a> ObjectTable<'a> {
   pub fn new(memory: &mut Memory) -> ObjectTable {
-    let table_offset = memory.property_table_offset();
-    ObjectTable {
+    let table_offset = memory.property_table_ptr();
+    let ot = ObjectTable {
       memory: memory,
-      base: ObjectTableBase { offset: table_offset },
+      base: ObjectTableBase { ptr: table_offset },
+    };
+    ot
+  }
+
+  pub fn attributes(&self, object_number: u16) -> u32 {
+    let object = self.base.object_with_number(object_number);
+    object.attributes(self.memory)
+  }
+
+  pub fn set_attributes(&mut self, object_number: u16, attrs: u32) {
+    let object = self.base.object_with_number(object_number);
+    object.set_attributes(attrs, self.memory);
+  }
+
+  pub fn parent(&self, object_number: u16) -> u16 {
+    let object = self.base.object_with_number(object_number);
+    object.parent(self.memory)
+  }
+
+  pub fn set_parent(&mut self, object_number: u16, parent: u16) {
+    let object = self.base.object_with_number(object_number);
+    object.set_parent(parent, self.memory);
+  }
+
+  pub fn sibling(&self, object_number: u16) -> u16 {
+    let object = self.base.object_with_number(object_number);
+    object.sibling(self.memory)
+  }
+
+  pub fn set_sibling(&mut self, object_number: u16, sibling: u16) {
+    let object = self.base.object_with_number(object_number);
+    object.set_sibling(sibling, self.memory);
+  }
+
+  pub fn child(&self, object_number: u16) -> u16 {
+    let object = self.base.object_with_number(object_number);
+    object.child(self.memory)
+  }
+
+  pub fn set_child(&mut self, object_number: u16, child: u16) {
+    let object = self.base.object_with_number(object_number);
+    object.set_child(child, self.memory);
+  }
+
+  pub fn put_property(&mut self, object_number: u16, property_index: u16, value: u16) {
+    let object = self.base.object_with_number(object_number);
+
+    let prop_header_ptr = BytePtr::new(self.memory.u16_at(object.ptr.inc_by(7)));
+    let text_length = self.memory.u8_at(prop_header_ptr);
+
+    // 1 to skip the size byte, 2 * text length to skip the description
+    let mut prop_ptr = prop_header_ptr.inc_by((1 + 2 * text_length) as u16);
+
+    let mut i = 0;
+    loop {
+      let size_byte = self.memory.u8_at(prop_ptr);
+      if size_byte == 0 {
+        // We've run off the end of the property table.
+        break;
+      }
+      let prop_num = size_byte % 32;
+      let prop_size = size_byte / 32 + 1;
+      if prop_num as u16 == property_index {
+        // skip the size byte.
+        let value_ptr = prop_ptr.inc_by(1);
+        if prop_size == 2 {
+          self.memory.set_u16_at(value, value_ptr);
+        } else if prop_size == 1 {
+          self.memory.set_u8_at(value as u8, value_ptr);
+        } else {
+          panic!("{:?}", "prop data size must be 0 or 1");
+        }
+        break;
+      }
+
+      // Spec says (size_byte / 32) + 1, plus another to skip the size byte.
+      prop_ptr = prop_ptr.inc_by((size_byte / 32 + 2) as u16);
+      i += 1;
+      if i > 10 {
+        break;
+      }
     }
   }
 
@@ -109,50 +197,111 @@ impl<'a> ObjectTable<'a> {
 
     // Add to new parent.
   }
+}
 
-  pub fn attributes(&self, object_number: u16) -> u32 {
-    let object = self.base.object_with_number(object_number);
-    object.attributes(self.memory)
+#[cfg(test)]
+mod tests {
+  use byteorder::{BigEndian, ByteOrder};
+  use super::ObjectTable;
+  use zmachine::vm::{BytePtr, Memory};
+
+  #[derive(Debug)]
+  struct ObjectDesc {
+    attributes: u32,
+    parent: u8,
+    sibling: u8,
+    child: u8,
   }
 
-  pub fn put_property(&mut self, object_number: u16, property_index: u16, value: u16) {
-    let object = self.base.object_with_number(object_number);
-
-    let prop_header_offset = self.memory.u16_at_index(object.offset + 7) as usize;
-
-    let text_length = self.memory.u8_at_index(prop_header_offset);
-
-    // 1 to skip the size byte, 2 * text length to skip the description
-    let mut prop_offset = prop_header_offset + 1 + 2 * text_length as usize;
-
-    let mut i = 0;
-    loop {
-      let size_byte = self.memory.u8_at_index(prop_offset);
-      if size_byte == 0 {
-        // We've run off the end of the property table.
-        break;
-      }
-      let prop_num = size_byte % 32;
-      let prop_size = size_byte / 32 + 1;
-      if prop_num as u16 == property_index {
-        // skip the size byte.
-        let value_offset = prop_offset + 1;
-        if prop_size == 2 {
-          self.memory.set_u16_at_index(value_offset, value);
-        } else if prop_size == 1 {
-          self.memory.set_index_to_u8(value_offset, value as u8);
-        } else {
-          panic!("{:?}", "prop data size must be 0 or 1");
-        }
-        break;
-      }
-
-      // Spec says (size_byte / 32) + 1, plus another to skip the size byte.
-      prop_offset += ((size_byte / 32) + 2) as usize;
-      i += 1;
-      if i > 10 {
-        break;
+  impl ObjectDesc {
+    fn new(attributes: u32, parent: u8, sibling: u8, child: u8) -> ObjectDesc {
+      ObjectDesc {
+        attributes: attributes,
+        parent: parent,
+        sibling: sibling,
+        child: child,
       }
     }
+  }
+
+  fn build_test_object_table(descs: &[ObjectDesc]) -> Memory {
+    let mut bytes: Vec<u8> = Vec::new();
+
+    // Make room for the "header".
+    bytes.resize(0x10, 0);
+    // Then set the table index to point after the "header".
+    // Magic number: 0x0a is the property table offset.
+    let len = bytes.len();
+    BigEndian::write_u16(&mut bytes[0x0a..], len as u16);
+
+    let num_properties = 31;
+    let num_property_bytes = num_properties * 2;
+
+    let default_properties_start = bytes.len();
+    // Make room for the default properties.
+    let len = bytes.len();
+    bytes.resize(len + num_property_bytes, 0);
+
+    // Write some values into the default properties table so that we can
+    // distinguish them as a testing aid.
+    for i in 0..num_properties {
+      let offset = default_properties_start + 2 * i;
+      let val = (i + 1) * 3;
+      BigEndian::write_u16(&mut bytes[offset..], val as u16);
+    }
+
+    for desc in descs {
+      let len = bytes.len();
+      bytes.resize(len + 9, 0);
+
+      BigEndian::write_u32(&mut bytes[len..], desc.attributes);
+      bytes[len + 4] = desc.parent;
+      bytes[len + 5] = desc.sibling;
+      bytes[len + 6] = desc.child;
+    }
+
+    Memory::from(bytes)
+  }
+
+  #[test]
+  fn test_basics() {
+    let mut memory = build_test_object_table(vec![
+      ObjectDesc::new(17u32, 1u8, 2u8, 3u8 ),
+      ObjectDesc::new(35u32, 4u8, 5u8, 6u8 ),
+      ObjectDesc::new(17u32, 7u8, 8u8, 9u8 ),
+      ObjectDesc::new(0xfedcba98u32, 10u8, 11u8, 12u8 ),
+    ]
+      .as_slice());
+
+    let mut object_table = ObjectTable::new(&mut memory);
+
+    assert_eq!(17, object_table.attributes(1));
+    assert_eq!(35, object_table.attributes(2));
+    assert_eq!(17, object_table.attributes(3));
+    assert_eq!(0xfedcba98u32, object_table.attributes(4));
+
+    assert_eq!(1, object_table.parent(1));
+    assert_eq!(4, object_table.parent(2));
+    assert_eq!(7, object_table.parent(3));
+    assert_eq!(10, object_table.parent(4));
+
+    assert_eq!(2, object_table.sibling(1));
+    assert_eq!(5, object_table.sibling(2));
+    assert_eq!(8, object_table.sibling(3));
+    assert_eq!(11, object_table.sibling(4));
+
+    assert_eq!(3, object_table.child(1));
+    assert_eq!(6, object_table.child(2));
+    assert_eq!(9, object_table.child(3));
+    assert_eq!(12, object_table.child(4));
+
+    object_table.set_attributes(1, 0x54453443);
+    assert_eq!(0x54453443, object_table.attributes(1));
+    object_table.set_parent(2, 3);
+    assert_eq!(3, object_table.parent(2));
+    object_table.set_sibling(1, 2);
+    assert_eq!(2, object_table.sibling(1));
+    object_table.set_child(3, 1);
+    assert_eq!(1, object_table.child(3));
   }
 }

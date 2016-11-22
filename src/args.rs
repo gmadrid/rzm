@@ -1,5 +1,5 @@
 use clap::{App, AppSettings, Arg, ArgMatches};
-use result::{Error, Result};
+use rzm::{Error, Result};
 use std::borrow::Cow;
 use std::env;
 use std::ffi::OsString;
@@ -15,7 +15,7 @@ pub struct Args<'a> {
 
 impl<'a> Args<'a> {
   pub fn parse() -> Result<Args<'a>> {
-    let matches = try!(parse_from(env::args_os()));
+    let matches = parse_from(env::args_os())?;
     Ok(Args { matches: matches })
   }
 
