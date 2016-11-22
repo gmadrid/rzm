@@ -22,19 +22,29 @@ impl<'a> Args<'a> {
   pub fn zfile(&self) -> Cow<Path> {
     Cow::Borrowed(Path::new(self.matches.value_of(ZFILE).unwrap()))
   }
+
+  pub fn stacksize(&self) -> Result<u16> {
+    self.matches
+      .value_of(STACK_SIZE)
+      .unwrap_or(DEFAULT_STACK_SIZE)
+      .parse::<u16>()
+      .map_err(|e| Error::ParseIntError(STACK_SIZE, e))
+  }
 }
 
 fn parse_from<'a, I, T>(itr: I) -> Result<ArgMatches<'a>>
   where I: IntoIterator<Item = T>,
         T: Into<OsString> {
   App::new("rzm")
-  // App configuration
+    // App configuration
     .about("Collection of image tools in one command")
     .author(crate_authors!())
     .version(crate_version!())
     .setting(AppSettings::StrictUtf8)
     .setting(AppSettings::UnifiedHelpMessage)
     .setting(AppSettings::VersionlessSubcommands)
+
+    // Arguments.
     .arg(Arg::with_name(ZFILE)
       .required(true)
       .index(1))
