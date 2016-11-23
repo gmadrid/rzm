@@ -129,7 +129,7 @@ mod test {
     let mut vm = TestVM::new();
     vm.set_pcbytes(foo);
     vm.set_pc(0);
-    let str = super::decode_text(&mut vm, TextSource::PC).unwrap();
+    let str = decode_text(&mut vm, TextSource::PC).unwrap();
     assert_eq!("foo", str);
   }
 
@@ -142,7 +142,7 @@ mod test {
     let mut vm = TestVM::new();
     vm.set_pcbytes(f);
     vm.set_pc(0);
-    let str = super::decode_text(&mut vm, TextSource::PC).unwrap();
+    let str = decode_text(&mut vm, TextSource::PC).unwrap();
     assert_eq!("f", str);
   }
 
@@ -156,8 +156,8 @@ mod test {
     let quux = vec![0x00, 0x00, 0x00, 0x5b, 0x5a, 0xf4, 0xa5];
     let mut vm = TestVM::new();
     vm.set_heap(quux);
-    let str = super::decode_text(&mut vm,
-                                 TextSource::Memory(BytePtr::new(0x03).into(), false))
+    let str = decode_text(&mut vm,
+                          TextSource::Memory(BytePtr::new(0x03).into(), false))
       .unwrap();
     assert_eq!("quux", str);
   }
@@ -173,7 +173,7 @@ mod test {
     let quux = vec![0x12, 0xda, 0x6b, 0xa5, 0xd0, 0xa5];
     let mut vm = TestVM::new();
     vm.set_pcbytes(quux);
-    let str = super::decode_text(&mut vm, TextSource::PC).unwrap();
+    let str = decode_text(&mut vm, TextSource::PC).unwrap();
     assert_eq!("Quux!", str);
   }
 

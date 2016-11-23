@@ -10,7 +10,8 @@ use zmachine::vm::{BytePtr, Memory};
 // So, we will implement and test the memory-mapped versions, but we will use
 // a struct-based implementation to test the higher-level functions.
 trait ZObjectTable {
-  type ZObject;
+  type ZObject: ZObject<Helper = Self::Helper>;
+  type Helper;
 
   fn object_with_number(&self, object_number: u16) -> Self::ZObject;
 }
@@ -26,6 +27,15 @@ trait ZObject {
   fn set_sibling(&self, sibling: u16, helper: &mut Self::Helper);
   fn child(&self, helper: &Self::Helper) -> u16;
   fn set_child(&self, child: u16, helper: &mut Self::Helper);
+  fn property_table(&self, helper: &Self::Helper) -> BytePtr;
+}
+
+trait ZPropertyTable {
+  type Helper;
+
+  fn name_ptr(&self, helper: &Self::Helper) -> BytePtr;
+  // property numbers are 1-31. Returns the size and ptr to the property.
+  fn find_property(&self, number: u16, helper: &Self::Helper) -> Option<(u16, BytePtr)>;
 }
 
 #[derive(Debug)]
@@ -41,6 +51,7 @@ impl MemoryMappedObjectTable {
 
 impl ZObjectTable for MemoryMappedObjectTable {
   type ZObject = MemoryMappedObject;
+  type Helper = Memory;
 
   fn object_with_number(&self, object_number: u16) -> MemoryMappedObject {
     // TODO: check for 0.
@@ -93,12 +104,122 @@ impl ZObject for MemoryMappedObject {
   fn set_child(&self, child: u16, memory: &mut Memory) {
     memory.set_u8_at(child as u8, self.ptr.inc_by(6));
   }
+
+  fn property_table(&self, memory: &Memory) -> BytePtr {
+    BytePtr::new(memory.u16_at(self.ptr.inc_by(7)))
+  }
+}
+
+#[derive(Debug)]
+struct MemoryMappedPropertyTable {
+  ptr: BytePtr,
+  text_len: u8,
+}
+
+impl MemoryMappedPropertyTable {
+  fn property_table_for_number<OT>(object_table: OT,
+                                   object_number: u16,
+                                   memory: &Memory)
+                                   -> MemoryMappedPropertyTable
+    where OT: ZObjectTable<Helper = Memory> {
+    let obj = object_table.object_with_number(object_number);
+    let ptr = obj.property_table(memory);
+    MemoryMappedPropertyTable {
+      ptr: ptr,
+      text_len: memory.u8_at(ptr),
+    }
+  }
+}
+
+impl ZPropertyTable for MemoryMappedPropertyTable {
+  type Helper = Memory;
+
+  fn name_ptr(&self, helper: &Memory) -> BytePtr {
+    self.ptr.inc_by(1)
+  }
+
+  fn find_property(&self, number: u16, memory: &Memory) -> Option<(u16, BytePtr)> {
+    // * 2 because it's a word count, +1 to skip the size byte as well as the text.
+    let mut prop_ptr = self.ptr.inc_by(self.text_len as u16 * 2 + 1);
+    loop {
+      println!("PP: {:?}", prop_ptr);
+      let size_byte = memory.u8_at(prop_ptr);
+      let prop_num = (size_byte & 0b00011111u8) as u16;
+      // Properties are sorted descending, and terminated by a 0 size_byte.
+      if prop_num < number {
+        return None;
+      }
+
+      let size = size_byte / 32 + 1;
+      if prop_num == number {
+        return Some((size as u16, prop_ptr.inc_by(1)));
+      }
+
+      // Add 1 (for the size byte) plus the length of the property.
+      prop_ptr = prop_ptr.inc_by(size as u16 + 1);
+    }
+  }
 }
 
 #[cfg(test)]
 mod tests {
-  use super::{MemoryMappedObject, MemoryMappedObjectTable, ZObject, ZObjectTable};
+  use super::{MemoryMappedObject, MemoryMappedObjectTable, MemoryMappedPropertyTable, ZObject,
+              ZObjectTable, ZPropertyTable};
   use zmachine::vm::{BytePtr, Memory};
+
+  #[test]
+  fn test_mm_property_table() {
+    let blob = vec![// Leave 3 zeros at the front to test the ptr code.
+                    0x00,
+                    0x00,
+                    0x00,
+
+                    // text length of "quux" = 2 words
+                    0x02,
+
+                    // this is the encoding for "quux"
+                    0x5b,
+                    0x5a,
+                    0xf4,
+                    0xa5,
+
+                    // property 12 of length 2, val = 0xdde2
+                    (12 + (2 - 1) * 32u8),
+                    0xdd,
+                    0xe2,
+
+                    // property 7 of length 4, val = 0xaacb3211
+                    (7 + (4 - 1) * 32u8),
+                    0xaa,
+                    0xcb,
+                    0x32,
+                    0x11,
+
+                    // property 3 of length 2, val = 0x1234
+                    (3 + (2 - 1) * 32u8),
+                    0x12,
+                    0x34,
+
+                    // termination byte
+                    0x00];
+    let memory = Memory::from(blob);
+    let ptr = BytePtr::new(3);
+    let prop_table = MemoryMappedPropertyTable {
+      ptr: ptr,
+      text_len: memory.u8_at(ptr),
+    };
+
+    assert_eq!(None, prop_table.find_property(21, &memory));
+    assert_eq!(None, prop_table.find_property(9, &memory));
+    assert_eq!(None, prop_table.find_property(1, &memory));
+
+    assert_eq!(Some((2, BytePtr::new(9))),
+               prop_table.find_property(12, &memory));
+    assert_eq!(Some((4, BytePtr::new(12))),
+               prop_table.find_property(7, &memory));
+    assert_eq!(Some((2, BytePtr::new(17))),
+               prop_table.find_property(3, &memory));
+  }
 
   #[test]
   fn test_mm_object_table() {
@@ -142,19 +263,17 @@ mod tests {
     assert_eq!(0x12, obj.parent(&memory));
     assert_eq!(0x13, obj.sibling(&memory));
     assert_eq!(0x23, obj.child(&memory));
-    // assert_eq!(0x6543, obj.property_table());
+    assert_eq!(BytePtr::new(0x6543), obj.property_table(&memory));
 
     obj.set_attributes(0x55667788, &mut memory);
     obj.set_parent(0x11, &mut memory);
     obj.set_sibling(0x77, &mut memory);
     obj.set_child(0xcc, &mut memory);
-    // obj.set_property_table(0x8844, &mut memory);
 
     assert_eq!(0x55667788, obj.attributes(&memory));
     assert_eq!(0x11, obj.parent(&memory));
     assert_eq!(0x77, obj.sibling(&memory));
     assert_eq!(0xcc, obj.child(&memory));
-    // assert_eq!(0x8843, obj.property_table());
   }
 }
 
