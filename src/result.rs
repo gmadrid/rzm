@@ -11,7 +11,6 @@ pub enum Error {
   CouldNotReadHeader,
   ParseIntError(&'static str, num::ParseIntError),
   UnknownOpcode(&'static str, u8, usize),
-  Unimplemented,
   ZFileTooShort,
 }
 

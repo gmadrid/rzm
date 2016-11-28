@@ -71,19 +71,11 @@ impl ZMachine {
     let top_two_bits = first_byte & 0b11000000;
 
     // TODO: (v5) handle 0xbe - extended opcodes
-    let result = match top_two_bits {
+    match top_two_bits {
       0b11000000 => self.process_variable_opcode(first_byte),
       0b10000000 => self.process_short_opcode(first_byte),
       _ => self.process_long_opcode(first_byte),
-    };
-    // TODO: remove this when you don't need it anymore.
-    match result {
-      Err(Error::Unimplemented) => {
-        println!("Umimplemented opcode, {:#b} at: {:#x}", first_byte, pcvalue)
-      }
-      _ => {}
     }
-    result
   }
 
   fn process_variable_opcode(&mut self, first_byte: u8) -> Result<()> {
@@ -196,6 +188,16 @@ impl ZMachine {
     self.dispatch_2op(start_pc, opcode_number, first, second)
   }
 
+  fn dispatch_2op_with_return(&mut self,
+                              lhs: Operand,
+                              rhs: Operand,
+                              op_func: &Fn(&mut Self, Operand, Operand, VariableRef) -> Result<()>)
+                              -> Result<()> {
+    let encoded = self.read_pc_byte();
+    let variable = VariableRef::decode(encoded);
+    op_func(self, lhs, rhs, variable)
+  }
+
   fn dispatch_2op(&mut self,
                   start_pc: usize,
                   opcode: u8,
@@ -205,29 +207,14 @@ impl ZMachine {
     match opcode {
       0x01 => ops::twoops::je_0x01(self, lhs, rhs),
       0x05 => ops::twoops::inc_chk_0x05(self, lhs, rhs),
-      0x09 => {
-        let encoded = self.read_pc_byte();
-        ops::twoops::and_0x09(self, lhs, rhs, VariableRef::decode(encoded))
-      }
+      0x09 => self.dispatch_2op_with_return(lhs, rhs, &ops::twoops::and_0x09),
       0x0a => ops::twoops::test_attr_0x0a(self, lhs, rhs),
       0x0d => ops::twoops::store_0x0d(self, lhs, rhs),
       0x0e => ops::twoops::insert_obj_0x0e(self, lhs, rhs),
-      0x0f => {
-        let encoded = self.read_pc_byte();
-        ops::twoops::loadw_0x0f(self, lhs, rhs, VariableRef::decode(encoded))
-      }
-      0x10 => {
-        let encoded = self.read_pc_byte();
-        ops::twoops::loadb_0x10(self, lhs, rhs, VariableRef::decode(encoded))
-      }
-      0x14 => {
-        let encoded = self.read_pc_byte();
-        ops::twoops::add_0x14(self, lhs, rhs, VariableRef::decode(encoded))
-      }
-      0x15 => {
-        let encoded = self.read_pc_byte();
-        ops::twoops::sub_0x15(self, lhs, rhs, VariableRef::decode(encoded))
-      }
+      0x0f => self.dispatch_2op_with_return(lhs, rhs, &ops::twoops::loadw_0x0f),
+      0x10 => self.dispatch_2op_with_return(lhs, rhs, &ops::twoops::loadb_0x10),
+      0x14 => self.dispatch_2op_with_return(lhs, rhs, &ops::twoops::add_0x14),
+      0x15 => self.dispatch_2op_with_return(lhs, rhs, &ops::twoops::sub_0x15),
       _ => panic!("Unknown long opcode: {:x} @{:x}", opcode, start_pc),
     }
   }
@@ -329,9 +316,7 @@ impl VM for ZMachine {
   }
 
   fn insert_obj(&mut self, object_number: u16, dest_number: u16) -> Result<()> {
-    // ObjectTable::new(&mut self.memory).insert_obj(object_number, dest_number);
-    //    Ok(())
-    Err(Error::Unimplemented)
+    unimplemented!()
   }
 
   fn abbrev_addr(&self, abbrev_table: u8, abbrev_index: u8) -> Result<WordPtr> {
