@@ -1,10 +1,11 @@
 use result::{Error, Result};
 use std::io::Read;
-use zmachine::object_table::ObjectTable;
 use zmachine::ops;
 use zmachine::ops::Operand;
 use zmachine::vm::{RawPtr, VM, VariableRef, WordPtr};
 use zmachine::vm::memory::Memory;
+use zmachine::vm::object_table::{MemoryMappedObjectTable, MemoryMappedPropertyTable, ZObject,
+                                 ZObjectTable, ZPropertyTable};
 use zmachine::vm::pc::PC;
 use zmachine::vm::stack::Stack;
 
@@ -65,15 +66,24 @@ impl ZMachine {
   }
 
   fn process_opcode(&mut self) -> Result<()> {
+    let pcvalue = usize::from(self.pc.pc());
     let first_byte = self.read_pc_byte();
     let top_two_bits = first_byte & 0b11000000;
 
     // TODO: (v5) handle 0xbe - extended opcodes
-    match top_two_bits {
+    let result = match top_two_bits {
       0b11000000 => self.process_variable_opcode(first_byte),
       0b10000000 => self.process_short_opcode(first_byte),
       _ => self.process_long_opcode(first_byte),
+    };
+    // TODO: remove this when you don't need it anymore.
+    match result {
+      Err(Error::Unimplemented) => {
+        println!("Umimplemented opcode, {:#b} at: {:#x}", first_byte, pcvalue)
+      }
+      _ => {}
     }
+    result
   }
 
   fn process_variable_opcode(&mut self, first_byte: u8) -> Result<()> {
@@ -306,23 +316,28 @@ impl VM for ZMachine {
   }
 
   fn attributes(&mut self, object_number: u16) -> Result<u32> {
-    Ok(ObjectTable::new(&mut self.memory).attributes(object_number))
+    let object_table = MemoryMappedObjectTable::new(self.memory.property_table_ptr());
+    let object = object_table.object_with_number(object_number);
+    Ok(object.attributes(&self.memory))
   }
 
   fn put_property(&mut self, object_number: u16, property_index: u16, value: u16) -> Result<()> {
-    ObjectTable::new(&mut self.memory).put_property(object_number, property_index, value);
-    Ok(())
+    let object_table = MemoryMappedObjectTable::new(self.memory.property_table_ptr());
+    let object = object_table.object_with_number(object_number);
+    let property_table = object.property_table(&self.memory);
+    Ok(property_table.set_property(property_index, value, &mut self.memory))
   }
 
   fn insert_obj(&mut self, object_number: u16, dest_number: u16) -> Result<()> {
-    ObjectTable::new(&mut self.memory).insert_obj(object_number, dest_number);
-    Ok(())
+    // ObjectTable::new(&mut self.memory).insert_obj(object_number, dest_number);
+    //    Ok(())
+    Err(Error::Unimplemented)
   }
 
   fn abbrev_addr(&self, abbrev_table: u8, abbrev_index: u8) -> Result<WordPtr> {
     let abbrev_table_ptr = self.memory.abbrev_table_ptr();
     let abbrev_entry_ptr =
-      abbrev_table_ptr.inc_by(32 * (abbrev_table as u16 - 1) + abbrev_index as u16 * 2);
+      abbrev_table_ptr.inc_by((32 * (abbrev_table as u16 - 1) + abbrev_index as u16) * 2);
     let abbrev_addr = self.memory.u16_at(abbrev_entry_ptr);
     Ok(WordPtr::new(abbrev_addr))
   }

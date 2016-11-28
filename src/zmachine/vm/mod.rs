@@ -1,5 +1,6 @@
 // YES
 mod memory;
+mod object_table;
 mod pc;
 mod ptrs;
 mod stack;

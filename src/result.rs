@@ -1,5 +1,6 @@
 use clap;
 use std::io;
+use std::num;
 use std::result;
 
 #[derive(Debug)]
@@ -9,7 +10,9 @@ pub enum Error {
   IO(io::Error),
 
   CouldNotReadHeader,
+  ParseIntError(&'static str, num::ParseIntError),
   UnknownOpcode(&'static str, u8, usize),
+  Unimplemented,
   ZFileTooShort,
 }
 

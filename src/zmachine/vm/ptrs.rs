@@ -10,7 +10,7 @@
 /**
  * An offset into memory from 0...last byte of static memory.
  */
-#[derive(Clone,Copy,Debug)]
+#[derive(Clone,Copy,Debug,Eq,PartialEq)]
 pub struct BytePtr {
   val: u16,
 }

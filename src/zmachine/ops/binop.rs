@@ -5,7 +5,7 @@ use zmachine::ops::Operand;
 use zmachine::vm::{VM, VariableRef};
 
 // The ZMachine works mostly with unsigned words. So, to perform a signed
-// binary, we have to just through some hoops:
+// binary, we have to jump through some hoops:
 // Receive two unsigned words, convert to signed, perform the requested
 // signed binary operation, then convert back to unsigned.
 // TODO: comment this function better.
