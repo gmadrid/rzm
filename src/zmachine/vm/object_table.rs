@@ -1,3 +1,4 @@
+use result::Result;
 use zmachine::vm::{BytePtr, Memory};
 
 // We create traits for ZObjectTable and ZObject to facilitate testability.
@@ -15,6 +16,10 @@ pub trait ZObjectTable {
   type PropertyTable: ZPropertyTable;
 
   fn object_with_number(&self, object_number: u16) -> Self::ZObject;
+
+  fn insert_obj(&mut self, object_number: u16, parent_number: u16) -> Result<()> {
+    Ok(())
+  }
 }
 
 pub trait ZObject {
@@ -303,6 +308,111 @@ mod tests {
     assert_eq!(0x11, obj.parent(&memory));
     assert_eq!(0x77, obj.sibling(&memory));
     assert_eq!(0xcc, obj.child(&memory));
+  }
+
+  #[derive(Debug,Clone)]
+  struct MockObjectTable {
+    objects: Vec<MockObject>,
+  }
+
+  #[derive(Debug,Clone)]
+  struct MockObject {
+    attributes: u32,
+    parent: u16,
+    sibling: u16,
+    child: u16,
+  }
+
+  impl MockObjectTable {
+    fn new() -> MockObjectTable {
+      MockObjectTable { objects: Vec::new() }
+    }
+
+    fn add_mock_object(&mut self, attributes: u32, parent: u16, sibling: u16, child: u16) {
+      let obj = MockObject {
+        attributes: attributes,
+        parent: parent,
+        sibling: sibling,
+        child: child,
+      };
+      self.objects.push(obj);
+    }
+  }
+
+  impl ZObjectTable for MockObjectTable {
+    type ZObject = MockObject;
+    type Helper = Self::ZObject;
+    type PropertyTable = MockPropertyTable;
+
+    fn object_with_number(&self, object_number: u16) -> MockObject {
+      self.objects[object_number as usize - 1]
+    }
+  }
+
+  impl ZObject for MockObject {
+    type Helper = Self;
+    type PropertyTable = MockPropertyTable;
+
+    fn attributes(&self, helper: &Self) -> u32 {
+      helper.attributes
+    }
+    fn set_attributes(&self, attrs: u32, helper: &mut Self) {
+      helper.attributes = attrs;
+    }
+    fn parent(&self, helper: &Self) -> u16 {
+      helper.parent
+    }
+    fn set_parent(&self, parent: u16, helper: &mut Self) {
+      helper.parent = parent;
+    }
+    fn sibling(&self, helper: &Self) -> u16 {
+      helper.sibling
+    }
+    fn set_sibling(&self, sibling: u16, helper: &mut Self) {
+      helper.sibling = sibling;
+    }
+    fn child(&self, helper: &Self) -> u16 {
+      helper.child
+    }
+    fn set_child(&self, child: u16, helper: &mut Self) {
+      helper.child = child;
+    }
+    fn property_table(&self, helper: &Self) -> MockPropertyTable {
+      MockPropertyTable::new(0)
+    }
+  }
+
+  #[test]
+  fn test_insert_0_obj() {
+    let mut table = MockObjectTable::new();
+    table.insert_obj(0, 0).unwrap();
+  }
+
+  #[test]
+  fn test_insert_obj_zeros() {
+    // 0, 0, should be okay, but do nothing.
+
+    // 0, 1, should be okay, but do nothing.
+
+    // 1, 0, should remove from parent:
+    // * obj 1 has no parent, is okay, but does nothing.
+    // * obj 1 has a parent and is its child.
+    // * obj 1 has a parent and is in the sibling list of its child.
+  }
+
+  fn test_insert_obj() {
+    // 1 -> 2 where O x D:
+    // O: obj has no parent, no sibs
+    //    obj has parent, no sibs
+    //    obj is child, no sibs
+    //    obj is child, has sibs
+    //    obj is not child, last sib
+    //    obj is not child, middle sib
+    // D: dest has no children
+    //    dest has one child
+    //    dest has many children
+    //    dest is already parent of obj
+    //    dest already in objs sibling list
   }
 
   // In theory, if we establish confidence in the memory-mapped versions of the
