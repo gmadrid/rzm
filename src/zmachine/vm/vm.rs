@@ -79,7 +79,7 @@ pub trait VM: Sized {
   fn read_memory<T>(&self, ptr: T) -> Result<u16> where T: Into<RawPtr>;
   /// Write `val` at `ptr` in the vm's memory.
   fn write_memory<T>(&mut self, ptr: T, val: u16) -> Result<()> where T: Into<RawPtr>;
-  /// Read the single byte at `byteaddress` in the vm's memory.
+  /// Read the single byte at `ptr` in the vm's memory.
   fn read_memory_u8<T>(&self, ptr: T) -> Result<u8> where T: Into<RawPtr>;
 
   /// Return all of the attributes for the object with number `object_number`.
@@ -115,9 +115,9 @@ pub trait VM: Sized {
   /// Pops the last frame, stores `value` into the result var from the
   /// previous frame, and resets the pc from the value in the previous frame.
   fn ret_value(&mut self, value: u16) -> Result<()> {
-    let (pc, result_var) = try!(self.pop_frame());
-    try!(self.write_variable(result_var, value));
-    try!(self.set_current_pc(pc));
+    let (pc, result_var) = self.pop_frame()?;
+    self.write_variable(result_var, value)?;
+    self.set_current_pc(pc)?;
     Ok(())
   }
 }

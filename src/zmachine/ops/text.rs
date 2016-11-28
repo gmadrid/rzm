@@ -30,7 +30,8 @@ fn decode_text<T>(vm: &mut T, src: TextSource) -> Result<String>
 
   let mut offset = 0;
   loop {
-    let word = try!(if from_pc {
+    // TODO: create a Trait for reading words to simplify this code.
+    let word = if from_pc {
       Ok(vm.read_pc_word())
     } else {
       // text_ptr should always be Some() unless from_pc is true.
@@ -39,7 +40,7 @@ fn decode_text<T>(vm: &mut T, src: TextSource) -> Result<String>
       let w = vm.read_memory(ptr);
       offset += 2;
       w
-    });
+    }?;
 
     let ch1 = (word >> 10) & 0b11111u16;
     let ch2 = (word >> 5) & 0b11111u16;
@@ -47,8 +48,8 @@ fn decode_text<T>(vm: &mut T, src: TextSource) -> Result<String>
 
     for ch in [ch1, ch2, ch3].into_iter() {
       if let Some(set) = abbrev_set {
-        let abbrev_addr = try!(vm.abbrev_addr(set as u8, *ch as u8));
-        let abbrev = try!(decode_text(vm, TextSource::Memory(abbrev_addr.into(), true)));
+        let abbrev_addr = vm.abbrev_addr(set as u8, *ch as u8)?;
+        let abbrev = decode_text(vm, TextSource::Memory(abbrev_addr.into(), true))?;
         s.push_str(abbrev.as_str());
 
         abbrev_set = None;
@@ -80,7 +81,7 @@ fn decode_text<T>(vm: &mut T, src: TextSource) -> Result<String>
 
 pub fn print_0x02<T>(vm: &mut T) -> Result<()>
   where T: VM {
-  let s = try!(decode_text(vm, TextSource::PC));
+  let s = decode_text(vm, TextSource::PC)?;
   print!("{}", s);
   Ok(())
 }
@@ -88,14 +89,14 @@ pub fn print_0x02<T>(vm: &mut T) -> Result<()>
 pub fn print_num_0x06<T>(vm: &mut T, operands: [Operand; 4]) -> Result<()>
   where T: VM {
   // We only care about the first operand.
-  let value = try!(operands[0].value(vm));
+  let value = operands[0].value(vm)?;
   print!("{}", value);
   Ok(())
 }
 
 pub fn print_char_0x05<T>(vm: &mut T, operands: [Operand; 4]) -> Result<()>
   where T: VM {
-  let ch = try!(operands[0].value(vm));
+  let ch = operands[0].value(vm)?;
   match ch {
     13 => print!("\n"),
     32...126 => print!("{}", ch as u8 as char),

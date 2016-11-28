@@ -33,7 +33,7 @@ impl From<Memory> for ZMachine {
 impl ZMachine {
   pub fn from_reader<T: Read>(mut reader: T) -> Result<ZMachine> {
     let mut zbytes = Vec::<u8>::new();
-    let bytes_read = try!(reader.read_to_end(&mut zbytes));
+    let bytes_read = reader.read_to_end(&mut zbytes)?;
     if bytes_read < HEADER_SIZE {
       return Err(Error::CouldNotReadHeader);
     }
@@ -60,7 +60,7 @@ impl ZMachine {
   pub fn run(&mut self) -> Result<()> {
     // TODO: check version number
     loop {
-      try!(self.process_opcode())
+      self.process_opcode()?
     }
   }
 
@@ -147,27 +147,25 @@ impl ZMachine {
 
   fn process_0op(&mut self, start_pc: usize, op: u8) -> Result<()> {
 
-    try!(match op {
+    match op {
       0x00 => ops::zeroops::rtrue_0x00(self),
       0x02 => ops::zeroops::print_0x02(self),
       0x0b => ops::zeroops::new_line_0x0b(self),
       _ => {
         panic!("Unknown short 0op opcode: {:x} @{:x}", op, start_pc);
       }
-    });
-    Ok(())
+    }
   }
 
   fn process_1op(&mut self, start_pc: usize, op: u8, operand: Operand) -> Result<()> {
-    try!(match op {
+    match op {
       0x00 => ops::oneops::jz_0x00(self, operand),
       0x0b => ops::oneops::ret_0x0b(self, operand),
       0x0c => ops::oneops::jump_0x0c(self, operand),
       _ => {
         panic!("Unknown short 1op opcode: {:x} @{:x}", op, start_pc);
       }
-    });
-    Ok(())
+    }
   }
 
   fn process_long_opcode(&mut self, first_byte: u8) -> Result<()> {

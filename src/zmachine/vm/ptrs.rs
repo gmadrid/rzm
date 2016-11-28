@@ -117,20 +117,20 @@ mod test {
   fn test_bp_convert() {
     let bp = BytePtr::new(10);
     let rp: RawPtr = bp.into();
-    assert_eq!(10usize, rp.into());
+    assert_eq!(10usize, usize::from(rp));
   }
 
   #[test]
   fn test_wp_convert() {
     let wp = WordPtr::new(25);
     let rp: RawPtr = wp.into();
-    assert_eq!(50usize, rp.into());
+    assert_eq!(50usize, usize::from(rp));
   }
 
   #[test]
   fn test_pa_convert() {
     let pa = PackedAddr::new(83);
     let rp: RawPtr = pa.into();
-    assert_eq!(166usize, rp.into());
+    assert_eq!(166usize, usize::from(rp));
   }
 }

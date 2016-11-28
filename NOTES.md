@@ -39,7 +39,7 @@ My next ops will probably be:
      4. storew       Done
      5. test_attr    Done
      6. new_line     Done
-     7. insert_obj   Done
+     7. insert_obj   
      8. ret_popped
      9. push
     10. jg

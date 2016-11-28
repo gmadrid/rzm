@@ -23,8 +23,8 @@ pub fn branch_binop<F, T>(vm: &mut T, op1: Operand, op2: Operand, pred: F) -> Re
   where F: Fn(i16, i16) -> bool,
         T: VM {
   // Rust will panic if we overflow, so do arithmetic as i32 and downcast.
-  let lhs = try!(op1.value(vm)) as i16;
-  let rhs = try!(op2.value(vm)) as i16;
+  let lhs = op1.value(vm)? as i16;
+  let rhs = op2.value(vm)? as i16;
   let cmp = pred(lhs, rhs);
 
   let first_label_byte = vm.read_pc_byte();
@@ -45,10 +45,10 @@ pub fn branch_binop<F, T>(vm: &mut T, op1: Operand, op2: Operand, pred: F) -> Re
   if cmp == branch_on {
     if offset == 0 {
       // return false from the current routine
-      try!(vm.ret_value(0));
+      vm.ret_value(0)?;
     } else if offset == 1 {
       // return true from the current routine
-      try!(vm.ret_value(1));
+      vm.ret_value(1)?;
     } else {
       vm.offset_pc(offset - 2);
     }
@@ -68,11 +68,11 @@ pub fn je_0x01<T>(vm: &mut T, lhs: Operand, rhs: Operand) -> Result<()>
 
 pub fn inc_chk_0x05<T>(vm: &mut T, var_op: Operand, value: Operand) -> Result<()>
   where T: VM {
-  let encoded = try!(var_op.value(vm));
+  let encoded = var_op.value(vm)?;
   let variable = VariableRef::decode(encoded as u8);
-  let var_value = try!(vm.read_variable(variable));
-  let cmp_value = try!(value.value(vm));
-  try!(vm.write_variable(variable, var_value + 1));
+  let var_value = vm.read_variable(variable)?;
+  let cmp_value = value.value(vm)?;
+  vm.write_variable(variable, var_value + 1)?;
   branch_binop(vm,
                Operand::LargeConstant(var_value + 1),
                value,
@@ -81,10 +81,10 @@ pub fn inc_chk_0x05<T>(vm: &mut T, var_op: Operand, value: Operand) -> Result<()
 
 pub fn jump_0x0c<T>(vm: &mut T, operand: Operand) -> Result<()>
   where T: VM {
-  let value = try!(operand.value(vm)) as i16 as isize;
+  let value = operand.value(vm)? as i16 as isize;
   let current_pc = vm.current_pc();
   let new_pc = ((current_pc as isize) + value) as usize - 2;
-  try!(vm.set_current_pc(new_pc));
+  vm.set_current_pc(new_pc)?;
   Ok(())
 }
 

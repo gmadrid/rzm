@@ -17,8 +17,8 @@ fn signed_binop<F, T>(vm: &mut T,
                       -> Result<()>
   where F: Fn(i32, i32) -> i32,
         T: VM {
-  let lhs = try!(lop.value(vm));
-  let rhs = try!(rop.value(vm));
+  let lhs = lop.value(vm)?;
+  let rhs = rop.value(vm)?;
 
   // First, treat the input bits as signed, then sign extend to 32 bits.
   // This is so that if we overflow, rust will not panic.
@@ -26,7 +26,7 @@ fn signed_binop<F, T>(vm: &mut T,
   let wide_rhs = rhs as i16 as i32;
   let value = binop(wide_lhs, wide_rhs) as u16;
 
-  try!(vm.write_variable(result_ref, value));
+  vm.write_variable(result_ref, value)?;
   Ok(())
 }
 

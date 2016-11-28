@@ -95,27 +95,25 @@ pub use self::vm::zvm::ZMachine;
 // }
 //
 // fn process_0op(&mut self, op: u8) -> Result<()> {
-// try!(match op {
+// match op {
 // 0x00 => ops::zeroops::rtrue_0x00(self),
 // 0x02 => ops::zeroops::print_0x02(self),
 // 0x0b => ops::zeroops::new_line_0x0b(self),
 // _ => {
 // panic!("Unknown short 0op opcode: {:x} @{:x}", op, self.pc.pc() - 1);
 // }
-// });
-// Ok(())
+// }
 // }
 //
 // fn process_1op(&mut self, op: u8, operand: Operand) -> Result<()> {
-// try!(match op {
+// match op {
 // 0x00 => ops::oneops::jz_0x00(self, operand),
 // 0x0b => ops::oneops::ret_0x0b(self, operand),
 // 0x0c => ops::oneops::jump_0x0c(self, operand),
 // _ => {
 // panic!("Unknown short 1op opcode: {:x} @{:x}", op, self.pc.pc() - 1);
 // }
-// });
-// Ok(())
+// }
 // }
 //
 // fn process_long_opcode(&mut self, first_byte: u8) -> Result<()> {
