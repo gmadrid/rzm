@@ -1,5 +1,8 @@
 // YES
 mod memory;
+mod mm_object_table;
+#[cfg(test)]
+mod mock_object_table;
 mod object_table;
 mod pc;
 mod ptrs;
