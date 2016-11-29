@@ -87,7 +87,7 @@ impl ZObject for MemoryMappedObject {
 }
 
 impl ZPropertyTable for MemoryMappedPropertyTable {
-  type Helper = Memory;
+  type PropertyAccess = Memory;
   type Ref = BytePtr;
 
   fn name_ptr(&self, helper: &Memory) -> BytePtr {

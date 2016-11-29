@@ -18,7 +18,7 @@ pub trait ZObjectTable {
   fn object_with_number(&self, object_number: u16) -> Self::ZObject;
 
   fn insert_obj(&mut self, object_number: u16, parent_number: u16) -> Result<()> {
-    Ok(())
+    unimplemented!()
   }
 }
 
@@ -45,16 +45,16 @@ pub trait ZPropertyAccess {
 }
 
 pub trait ZPropertyTable {
-  type Helper;
+  type PropertyAccess;
   type Ref;
 
-  fn name_ptr(&self, helper: &Self::Helper) -> Self::Ref;
+  fn name_ptr(&self, helper: &Self::PropertyAccess) -> Self::Ref;
   // property numbers are 1-31. Returns the size and ptr to the property.
-  fn find_property(&self, number: u16, helper: &Self::Helper) -> Option<(u16, Self::Ref)>;
+  fn find_property(&self, number: u16, helper: &Self::PropertyAccess) -> Option<(u16, Self::Ref)>;
 
   // TODO: test set_property
-  fn set_property(&self, number: u16, value: u16, helper: &mut Self::Helper)
-    where Self::Helper: ZPropertyAccess<Ref = Self::Ref> {
+  fn set_property(&self, number: u16, value: u16, helper: &mut Self::PropertyAccess)
+    where Self::PropertyAccess: ZPropertyAccess<Ref = Self::Ref> {
     if let Some((size, ptr)) = self.find_property(number, helper) {
       match size {
         1 => helper.set_byte_property(value as u8, ptr),
@@ -72,7 +72,6 @@ pub trait ZPropertyTable {
 
 #[cfg(testt)]
 mod tests {
-  use std::collections::HashMap;
 
   use super::{MemoryMappedObject, MemoryMappedObjectTable, MemoryMappedPropertyTable, ZObject,
               ZObjectTable, ZPropertyAccess, ZPropertyTable};
@@ -157,14 +156,6 @@ mod tests {
     //    dest already in objs sibling list
   }
 
-  // In theory, if we establish confidence in the memory-mapped versions of the
-  // object table, then we can test the default functions in terms of another
-  // implementation. The main benefit of this is that we don't have to set up
-  // a Memory containing the data which really helps with debugging.
-  pub struct MockPropertyTable {
-    table: HashMap<u16, MockProperty>,
-  }
-
   impl MockPropertyTable {
     fn new(size: u16) -> MockPropertyTable {
       MockPropertyTable { table: HashMap::new() }
@@ -173,13 +164,6 @@ mod tests {
     fn add_property(&mut self, number: u16, size: u16, val: u16) {
       self.table.insert(number, MockProperty::new(number, size, val));
     }
-  }
-
-  #[derive(Clone, Copy)]
-  struct MockProperty {
-    number: u16,
-    size: u16,
-    val: u16,
   }
 
   impl MockProperty {
