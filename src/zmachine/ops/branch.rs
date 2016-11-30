@@ -63,6 +63,7 @@ pub fn jz_0x00<T>(vm: &mut T, operand: Operand) -> Result<()>
 
 pub fn je_0x01<T>(vm: &mut T, lhs: Operand, rhs: Operand) -> Result<()>
   where T: VM {
+  println!("je operands: {:?}", [&lhs, &rhs]);
   branch_binop(vm, lhs, rhs, |l, r| l == r)
 }
 
@@ -99,6 +100,17 @@ pub fn jin_0x06<T>(vm: &mut T, lhs: Operand, rhs: Operand) -> Result<()>
                Operand::LargeConstant(parent_number),
                Operand::LargeConstant(childs_parent_number),
                |l, r| l == r)
+}
+
+pub fn get_child_0x02<T>(vm: &mut T, object_number: Operand, variable: VariableRef) -> Result<()>
+  where T: VM {
+  let object_number = object_number.value(vm)?;
+  let parent_number = vm.child_number(object_number)?;
+  vm.write_variable(variable, parent_number)?;
+  branch_binop(vm,
+               Operand::LargeConstant(parent_number),
+               Operand::SmallConstant(0),
+               |parent, zero| parent != zero)
 }
 
 #[cfg(test)]

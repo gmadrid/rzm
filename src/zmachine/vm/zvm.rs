@@ -67,6 +67,7 @@ impl ZMachine {
 
   fn process_opcode(&mut self) -> Result<()> {
     let pcvalue = usize::from(self.pc.pc());
+    println!("Opcode PC: {:#x}", usize::from(self.pc.pc()));
     let first_byte = self.read_pc_byte();
     let top_two_bits = first_byte & 0b11000000;
 
@@ -173,12 +174,18 @@ impl ZMachine {
   fn process_1op(&mut self, start_pc: usize, op: u8, operand: Operand) -> Result<()> {
     match op {
       0x00 => ops::oneops::jz_0x00(self, operand),
+      0x02 => {
+        println!("PC before: {:?}", start_pc);
+        let r = self.process_1op_with_return(operand, &ops::oneops::get_child_0x02);
+        println!("PC after: {:?}", self.pc.pc());
+        r
+      }
       0x03 => self.process_1op_with_return(operand, &ops::oneops::get_parent_0x03),
       0x0a => ops::oneops::print_obj_0x0a(self, operand),
       0x0b => ops::oneops::ret_0x0b(self, operand),
       0x0c => ops::oneops::jump_0x0c(self, operand),
       _ => {
-        panic!("Unknown short 1op opcode: {:x} @{:x}", op, start_pc);
+        panic!("Unknown short 1op opcode: {:#x} @{:#x}", op, start_pc);
       }
     }
   }
@@ -322,6 +329,12 @@ impl VM for ZMachine {
     let object_table = MemoryMappedObjectTable::new(self.memory.property_table_ptr());
     let object = object_table.object_with_number(object_number);
     Ok(object.parent(&self.memory))
+  }
+
+  fn child_number(&self, object_number: u16) -> Result<u16> {
+    let object_table = MemoryMappedObjectTable::new(self.memory.property_table_ptr());
+    let object = object_table.object_with_number(object_number);
+    Ok(object.child(&self.memory))
   }
 
   fn attributes(&mut self, object_number: u16) -> Result<u32> {

@@ -41,6 +41,7 @@ pub mod zeroops {
 }
 
 pub mod oneops {
+  pub use super::branch::get_child_0x02;
   pub use super::branch::jump_0x0c;
   pub use super::branch::jz_0x00;
   pub use super::call::ret_0x0b;
