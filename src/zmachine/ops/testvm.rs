@@ -161,6 +161,9 @@ impl VM for TestVM {
   fn insert_obj(&mut self, object_number: u16, dest_number: u16) -> Result<()> {
     unimplemented!()
   }
+  fn object_name(&self, object_number: u16) -> Result<RawPtr> {
+    unimplemented!()
+  }
 
   fn abbrev_addr(&self, abbrev_table: u8, abbrev_index: u8) -> Result<WordPtr> {
     unimplemented!()

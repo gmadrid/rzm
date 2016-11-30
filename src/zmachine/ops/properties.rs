@@ -18,7 +18,7 @@
 use result::Result;
 use zmachine::ops::Operand;
 use zmachine::ops::branch::branch_binop;
-use zmachine::vm::VM;
+use zmachine::vm::{VM, VariableRef};
 
 pub fn put_prop_0x03<T>(vm: &mut T, operands: [Operand; 4]) -> Result<()>
   where T: VM {
@@ -70,6 +70,14 @@ pub fn set_attr_0x0b<T>(vm: &mut T, object_number: Operand, attr_number: Operand
   let mask = 1u32 << (31u8 - attr_number as u8);
   let new_attrs = attrs | mask;
   vm.set_attributes(object_number, new_attrs)
+}
+
+pub fn get_parent_0x03<T>(vm: &mut T, object_number: Operand, variable: VariableRef) -> Result<()>
+  where T: VM {
+  // TODO: test get_parent_0x03
+  let object_number = object_number.value(vm)?;
+  let parent_number = vm.parent_number(object_number)?;
+  vm.write_variable(variable, parent_number)
 }
 
 #[cfg(test)]

@@ -161,9 +161,19 @@ impl ZMachine {
     }
   }
 
+  fn process_1op_with_return(&mut self,
+                             operand: Operand,
+                             op_func: &Fn(&mut Self, Operand, VariableRef) -> Result<()>)
+                             -> Result<()> {
+    let encoded = self.read_pc_byte();
+    let variable = VariableRef::decode(encoded);
+    op_func(self, operand, variable)
+  }
+
   fn process_1op(&mut self, start_pc: usize, op: u8, operand: Operand) -> Result<()> {
     match op {
       0x00 => ops::oneops::jz_0x00(self, operand),
+      0x03 => self.process_1op_with_return(operand, &ops::oneops::get_parent_0x03),
       0x0a => ops::oneops::print_obj_0x0a(self, operand),
       0x0b => ops::oneops::ret_0x0b(self, operand),
       0x0c => ops::oneops::jump_0x0c(self, operand),
