@@ -94,6 +94,8 @@ impl ZMachine {
         0x03 => ops::varops::put_prop_0x03(self, operands),
         0x05 => ops::varops::print_char_0x05(self, operands),
         0x06 => ops::varops::print_num_0x06(self, operands),
+        0x08 => ops::varops::push_0x08(self, operands),
+        0x09 => ops::varops::pull_0x09(self, operands),
         _ => Err(Error::UnknownOpcode("VAR", opcode_number, start_pc)),
       }
     }
