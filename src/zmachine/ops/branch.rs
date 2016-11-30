@@ -58,13 +58,30 @@ pub fn branch_binop<F, T>(vm: &mut T, op1: Operand, op2: Operand, pred: F) -> Re
 
 pub fn jz_0x00<T>(vm: &mut T, operand: Operand) -> Result<()>
   where T: VM {
-  je_0x01(vm, operand, Operand::SmallConstant(0))
+  je_0x01(vm,
+          [operand, Operand::SmallConstant(0), Operand::Omitted, Operand::Omitted])
 }
 
-pub fn je_0x01<T>(vm: &mut T, lhs: Operand, rhs: Operand) -> Result<()>
+pub fn je_0x01<T>(vm: &mut T, operands: [Operand; 4]) -> Result<()>
   where T: VM {
-  println!("je operands: {:?}", [&lhs, &rhs]);
-  branch_binop(vm, lhs, rhs, |l, r| l == r)
+  let value = operands[0].value(vm)?;
+
+  let mut truth = false;
+  for operand in &operands[1..] {
+    match *operand {
+      Operand::Omitted => break,
+      _ => {
+        let operand_value = operand.value(vm)?;
+        if value == operand_value {
+          truth = true;
+          break;
+        }
+      }
+    }
+  }
+
+  // TODO: write branch_on_condition to avoid stupid closures like this one.
+  branch_binop(vm, operands[0], operands[1], |_, _| truth)
 }
 
 pub fn inc_chk_0x05<T>(vm: &mut T, var_op: Operand, value: Operand) -> Result<()>
@@ -105,12 +122,26 @@ pub fn jin_0x06<T>(vm: &mut T, lhs: Operand, rhs: Operand) -> Result<()>
 pub fn get_child_0x02<T>(vm: &mut T, object_number: Operand, variable: VariableRef) -> Result<()>
   where T: VM {
   let object_number = object_number.value(vm)?;
-  let parent_number = vm.child_number(object_number)?;
-  vm.write_variable(variable, parent_number)?;
+  let child_number = vm.child_number(object_number)?;
+  vm.write_variable(variable, child_number)?;
   branch_binop(vm,
-               Operand::LargeConstant(parent_number),
+               Operand::LargeConstant(child_number),
                Operand::SmallConstant(0),
-               |parent, zero| parent != zero)
+               |child, zero| child != zero)
+}
+
+pub fn get_sibling_0x01<T>(vm: &mut T,
+                           object_number: Operand,
+                           variable: VariableRef)
+                           -> Result<()>
+  where T: VM {
+  let object_number = object_number.value(vm)?;
+  let sibling_number = vm.sibling_number(object_number)?;
+  vm.write_variable(variable, sibling_number)?;
+  branch_binop(vm,
+               Operand::LargeConstant(sibling_number),
+               Operand::SmallConstant(0),
+               |sibling, zero| sibling != zero)
 }
 
 #[cfg(test)]

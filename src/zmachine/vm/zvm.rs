@@ -67,7 +67,6 @@ impl ZMachine {
 
   fn process_opcode(&mut self) -> Result<()> {
     let pcvalue = usize::from(self.pc.pc());
-    println!("Opcode PC: {:#x}", usize::from(self.pc.pc()));
     let first_byte = self.read_pc_byte();
     let top_two_bits = first_byte & 0b11000000;
 
@@ -85,8 +84,8 @@ impl ZMachine {
     let start_pc = start_pc - 1usize;
     //    println!("var opcode number: {:x} @{:x}", opcode_number, start_pc);
     if (first_byte & 0b00100000) == 0 {
-      let (lhs, rhs) = self.read_2_operands();
-      self.dispatch_2op(start_pc, opcode_number, lhs, rhs)
+      let operands = self.read_var_operands();
+      self.dispatch_2op(start_pc, opcode_number, operands)
     } else {
       let operands = self.read_var_operands();
       match opcode_number {
@@ -122,20 +121,6 @@ impl ZMachine {
     operand
   }
 
-  fn read_2_operands(&mut self) -> (Operand, Operand) {
-    // TODO: we should probably use read_var_operands for this,
-    // then check that the last two are Omitted.
-    let operand_types = self.read_pc_byte();
-    let lhs = self.read_operand_of_type((operand_types & 0b11000000) >> 6);
-    let rhs = self.read_operand_of_type((operand_types & 0b00110000) >> 4);
-
-    // We ignore the next two operands, but they should be Omitted.
-    // TODO: check that they are omitted.
-
-    //    println!("VAR 2OP: {:?}/{:?}", lhs, rhs);
-    (lhs, rhs)
-  }
-
   fn process_short_opcode(&mut self, first_byte: u8) -> Result<()> {
     let op = first_byte & 0b00001111;
     // TODO: figure out how to write this better.
@@ -151,7 +136,6 @@ impl ZMachine {
   }
 
   fn process_0op(&mut self, start_pc: usize, op: u8) -> Result<()> {
-
     match op {
       0x00 => ops::zeroops::rtrue_0x00(self),
       0x02 => ops::zeroops::print_0x02(self),
@@ -174,12 +158,8 @@ impl ZMachine {
   fn process_1op(&mut self, start_pc: usize, op: u8, operand: Operand) -> Result<()> {
     match op {
       0x00 => ops::oneops::jz_0x00(self, operand),
-      0x02 => {
-        println!("PC before: {:?}", start_pc);
-        let r = self.process_1op_with_return(operand, &ops::oneops::get_child_0x02);
-        println!("PC after: {:?}", self.pc.pc());
-        r
-      }
+      0x01 => self.process_1op_with_return(operand, &ops::oneops::get_sibling_0x01),
+      0x02 => self.process_1op_with_return(operand, &ops::oneops::get_child_0x02),
       0x03 => self.process_1op_with_return(operand, &ops::oneops::get_parent_0x03),
       0x0a => ops::oneops::print_obj_0x0a(self, operand),
       0x0b => ops::oneops::ret_0x0b(self, operand),
@@ -205,39 +185,45 @@ impl ZMachine {
     } else {
       0b10
     });
-    self.dispatch_2op(start_pc, opcode_number, first, second)
+    let operands = [first, second, Operand::Omitted, Operand::Omitted];
+    self.dispatch_2op(start_pc, opcode_number, operands)
+  }
+
+  fn dispatch_basic_2op(&mut self,
+                        operands: [Operand; 4],
+                        op_func: &Fn(&mut Self, Operand, Operand) -> Result<()>)
+                        -> Result<()> {
+    let lhs = operands[0];
+    let rhs = operands[1];
+    // TODO: add checking that there are no extra operands.
+    op_func(self, lhs, rhs)
   }
 
   fn dispatch_2op_with_return(&mut self,
-                              lhs: Operand,
-                              rhs: Operand,
+                              operands: [Operand; 4],
                               op_func: &Fn(&mut Self, Operand, Operand, VariableRef) -> Result<()>)
                               -> Result<()> {
     let encoded = self.read_pc_byte();
     let variable = VariableRef::decode(encoded);
-    op_func(self, lhs, rhs, variable)
+    // TODO: add checking that there are no extra operands.
+    op_func(self, operands[0], operands[1], variable)
   }
 
-  fn dispatch_2op(&mut self,
-                  start_pc: usize,
-                  opcode: u8,
-                  lhs: Operand,
-                  rhs: Operand)
-                  -> Result<()> {
+  fn dispatch_2op(&mut self, start_pc: usize, opcode: u8, operands: [Operand; 4]) -> Result<()> {
     match opcode {
-      0x01 => ops::twoops::je_0x01(self, lhs, rhs),
-      0x05 => ops::twoops::inc_chk_0x05(self, lhs, rhs),
-      0x06 => ops::twoops::jin_0x06(self, lhs, rhs),
-      0x09 => self.dispatch_2op_with_return(lhs, rhs, &ops::twoops::and_0x09),
-      0x0a => ops::twoops::test_attr_0x0a(self, lhs, rhs),
-      0x0b => ops::twoops::set_attr_0x0b(self, lhs, rhs),
-      0x0d => ops::twoops::store_0x0d(self, lhs, rhs),
-      0x0e => ops::twoops::insert_obj_0x0e(self, lhs, rhs),
-      0x0f => self.dispatch_2op_with_return(lhs, rhs, &ops::twoops::loadw_0x0f),
-      0x10 => self.dispatch_2op_with_return(lhs, rhs, &ops::twoops::loadb_0x10),
-      0x11 => self.dispatch_2op_with_return(lhs, rhs, &ops::twoops::get_prop_0x11),
-      0x14 => self.dispatch_2op_with_return(lhs, rhs, &ops::twoops::add_0x14),
-      0x15 => self.dispatch_2op_with_return(lhs, rhs, &ops::twoops::sub_0x15),
+      0x01 => ops::twoops::je_0x01(self, operands),
+      0x05 => self.dispatch_basic_2op(operands, &ops::twoops::inc_chk_0x05),
+      0x06 => self.dispatch_basic_2op(operands, &ops::twoops::jin_0x06),
+      0x09 => self.dispatch_2op_with_return(operands, &ops::twoops::and_0x09),
+      0x0a => self.dispatch_basic_2op(operands, &ops::twoops::test_attr_0x0a),
+      0x0b => self.dispatch_basic_2op(operands, &ops::twoops::set_attr_0x0b),
+      0x0d => self.dispatch_basic_2op(operands, &ops::twoops::store_0x0d),
+      0x0e => self.dispatch_basic_2op(operands, &ops::twoops::insert_obj_0x0e),
+      0x0f => self.dispatch_2op_with_return(operands, &ops::twoops::loadw_0x0f),
+      0x10 => self.dispatch_2op_with_return(operands, &ops::twoops::loadb_0x10),
+      0x11 => self.dispatch_2op_with_return(operands, &ops::twoops::get_prop_0x11),
+      0x14 => self.dispatch_2op_with_return(operands, &ops::twoops::add_0x14),
+      0x15 => self.dispatch_2op_with_return(operands, &ops::twoops::sub_0x15),
       _ => panic!("Unknown long opcode: {:#x} @{:#x}", opcode, start_pc),
     }
   }
@@ -335,6 +321,12 @@ impl VM for ZMachine {
     let object_table = MemoryMappedObjectTable::new(self.memory.property_table_ptr());
     let object = object_table.object_with_number(object_number);
     Ok(object.child(&self.memory))
+  }
+
+  fn sibling_number(&self, object_number: u16) -> Result<u16> {
+    let object_table = MemoryMappedObjectTable::new(self.memory.property_table_ptr());
+    let object = object_table.object_with_number(object_number);
+    Ok(object.sibling(&self.memory))
   }
 
   fn attributes(&mut self, object_number: u16) -> Result<u32> {

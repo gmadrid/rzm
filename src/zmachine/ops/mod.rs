@@ -12,7 +12,7 @@ mod text;
 #[cfg(test)]
 mod testvm;
 
-#[derive(Debug,Eq,PartialEq)]
+#[derive(Clone,Copy,Debug,Eq,PartialEq)]
 pub enum Operand {
   LargeConstant(u16),
   SmallConstant(u8),
@@ -42,6 +42,7 @@ pub mod zeroops {
 
 pub mod oneops {
   pub use super::branch::get_child_0x02;
+  pub use super::branch::get_sibling_0x01;
   pub use super::branch::jump_0x0c;
   pub use super::branch::jz_0x00;
   pub use super::call::ret_0x0b;
