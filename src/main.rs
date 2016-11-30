@@ -20,6 +20,7 @@ fn real_main() -> Result<()> {
 fn main() {
   // A shell that calls a "real main" function and reports errors.
   // A convenience so that I can try!() inside the "main" function.
+  // TODO: make this return non-zero on failure.
   match real_main() {
     Ok(_) => (),
     Err(err) => {
