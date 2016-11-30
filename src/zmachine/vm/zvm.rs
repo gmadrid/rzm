@@ -228,9 +228,10 @@ impl ZMachine {
       0x0e => ops::twoops::insert_obj_0x0e(self, lhs, rhs),
       0x0f => self.dispatch_2op_with_return(lhs, rhs, &ops::twoops::loadw_0x0f),
       0x10 => self.dispatch_2op_with_return(lhs, rhs, &ops::twoops::loadb_0x10),
+      0x11 => self.dispatch_2op_with_return(lhs, rhs, &ops::twoops::get_prop_0x11),
       0x14 => self.dispatch_2op_with_return(lhs, rhs, &ops::twoops::add_0x14),
       0x15 => self.dispatch_2op_with_return(lhs, rhs, &ops::twoops::sub_0x15),
-      _ => panic!("Unknown long opcode: {:x} @{:x}", opcode, start_pc),
+      _ => panic!("Unknown long opcode: {:#x} @{:#x}", opcode, start_pc),
     }
   }
 }
@@ -341,6 +342,24 @@ impl VM for ZMachine {
     let object = object_table.object_with_number(object_number);
     let property_table = object.property_table(&self.memory);
     Ok(property_table.name_ptr(&self.memory).into())
+  }
+
+  fn get_property(&self, object_number: u16, property_number: u16) -> Result<u16> {
+    let object_table = MemoryMappedObjectTable::new(self.memory.property_table_ptr());
+    let object = object_table.object_with_number(object_number);
+    let property_table = object.property_table(&self.memory);
+    let property = property_table.find_property(property_number, &self.memory);
+    match property {
+      // TODO: deal with default properties.
+      None => panic!("Missed our prop. Need defaults table."),
+      Some((size, ptr)) => {
+        match size {
+          1 => Ok(self.memory.u8_at(ptr) as u16),
+          2 => Ok(self.memory.u16_at(ptr)),
+          _ => panic!("Bad size"),
+        }
+      }
+    }
   }
 
   fn put_property(&mut self, object_number: u16, property_index: u16, value: u16) -> Result<()> {

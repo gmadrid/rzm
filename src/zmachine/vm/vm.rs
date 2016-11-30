@@ -88,6 +88,8 @@ pub trait VM: Sized {
   fn parent_number(&self, object_number: u16) -> Result<u16>;
   fn object_name(&self, object_number: u16) -> Result<RawPtr>;
 
+  fn get_property(&self, object_number: u16, property_number: u16) -> Result<u16>;
+
   /// Set `property_index` in `object_number` to `value`.
   fn put_property(&mut self, object_number: u16, property_index: u16, value: u16) -> Result<()>;
   /// Make the object at `object_number` be the first child of the object

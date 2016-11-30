@@ -164,7 +164,9 @@ impl VM for TestVM {
   fn object_name(&self, object_number: u16) -> Result<RawPtr> {
     unimplemented!()
   }
-
+  fn get_property(&self, object_number: u16, property_number: u16) -> Result<u16> {
+    unimplemented!()
+  }
   fn abbrev_addr(&self, abbrev_table: u8, abbrev_index: u8) -> Result<WordPtr> {
     unimplemented!()
   }

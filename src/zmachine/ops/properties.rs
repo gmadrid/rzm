@@ -80,6 +80,20 @@ pub fn get_parent_0x03<T>(vm: &mut T, object_number: Operand, variable: Variable
   vm.write_variable(variable, parent_number)
 }
 
+pub fn get_prop_0x11<T>(vm: &mut T,
+                        object_number: Operand,
+                        property_number: Operand,
+                        variable: VariableRef)
+                        -> Result<()>
+  where T: VM {
+  // TODO: test get_prop_0x11
+  let object_number = object_number.value(vm)?;
+  let property_number = property_number.value(vm)?;
+  let value = vm.get_property(object_number, property_number)?;
+  vm.write_variable(variable, value)
+}
+
+
 #[cfg(test)]
 mod tests {
   // TODO: test everything in this file.
