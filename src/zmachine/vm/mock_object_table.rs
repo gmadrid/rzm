@@ -158,7 +158,7 @@ impl ZPropertyTable for MockPropertyTable {
 #[cfg(test)]
 mod tests {
   use super::{MockObjectTable, MockObjectTableStorage};
-  use zmachine::vm::object_table::{ZObject, ZObjectTable, ZPropertyTable};
+  use zmachine::vm::object_table::{ZObject, ZObjectTable};
 
   #[test]
   fn test_mock_object_table() {

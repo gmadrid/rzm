@@ -4,7 +4,7 @@ use zmachine::ops;
 use zmachine::ops::Operand;
 use zmachine::vm::{RawPtr, VM, VariableRef, WordPtr};
 use zmachine::vm::memory::Memory;
-use zmachine::vm::mm_object_table::{MemoryMappedObjectTable, MemoryMappedPropertyTable};
+use zmachine::vm::mm_object_table::MemoryMappedObjectTable;
 use zmachine::vm::object_table::{ZObject, ZObjectTable, ZPropertyTable};
 use zmachine::vm::pc::PC;
 use zmachine::vm::stack::Stack;

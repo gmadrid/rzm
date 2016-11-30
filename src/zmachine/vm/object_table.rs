@@ -1,5 +1,4 @@
 use result::Result;
-use zmachine::vm::{BytePtr, Memory};
 
 // We create traits for ZObjectTable and ZObject to facilitate testability.
 // In the zmachine, these are memory mapped into the VM's dynamic memory, but
@@ -31,7 +30,6 @@ pub trait ZObjectTable {
 
     let parent_obj = self.object_with_number(parent_number);
     let mut current_number = parent_obj.child(access);
-    let mut previous_sibling_number = 0;
     if current_number == object_number {
       // object is first child
       let new_child = obj.sibling(access);
@@ -142,8 +140,7 @@ pub trait ZPropertyTable {
 
 #[cfg(test)]
 mod tests {
-  use super::{ZObject, ZObjectTable, ZPropertyAccess, ZPropertyTable};
-  use zmachine::vm::{BytePtr, Memory};
+  use super::ZObjectTable;
   use zmachine::vm::mock_object_table::{MockObjectTable, MockObjectTableStorage};
 
   #[test]

@@ -2,7 +2,7 @@
 
 use result::Result;
 use zmachine::ops::Operand;
-use zmachine::vm::{BytePtr, RawPtr, VM, VariableRef};
+use zmachine::vm::{RawPtr, VM};
 
 const ROW1: [char; 26] = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n',
                           'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z'];

@@ -14,7 +14,7 @@ impl MemoryMappedObjectTable {
 }
 
 #[derive(Debug)]
-struct MemoryMappedObject {
+pub struct MemoryMappedObject {
   number: u16,
   ptr: BytePtr,
 }
