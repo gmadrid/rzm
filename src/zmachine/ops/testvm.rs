@@ -151,10 +151,17 @@ impl VM for TestVM {
     unimplemented!()
   }
 
+  fn parent_number(&self, object_number: u16) -> Result<u16> {
+    unimplemented!()
+  }
+
   fn put_property(&mut self, object_number: u16, property_index: u16, value: u16) -> Result<()> {
     unimplemented!()
   }
   fn insert_obj(&mut self, object_number: u16, dest_number: u16) -> Result<()> {
+    unimplemented!()
+  }
+  fn object_name(&self, object_number: u16) -> Result<RawPtr> {
     unimplemented!()
   }
 

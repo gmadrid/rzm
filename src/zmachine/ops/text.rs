@@ -2,7 +2,7 @@
 
 use result::Result;
 use zmachine::ops::Operand;
-use zmachine::vm::{RawPtr, VM};
+use zmachine::vm::{BytePtr, RawPtr, VM};
 
 const ROW1: [char; 26] = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n',
                           'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z'];
@@ -91,6 +91,16 @@ pub fn print_num_0x06<T>(vm: &mut T, operands: [Operand; 4]) -> Result<()>
   // We only care about the first operand.
   let value = operands[0].value(vm)?;
   print!("{}", value);
+  Ok(())
+}
+
+pub fn print_obj_0x0a<T>(vm: &mut T, operand: Operand) -> Result<()>
+  where T: VM {
+  // TODO: test print_obj_0x0a
+  let object_number = operand.value(vm)?;
+  let text_ptr = vm.object_name(object_number)?;
+  let str = decode_text(vm, TextSource::Memory(text_ptr, false))?;
+  println!("{}", str);
   Ok(())
 }
 
