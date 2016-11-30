@@ -18,6 +18,32 @@ pub fn pull_0x09<T>(vm: &mut T, operands: [Operand; 4]) -> Result<()>
 
 #[cfg(test)]
 mod tests {
-  // TODO: test push_0x08
-  // TODO: test pull_0x09
+  use zmachine::ops::Operand;
+  use zmachine::ops::testvm::TestVM;
+  use zmachine::vm::{VM, VariableRef};
+
+  #[test]
+  fn test_push_0x08() {
+    let mut vm = TestVM::new();
+    let operands =
+      [Operand::SmallConstant(8), Operand::Omitted, Operand::Omitted, Operand::Omitted];
+    super::push_0x08(&mut vm, operands);
+
+    assert_eq!(8, vm.pop_stack().unwrap());
+  }
+
+  #[test]
+  fn test_pull_0x09() {
+    let mut vm = TestVM::new();
+    vm.push_stack(38);
+
+    let global_idx = 3;
+    let operands = [Operand::SmallConstant(VariableRef::encode(VariableRef::Global(global_idx))),
+                    Operand::Omitted,
+                    Operand::Omitted,
+                    Operand::Omitted];
+    super::pull_0x09(&mut vm, operands).unwrap();
+
+    assert_eq!(38, vm.read_global(global_idx).unwrap());
+  }
 }
