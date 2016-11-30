@@ -58,3 +58,21 @@ pub fn test_attr_0x0a<T>(vm: &mut T, object_index: Operand, attr_number: Operand
                Operand::SmallConstant(0),
                |l, _| l != 0)
 }
+
+pub fn set_attr_0x0b<T>(vm: &mut T, object_number: Operand, attr_number: Operand) -> Result<()>
+  where T: VM {
+  let object_number = object_number.value(vm)?;
+  let attr_number = attr_number.value(vm)?;
+
+  let attrs = vm.attributes(object_number)?;
+
+  // attribute bits are 0..31 - the reverse of what I expect.
+  let mask = 1u32 << (31u8 - attr_number as u8);
+  let new_attrs = attrs | mask;
+  vm.set_attributes(object_number, new_attrs)
+}
+
+#[cfg(test)]
+mod tests {
+  // TODO: test everything in this file.
+}

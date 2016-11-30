@@ -147,6 +147,10 @@ impl VM for TestVM {
     unimplemented!()
   }
 
+  fn set_attributes(&mut self, object_number: u16, attrs: u32) -> Result<()> {
+    unimplemented!()
+  }
+
   fn put_property(&mut self, object_number: u16, property_index: u16, value: u16) -> Result<()> {
     unimplemented!()
   }
