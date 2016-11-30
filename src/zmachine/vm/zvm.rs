@@ -316,7 +316,8 @@ impl VM for ZMachine {
   }
 
   fn insert_obj(&mut self, object_number: u16, dest_number: u16) -> Result<()> {
-    unimplemented!()
+    let object_table = MemoryMappedObjectTable::new(self.memory.property_table_ptr());
+    object_table.insert_obj(object_number, dest_number, &mut self.memory)
   }
 
   fn abbrev_addr(&self, abbrev_table: u8, abbrev_index: u8) -> Result<WordPtr> {
