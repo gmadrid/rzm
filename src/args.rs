@@ -47,6 +47,7 @@ fn parse_from<'a, I, T>(itr: I) -> Result<ArgMatches<'a>>
     // Arguments.
     .arg(Arg::with_name(ZFILE)
       .required(true)
+      .multiple(false)
       .index(1))
     .arg(Arg::with_name(STACK_SIZE)
       .long(STACK_SIZE)
@@ -54,6 +55,7 @@ fn parse_from<'a, I, T>(itr: I) -> Result<ArgMatches<'a>>
       .takes_value(true)
       .multiple(false)
       .number_of_values(1)
+      .help("Size of the ZMachine stack (in bytes)")
       .default_value(DEFAULT_STACK_SIZE))
 
     // Process it.
