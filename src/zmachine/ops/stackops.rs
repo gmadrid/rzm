@@ -15,3 +15,9 @@ pub fn pull_0x09<T>(vm: &mut T, operands: [Operand; 4]) -> Result<()>
   let val = vm.pop_stack()?;
   vm.write_variable(variable, val)
 }
+
+#[cfg(test)]
+mod tests {
+  // TODO: test push_0x08
+  // TODO: test pull_0x09
+}
