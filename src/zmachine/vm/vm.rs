@@ -86,6 +86,7 @@ pub trait VM: Sized {
   fn attributes(&mut self, object_number: u16) -> Result<u32>;
   fn set_attributes(&mut self, object_number: u16, attrs: u32) -> Result<()>;
   fn parent_number(&self, object_number: u16) -> Result<u16>;
+  fn object_name(&self, object_number: u16) -> Result<RawPtr>;
 
   /// Set `property_index` in `object_number` to `value`.
   fn put_property(&mut self, object_number: u16, property_index: u16, value: u16) -> Result<()>;

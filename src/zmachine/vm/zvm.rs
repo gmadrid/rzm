@@ -164,6 +164,7 @@ impl ZMachine {
   fn process_1op(&mut self, start_pc: usize, op: u8, operand: Operand) -> Result<()> {
     match op {
       0x00 => ops::oneops::jz_0x00(self, operand),
+      0x0a => ops::oneops::print_obj_0x0a(self, operand),
       0x0b => ops::oneops::ret_0x0b(self, operand),
       0x0c => ops::oneops::jump_0x0c(self, operand),
       _ => {
@@ -323,6 +324,13 @@ impl VM for ZMachine {
     let object = object_table.object_with_number(object_number);
     object.set_attributes(attrs, &mut self.memory);
     Ok(())
+  }
+
+  fn object_name(&self, object_number: u16) -> Result<RawPtr> {
+    let object_table = MemoryMappedObjectTable::new(self.memory.property_table_ptr());
+    let object = object_table.object_with_number(object_number);
+    let property_table = object.property_table(&self.memory);
+    Ok(property_table.name_ptr(&self.memory).into())
   }
 
   fn put_property(&mut self, object_number: u16, property_index: u16, value: u16) -> Result<()> {
