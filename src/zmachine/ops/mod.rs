@@ -52,6 +52,7 @@ pub mod twoops {
   pub use super::binop::sub_0x15;
   pub use super::branch::inc_chk_0x05;
   pub use super::branch::je_0x01;
+  pub use super::branch::jin_0x06;
   pub use super::load::loadb_0x10;
   pub use super::load::loadw_0x0f;
   pub use super::load::store_0x0d;

@@ -88,6 +88,19 @@ pub fn jump_0x0c<T>(vm: &mut T, operand: Operand) -> Result<()>
   Ok(())
 }
 
+pub fn jin_0x06<T>(vm: &mut T, lhs: Operand, rhs: Operand) -> Result<()>
+  where T: VM {
+  // TODO: test jin_0x06
+  let child_number = lhs.value(vm)?;
+  let parent_number = rhs.value(vm)?;
+
+  let childs_parent_number = vm.parent_number(child_number)?;
+  branch_binop(vm,
+               Operand::LargeConstant(parent_number),
+               Operand::LargeConstant(childs_parent_number),
+               |l, r| l == r)
+}
+
 #[cfg(test)]
 mod test {
   use super::fourteen_bit_signed;

@@ -151,6 +151,10 @@ impl VM for TestVM {
     unimplemented!()
   }
 
+  fn parent_number(&self, object_number: u16) -> Result<u16> {
+    unimplemented!()
+  }
+
   fn put_property(&mut self, object_number: u16, property_index: u16, value: u16) -> Result<()> {
     unimplemented!()
   }

@@ -209,6 +209,7 @@ impl ZMachine {
     match opcode {
       0x01 => ops::twoops::je_0x01(self, lhs, rhs),
       0x05 => ops::twoops::inc_chk_0x05(self, lhs, rhs),
+      0x06 => ops::twoops::jin_0x06(self, lhs, rhs),
       0x09 => self.dispatch_2op_with_return(lhs, rhs, &ops::twoops::and_0x09),
       0x0a => ops::twoops::test_attr_0x0a(self, lhs, rhs),
       0x0b => ops::twoops::set_attr_0x0b(self, lhs, rhs),
@@ -303,6 +304,12 @@ impl VM for ZMachine {
   fn read_memory_u8<T>(&self, ptr: T) -> Result<u8>
     where T: Into<RawPtr> {
     Ok(self.memory.u8_at(ptr))
+  }
+
+  fn parent_number(&self, object_number: u16) -> Result<u16> {
+    let object_table = MemoryMappedObjectTable::new(self.memory.property_table_ptr());
+    let object = object_table.object_with_number(object_number);
+    Ok(object.parent(&self.memory))
   }
 
   fn attributes(&mut self, object_number: u16) -> Result<u32> {
