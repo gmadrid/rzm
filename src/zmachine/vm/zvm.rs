@@ -211,6 +211,7 @@ impl ZMachine {
       0x05 => ops::twoops::inc_chk_0x05(self, lhs, rhs),
       0x09 => self.dispatch_2op_with_return(lhs, rhs, &ops::twoops::and_0x09),
       0x0a => ops::twoops::test_attr_0x0a(self, lhs, rhs),
+      0x0b => ops::twoops::set_attr_0x0b(self, lhs, rhs),
       0x0d => ops::twoops::store_0x0d(self, lhs, rhs),
       0x0e => ops::twoops::insert_obj_0x0e(self, lhs, rhs),
       0x0f => self.dispatch_2op_with_return(lhs, rhs, &ops::twoops::loadw_0x0f),
@@ -308,6 +309,13 @@ impl VM for ZMachine {
     let object_table = MemoryMappedObjectTable::new(self.memory.property_table_ptr());
     let object = object_table.object_with_number(object_number);
     Ok(object.attributes(&self.memory))
+  }
+
+  fn set_attributes(&mut self, object_number: u16, attrs: u32) -> Result<()> {
+    let object_table = MemoryMappedObjectTable::new(self.memory.property_table_ptr());
+    let object = object_table.object_with_number(object_number);
+    object.set_attributes(attrs, &mut self.memory);
+    Ok(())
   }
 
   fn put_property(&mut self, object_number: u16, property_index: u16, value: u16) -> Result<()> {
