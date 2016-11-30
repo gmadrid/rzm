@@ -181,11 +181,4 @@ mod test {
       .unwrap();
     assert_eq!(100, vm.current_pc());
   }
-
-  #[test]
-  fn test_je() {
-    // TODO write these tests
-    // test ret false
-    // test ret true
-  }
 }
