@@ -1,4 +1,3 @@
-// YES
 mod memory;
 mod mm_object_table;
 #[cfg(test)]

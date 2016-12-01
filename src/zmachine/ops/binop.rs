@@ -1,5 +1,3 @@
-// YES
-
 use result::Result;
 use zmachine::ops::Operand;
 use zmachine::vm::{VM, VariableRef};

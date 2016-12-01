@@ -1,5 +1,3 @@
-// YES
-
 use result::Result;
 use super::ptrs::{RawPtr, WordPtr};
 
