@@ -96,7 +96,7 @@ impl ZPropertyTable for MemoryMappedPropertyTable {
   type PropertyAccess = Memory;
   type Ref = BytePtr;
 
-  fn name_ptr(&self, helper: &Memory) -> BytePtr {
+  fn name_ptr(&self, _: &Memory) -> BytePtr {
     self.ptr.inc_by(1)
   }
 

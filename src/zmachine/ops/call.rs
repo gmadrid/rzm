@@ -11,7 +11,7 @@ pub fn call_0x00<T>(vm: &mut T, operands: [Operand; 4]) -> Result<()>
 
   if addr_value == 0 {
     // TODO: test calling with routine = 0.
-    vm.write_variable(result_location, 0);
+    vm.write_variable(result_location, 0)?;
     return Ok(());
   }
 

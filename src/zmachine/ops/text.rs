@@ -1,6 +1,6 @@
 use result::Result;
 use zmachine::ops::Operand;
-use zmachine::vm::{BytePtr, RawPtr, VM};
+use zmachine::vm::{RawPtr, VM};
 
 const ROW1: [char; 26] = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n',
                           'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z'];
@@ -140,7 +140,7 @@ pub fn print_char_0x05<T>(vm: &mut T, operands: [Operand; 4]) -> Result<()>
   Ok(())
 }
 
-pub fn new_line_0x0b<T>(vm: &mut T) -> Result<()>
+pub fn new_line_0x0b<T>(_: &mut T) -> Result<()>
   where T: VM {
   print!("\n");
   Ok(())

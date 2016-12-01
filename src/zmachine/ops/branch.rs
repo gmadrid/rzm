@@ -50,7 +50,7 @@ pub fn branch_binop<F, T>(vm: &mut T, op1: Operand, op2: Operand, pred: F) -> Re
       // return true from the current routine
       vm.ret_value(1)?;
     } else {
-      vm.offset_pc(offset - 2);
+      vm.offset_pc(offset - 2)?;
     }
   }
   Ok(())
@@ -98,7 +98,6 @@ pub fn inc_chk_0x05<T>(vm: &mut T, var_op: Operand, value: Operand) -> Result<()
   let encoded = var_op.value(vm)?;
   let variable = VariableRef::decode(encoded as u8);
   let var_value = vm.read_variable(variable)?;
-  let cmp_value = value.value(vm)?;
   let new_value = (var_value as u32 + 1) as u16;
   vm.write_variable(variable, new_value)?;
   branch_binop(vm, Operand::LargeConstant(new_value), value, |l, r| l > r)
