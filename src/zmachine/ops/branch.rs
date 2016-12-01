@@ -99,11 +99,9 @@ pub fn inc_chk_0x05<T>(vm: &mut T, var_op: Operand, value: Operand) -> Result<()
   let variable = VariableRef::decode(encoded as u8);
   let var_value = vm.read_variable(variable)?;
   let cmp_value = value.value(vm)?;
-  vm.write_variable(variable, var_value + 1)?;
-  branch_binop(vm,
-               Operand::LargeConstant(var_value + 1),
-               value,
-               |l, r| l > r)
+  let new_value = (var_value as u32 + 1) as u16;
+  vm.write_variable(variable, new_value)?;
+  branch_binop(vm, Operand::LargeConstant(new_value), value, |l, r| l > r)
 }
 
 pub fn jump_0x0c<T>(vm: &mut T, operand: Operand) -> Result<()>
