@@ -57,6 +57,16 @@ pub fn loadb_0x10<T>(vm: &mut T,
   Ok(())
 }
 
+pub fn inc_0x05<T>(vm: &mut T, encoded_variable: Operand) -> Result<()>
+  where T: VM {
+  // TODO: test this.
+  // TODO: make sure this is a signed computation. (-1++ = 0)
+  let encoded = encoded_variable.value(vm)?;
+  let variable = VariableRef::decode(encoded as u8);
+  let old_value = vm.read_variable(variable)? as i16;
+  vm.write_variable(variable, (old_value + 1) as u16)
+}
+
 #[cfg(test)]
 mod test {
   use result::Result;

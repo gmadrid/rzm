@@ -10,6 +10,13 @@ pub fn call_0x00<T>(vm: &mut T, operands: [Operand; 4]) -> Result<()>
   let return_pc = vm.current_pc();
 
   let addr_value = operands[0].value(vm)?;
+
+  if addr_value == 0 {
+    // TODO: test calling with routine = 0.
+    vm.write_variable(result_location, 0);
+    return Ok(());
+  }
+
   let packed_addr = PackedAddr::new(addr_value);
   let raw_addr: RawPtr = packed_addr.into();
   vm.set_current_pc(raw_addr.into())?;
@@ -59,6 +66,11 @@ pub fn ret_0x0b<T>(vm: &mut T, operand: Operand) -> Result<()>
 pub fn rtrue_0x00<T>(vm: &mut T) -> Result<()>
   where T: VM {
   vm.ret_value(1)
+}
+
+pub fn rfalse_0x01<T>(vm: &mut T) -> Result<()>
+  where T: VM {
+  vm.ret_value(0)
 }
 
 // TODO: test this shit.

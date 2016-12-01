@@ -62,6 +62,12 @@ pub fn jz_0x00<T>(vm: &mut T, operand: Operand) -> Result<()>
           [operand, Operand::SmallConstant(0), Operand::Omitted, Operand::Omitted])
 }
 
+pub fn jl_0x02<T>(vm: &mut T, lhs: Operand, rhs: Operand) -> Result<()>
+  where T: VM {
+  // TODO: test jl_0x02
+  branch_binop(vm, lhs, rhs, |l, r| (l as u16) < (r as u16))
+}
+
 pub fn je_0x01<T>(vm: &mut T, operands: [Operand; 4]) -> Result<()>
   where T: VM {
   let value = operands[0].value(vm)?;

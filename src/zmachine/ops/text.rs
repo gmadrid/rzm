@@ -100,7 +100,7 @@ pub fn print_obj_0x0a<T>(vm: &mut T, operand: Operand) -> Result<()>
   let object_number = operand.value(vm)?;
   let text_ptr = vm.object_name(object_number)?;
   let str = decode_text(vm, TextSource::Memory(text_ptr, false))?;
-  println!("{}", str);
+  print!("{}", str);
   Ok(())
 }
 

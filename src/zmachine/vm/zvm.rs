@@ -138,6 +138,7 @@ impl ZMachine {
   fn process_0op(&mut self, start_pc: usize, op: u8) -> Result<()> {
     match op {
       0x00 => ops::zeroops::rtrue_0x00(self),
+      0x01 => ops::zeroops::rfalse_0x01(self),
       0x02 => ops::zeroops::print_0x02(self),
       0x0b => ops::zeroops::new_line_0x0b(self),
       _ => {
@@ -161,6 +162,7 @@ impl ZMachine {
       0x01 => self.process_1op_with_return(operand, &ops::oneops::get_sibling_0x01),
       0x02 => self.process_1op_with_return(operand, &ops::oneops::get_child_0x02),
       0x03 => self.process_1op_with_return(operand, &ops::oneops::get_parent_0x03),
+      0x05 => ops::oneops::inc_0x05(self, operand),
       0x0a => ops::oneops::print_obj_0x0a(self, operand),
       0x0b => ops::oneops::ret_0x0b(self, operand),
       0x0c => ops::oneops::jump_0x0c(self, operand),
@@ -212,6 +214,7 @@ impl ZMachine {
   fn dispatch_2op(&mut self, start_pc: usize, opcode: u8, operands: [Operand; 4]) -> Result<()> {
     match opcode {
       0x01 => ops::twoops::je_0x01(self, operands),
+      0x02 => self.dispatch_basic_2op(operands, &ops::twoops::jl_0x02),
       0x05 => self.dispatch_basic_2op(operands, &ops::twoops::inc_chk_0x05),
       0x06 => self.dispatch_basic_2op(operands, &ops::twoops::jin_0x06),
       0x09 => self.dispatch_2op_with_return(operands, &ops::twoops::and_0x09),
@@ -356,7 +359,7 @@ impl VM for ZMachine {
     let property = property_table.find_property(property_number, &self.memory);
     match property {
       // TODO: deal with default properties.
-      None => panic!("Missed our prop. Need defaults table."),
+      None => Ok(object_table.default_property_value(property_number, &self.memory)),
       Some((size, ptr)) => {
         match size {
           1 => Ok(self.memory.u8_at(ptr) as u16),
