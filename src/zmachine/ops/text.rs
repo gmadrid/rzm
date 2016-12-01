@@ -152,6 +152,8 @@ mod test {
   use zmachine::ops::testvm::TestVM;
   use zmachine::vm::BytePtr;
 
+  // TODO: add test with ZSCII in it.
+
   #[test]
   fn test_string_from_pc() {
     // f = 0x0b = 0b01011

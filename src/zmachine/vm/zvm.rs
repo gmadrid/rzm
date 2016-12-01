@@ -8,6 +8,7 @@ use zmachine::vm::mm_object_table::MemoryMappedObjectTable;
 use zmachine::vm::object_table::{ZObject, ZObjectTable, ZPropertyTable};
 use zmachine::vm::pc::PC;
 use zmachine::vm::stack::Stack;
+use zmachine::zconfig::{ZConfig, ZDefaults};
 
 const HEADER_SIZE: usize = 64;
 
@@ -17,21 +18,19 @@ pub struct ZMachine {
   stack: Stack,
 }
 
-impl From<Memory> for ZMachine {
-  // WARNING: From::from cannot fail, so this does no consistency checking.
-  fn from(memory: Memory) -> ZMachine {
+impl ZMachine {
+  pub fn from_memory<T>(memory: Memory, config: &T) -> ZMachine
+    where T: ZConfig {
     let pc = PC::new(memory.starting_pc());
     let mut zmachine = ZMachine {
       memory: memory,
       pc: pc,
-      stack: Stack::new(0xfff0),
+      stack: Stack::new(config.stack_size().unwrap()),
     };
     zmachine.reset_interpreter_flags();
     zmachine
   }
-}
 
-impl ZMachine {
   pub fn from_reader<T: Read>(mut reader: T) -> Result<ZMachine> {
     let mut zbytes = Vec::<u8>::new();
     let bytes_read = reader.read_to_end(&mut zbytes)?;
@@ -39,8 +38,9 @@ impl ZMachine {
       return Err(Error::CouldNotReadHeader);
     }
 
+    let config = ZDefaults::new();
     let memory = Memory::from(zbytes);
-    let zmachine = ZMachine::from(memory);
+    let zmachine = ZMachine::from_memory(memory, &config);
 
     let expected_file_length = zmachine.memory.file_length();
     if expected_file_length != 0 && expected_file_length > bytes_read as u32 {
@@ -71,7 +71,6 @@ impl ZMachine {
     let first_byte = self.read_pc_byte();
     let top_two_bits = first_byte & 0b11000000;
 
-    // TODO: (v5) handle 0xbe - extended opcodes
     match top_two_bits {
       0b11000000 => self.process_variable_opcode(first_byte),
       0b10000000 => self.process_short_opcode(first_byte),
@@ -361,7 +360,6 @@ impl VM for ZMachine {
     let property_table = object.property_table(&self.memory);
     let property = property_table.find_property(property_number, &self.memory);
     match property {
-      // TODO: deal with default properties.
       None => Ok(object_table.default_property_value(property_number, &self.memory)),
       Some((size, ptr)) => {
         match size {
