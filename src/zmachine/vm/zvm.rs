@@ -93,6 +93,7 @@ impl ZMachine {
         0x00 => ops::varops::call_0x00(self, operands),
         0x01 => ops::varops::storew_0x01(self, operands),
         0x03 => ops::varops::put_prop_0x03(self, operands),
+        0x04 => ops::varops::read_0x04(self, operands),
         0x05 => ops::varops::print_char_0x05(self, operands),
         0x06 => ops::varops::print_num_0x06(self, operands),
         0x08 => ops::varops::push_0x08(self, operands),

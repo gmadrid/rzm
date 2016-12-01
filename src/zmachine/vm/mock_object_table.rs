@@ -96,6 +96,10 @@ impl ZObjectTable for MockObjectTable {
   fn object_with_number(&self, object_number: u16) -> MockObject {
     MockObject { object_number: object_number }
   }
+
+  fn default_property_value(&self, property_number: u16, access: &Self::DataAccess) -> u16 {
+    43 + 2 * property_number
+  }
 }
 
 impl ZObject for MockObject {
