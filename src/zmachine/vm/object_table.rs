@@ -15,6 +15,7 @@ pub trait ZObjectTable {
   type PropertyTable: ZPropertyTable;
 
   fn object_with_number(&self, object_number: u16) -> Self::ZObject;
+  fn default_property_value(&self, property_number: u16, access: &Self::DataAccess) -> u16;
 
   fn remove_object_from_parent(&self,
                                object_number: u16,

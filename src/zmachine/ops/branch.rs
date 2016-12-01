@@ -58,12 +58,39 @@ pub fn branch_binop<F, T>(vm: &mut T, op1: Operand, op2: Operand, pred: F) -> Re
 
 pub fn jz_0x00<T>(vm: &mut T, operand: Operand) -> Result<()>
   where T: VM {
-  je_0x01(vm, operand, Operand::SmallConstant(0))
+  je_0x01(vm,
+          [operand, Operand::SmallConstant(0), Operand::Omitted, Operand::Omitted])
 }
 
-pub fn je_0x01<T>(vm: &mut T, lhs: Operand, rhs: Operand) -> Result<()>
+pub fn jl_0x02<T>(vm: &mut T, lhs: Operand, rhs: Operand) -> Result<()>
   where T: VM {
-  branch_binop(vm, lhs, rhs, |l, r| l == r)
+  // TODO: test jl_0x02
+  branch_binop(vm, lhs, rhs, |l, r| (l as u16) < (r as u16))
+}
+
+pub fn je_0x01<T>(vm: &mut T, operands: [Operand; 4]) -> Result<()>
+  where T: VM {
+  let value = operands[0].value(vm)?;
+
+  let mut truth = false;
+  for operand in &operands[1..] {
+    match *operand {
+      Operand::Omitted => break,
+      _ => {
+        let operand_value = operand.value(vm)?;
+        if value == operand_value {
+          truth = true;
+          break;
+        }
+      }
+    }
+  }
+
+  // TODO: write branch_on_condition to avoid stupid closures like this one.
+  branch_binop(vm,
+               Operand::SmallConstant(0),
+               Operand::SmallConstant(1),
+               |_, _| truth)
 }
 
 pub fn inc_chk_0x05<T>(vm: &mut T, var_op: Operand, value: Operand) -> Result<()>
@@ -101,6 +128,31 @@ pub fn jin_0x06<T>(vm: &mut T, lhs: Operand, rhs: Operand) -> Result<()>
                |l, r| l == r)
 }
 
+pub fn get_child_0x02<T>(vm: &mut T, object_number: Operand, variable: VariableRef) -> Result<()>
+  where T: VM {
+  let object_number = object_number.value(vm)?;
+  let child_number = vm.child_number(object_number)?;
+  vm.write_variable(variable, child_number)?;
+  branch_binop(vm,
+               Operand::LargeConstant(child_number),
+               Operand::SmallConstant(0),
+               |child, zero| child != zero)
+}
+
+pub fn get_sibling_0x01<T>(vm: &mut T,
+                           object_number: Operand,
+                           variable: VariableRef)
+                           -> Result<()>
+  where T: VM {
+  let object_number = object_number.value(vm)?;
+  let sibling_number = vm.sibling_number(object_number)?;
+  vm.write_variable(variable, sibling_number)?;
+  branch_binop(vm,
+               Operand::LargeConstant(sibling_number),
+               Operand::SmallConstant(0),
+               |sibling, zero| sibling != zero)
+}
+
 #[cfg(test)]
 mod test {
   use super::fourteen_bit_signed;
@@ -123,18 +175,24 @@ mod test {
     let mut vm = TestVM::new();
     vm.set_jump_offset_byte(6, false);
     je_0x01(&mut vm,
-            Operand::SmallConstant(0x03),
-            Operand::SmallConstant(0x03))
+            [Operand::SmallConstant(0x03),
+             Operand::SmallConstant(0x03),
+             Operand::Omitted,
+             Operand::Omitted])
       .unwrap();
     assert_eq!(1, vm.current_pc());
 
     vm.set_jump_offset_byte(6, false);
     je_0x01(&mut vm,
-            Operand::LargeConstant(0x03),
-            Operand::SmallConstant(0x04))
+            [Operand::LargeConstant(0x03),
+             Operand::SmallConstant(0x04),
+             Operand::Omitted,
+             Operand::Omitted])
       .unwrap();
     assert_eq!(5, vm.current_pc());
   }
+
+  // TODO: test the multi-operand je opcode.
 
   #[test]
   fn test_je_true() {
@@ -143,8 +201,10 @@ mod test {
     vm.write_local(3, 0x45);
     vm.push_stack(0x44);
     je_0x01(&mut vm,
-            Operand::Variable(VariableRef::Stack),
-            Operand::Variable(VariableRef::Local(3)))
+            [Operand::Variable(VariableRef::Stack),
+             Operand::Variable(VariableRef::Local(3)),
+             Operand::Omitted,
+             Operand::Omitted])
       .unwrap();
     assert_eq!(1, vm.current_pc());
 
@@ -152,8 +212,10 @@ mod test {
     vm.write_local(3, 0x45);
     vm.write_global(200, 0x45);
     je_0x01(&mut vm,
-            Operand::Variable(VariableRef::Global(200)),
-            Operand::Variable(VariableRef::Local(3)))
+            [Operand::Variable(VariableRef::Global(200)),
+             Operand::Variable(VariableRef::Local(3)),
+             Operand::Omitted,
+             Operand::Omitted])
       .unwrap();
     assert_eq!(7, vm.current_pc());
   }
@@ -165,8 +227,10 @@ mod test {
     // TODO: write these tests
     vm.set_jump_offset_word(400, true);
     je_0x01(&mut vm,
-            Operand::SmallConstant(4),
-            Operand::SmallConstant(4))
+            [Operand::SmallConstant(4),
+             Operand::SmallConstant(4),
+             Operand::Omitted,
+             Operand::Omitted])
       .unwrap();
     assert_eq!(400, vm.current_pc());
 
@@ -176,8 +240,10 @@ mod test {
     vm.set_pcbytes(vec);
     vm.pc = 500;
     je_0x01(&mut vm,
-            Operand::SmallConstant(6),
-            Operand::SmallConstant(6))
+            [Operand::SmallConstant(6),
+             Operand::SmallConstant(6),
+             Operand::Omitted,
+             Operand::Omitted])
       .unwrap();
     assert_eq!(100, vm.current_pc());
   }

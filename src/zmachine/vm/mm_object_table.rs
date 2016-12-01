@@ -39,6 +39,12 @@ impl ZObjectTable for MemoryMappedObjectTable {
       ptr: self.base_ptr.inc_by(31 * 2 + (object_number - 1) * 9),
     }
   }
+
+  fn default_property_value(&self, property_number: u16, access: &Memory) -> u16 {
+    // TODO: test this.
+    let ptr = self.base_ptr.inc_by(2 * (property_number - 1));
+    access.u16_at(ptr)
+  }
 }
 
 impl ZObject for MemoryMappedObject {
