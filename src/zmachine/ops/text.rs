@@ -11,6 +11,12 @@ const ROW2: [char; 26] = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K',
 const ROW3: [char; 26] = ['@', '\n', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '.', ',',
                           '!', '?', '_', '#', '\'', '"', '/', '\\', '-', ':', '(', ')'];
 
+enum State {
+  Normal,
+  FirstHalfZChar,
+  SecondHalfZChar,
+}
+
 enum TextSource {
   PC,
   Memory(RawPtr, bool),
@@ -20,6 +26,7 @@ fn decode_text<T>(vm: &mut T, src: TextSource) -> Result<String>
   where T: VM {
   let mut row = ROW1;
   let mut s: String = "".to_string();
+  let mut state = State::Normal;
 
   let (text_ptr, from_pc, in_abbrev) = match src {
     TextSource::PC => (None, true, false),
@@ -29,6 +36,7 @@ fn decode_text<T>(vm: &mut T, src: TextSource) -> Result<String>
   let mut abbrev_set: Option<u16> = None;
 
   let mut offset = 0;
+  let mut first_half = 0u16;
   loop {
     // TODO: create a Trait for reading words to simplify this code.
     let word = if from_pc {
@@ -54,19 +62,36 @@ fn decode_text<T>(vm: &mut T, src: TextSource) -> Result<String>
 
         abbrev_set = None;
       } else {
-        match *ch {
-          0x00u16 => s.push(' '),
-          0x01u16...0x03u16 => {
-            if in_abbrev {
-              panic!("Attempted to read abbrev in abbrev");
+        match state {
+          State::Normal => {
+            if row == ROW3 && *ch == 6 {
+              state = State::FirstHalfZChar
+            } else {
+              match *ch {
+                0x00u16 => s.push(' '),
+                0x01u16...0x03u16 => {
+                  if in_abbrev {
+                    panic!("Attempted to read abbrev in abbrev");
+                  }
+                  abbrev_set = Some(*ch);
+                }
+                0x04u16 => row = ROW2,
+                0x05u16 => row = ROW3,
+                _ => {
+                  s.push(row[(ch - 6) as usize]);
+                  row = ROW1;
+                }
+              }
             }
-            abbrev_set = Some(*ch);
           }
-          0x04u16 => row = ROW2,
-          0x05u16 => row = ROW3,
-          _ => {
-            s.push(row[(ch - 6) as usize]);
-            row = ROW1;
+          State::FirstHalfZChar => {
+            first_half = *ch << 5;
+            state = State::SecondHalfZChar;
+          }
+          State::SecondHalfZChar => {
+            let zchar = (first_half + *ch) as u8 as char;
+            print!("{}", zchar);
+            state = State::Normal;
           }
         }
       }

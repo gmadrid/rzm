@@ -35,6 +35,7 @@ impl Operand {
 }
 
 pub mod zeroops {
+  pub use super::call::ret_popped_0x08;
   pub use super::call::rfalse_0x01;
   pub use super::call::rtrue_0x00;
   pub use super::text::new_line_0x0b;

@@ -67,6 +67,7 @@ impl ZMachine {
 
   fn process_opcode(&mut self) -> Result<()> {
     let pcvalue = usize::from(self.pc.pc());
+    //    println!("pcvalue: {:#x}", pcvalue);
     let first_byte = self.read_pc_byte();
     let top_two_bits = first_byte & 0b11000000;
 
@@ -140,6 +141,7 @@ impl ZMachine {
       0x00 => ops::zeroops::rtrue_0x00(self),
       0x01 => ops::zeroops::rfalse_0x01(self),
       0x02 => ops::zeroops::print_0x02(self),
+      0x08 => ops::zeroops::ret_popped_0x08(self),
       0x0b => ops::zeroops::new_line_0x0b(self),
       _ => {
         panic!("Unknown short 0op opcode: {:x} @{:x}", op, start_pc);

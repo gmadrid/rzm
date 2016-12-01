@@ -40,7 +40,7 @@ My next ops will probably be:
      5. test_attr    Done
      6. new_line     Done
      7. insert_obj   Done
-     8. ret_popped
+     8. ret_popped   Done
      9. push         Done
     10. jg
     11. loadb        Done

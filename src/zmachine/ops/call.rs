@@ -63,6 +63,12 @@ pub fn ret_0x0b<T>(vm: &mut T, operand: Operand) -> Result<()>
   vm.ret_value(value)
 }
 
+pub fn ret_popped_0x08<T>(vm: &mut T) -> Result<()>
+  where T: VM {
+  let value = vm.pop_stack()?;
+  vm.ret_value(value)
+}
+
 pub fn rtrue_0x00<T>(vm: &mut T) -> Result<()>
   where T: VM {
   vm.ret_value(1)
