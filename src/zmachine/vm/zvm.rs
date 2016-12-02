@@ -4,8 +4,8 @@ use zmachine::ops;
 use zmachine::ops::Operand;
 use zmachine::vm::{RawPtr, VM, VariableRef, WordPtr};
 use zmachine::vm::memory::Memory;
-use zmachine::vm::mm_object_table::MemoryMappedObjectTable;
-use zmachine::vm::object_table::{ZObject, ZObjectTable, ZPropertyTable};
+use zmachine::vm::mm_object_table::{MemoryMappedObjectTable, MemoryMappedPropertyTable};
+use zmachine::vm::object_table::{ZObject, ZObjectTable, ZPropertyAccess, ZPropertyTable};
 use zmachine::vm::pc::PC;
 use zmachine::vm::stack::Stack;
 use zmachine::zconfig::{ZConfig, ZDefaults};
@@ -235,6 +235,11 @@ impl ZMachine {
 }
 
 impl VM for ZMachine {
+  type ObjTable = MemoryMappedObjectTable;
+  type ObjStorage = Memory;
+  type PropertyTable = MemoryMappedPropertyTable;
+  type PropertyAccess = Memory;
+
   fn read_pc_byte(&mut self) -> u8 {
     self.pc.next_byte(&self.memory)
   }
@@ -316,72 +321,95 @@ impl VM for ZMachine {
     Ok(self.memory.u8_at(ptr))
   }
 
-  fn parent_number(&self, object_number: u16) -> Result<u16> {
-    let object_table = MemoryMappedObjectTable::new(self.memory.property_table_ptr());
-    let object = object_table.object_with_number(object_number);
-    Ok(object.parent(&self.memory))
+  fn object_table(&self) -> Result<MemoryMappedObjectTable> {
+    let ptr = self.memory.property_table_ptr();
+    Ok(MemoryMappedObjectTable::new(ptr))
   }
 
-  fn child_number(&self, object_number: u16) -> Result<u16> {
-    let object_table = MemoryMappedObjectTable::new(self.memory.property_table_ptr());
-    let object = object_table.object_with_number(object_number);
-    Ok(object.child(&self.memory))
+  fn object_storage(&self) -> &Memory {
+    &self.memory
   }
 
-  fn sibling_number(&self, object_number: u16) -> Result<u16> {
-    let object_table = MemoryMappedObjectTable::new(self.memory.property_table_ptr());
-    let object = object_table.object_with_number(object_number);
-    Ok(object.sibling(&self.memory))
+  fn object_storage_mut(&mut self) -> &mut Memory {
+    &mut self.memory
   }
 
-  fn attributes(&mut self, object_number: u16) -> Result<u32> {
-    let object_table = MemoryMappedObjectTable::new(self.memory.property_table_ptr());
-    let object = object_table.object_with_number(object_number);
-    Ok(object.attributes(&self.memory))
+  // TODO: is it possible to combine this with object_storage by letting the
+  // compiler know that they are the same type.
+  fn property_storage(&self) -> &Memory {
+    &self.memory
   }
 
-  fn set_attributes(&mut self, object_number: u16, attrs: u32) -> Result<()> {
-    let object_table = MemoryMappedObjectTable::new(self.memory.property_table_ptr());
-    let object = object_table.object_with_number(object_number);
-    object.set_attributes(attrs, &mut self.memory);
-    Ok(())
+  fn property_storage_mut(&mut self) -> &mut Memory {
+    &mut self.memory
   }
 
-  fn object_name(&self, object_number: u16) -> Result<RawPtr> {
-    let object_table = MemoryMappedObjectTable::new(self.memory.property_table_ptr());
-    let object = object_table.object_with_number(object_number);
-    let property_table = object.property_table(&self.memory);
-    Ok(property_table.name_ptr(&self.memory).into())
-  }
+  // fn parent_number(&self, object_number: u16) -> Result<u16> {
+  //   let object_table = MemoryMappedObjectTable::new(self.memory.property_table_ptr());
+  //   let object = object_table.object_with_number(object_number);
+  //   Ok(object.parent(&self.memory))
+  // }
 
-  fn get_property(&self, object_number: u16, property_number: u16) -> Result<u16> {
-    let object_table = MemoryMappedObjectTable::new(self.memory.property_table_ptr());
-    let object = object_table.object_with_number(object_number);
-    let property_table = object.property_table(&self.memory);
-    let property = property_table.find_property(property_number, &self.memory);
-    match property {
-      None => Ok(object_table.default_property_value(property_number, &self.memory)),
-      Some((size, ptr)) => {
-        match size {
-          1 => Ok(self.memory.u8_at(ptr) as u16),
-          2 => Ok(self.memory.u16_at(ptr)),
-          _ => panic!("Bad size"),
-        }
-      }
-    }
-  }
+  // fn child_number(&self, object_number: u16) -> Result<u16> {
+  //   let object_table = MemoryMappedObjectTable::new(self.memory.property_table_ptr());
+  //   let object = object_table.object_with_number(object_number);
+  //   Ok(object.child(&self.memory))
+  // }
 
-  fn put_property(&mut self, object_number: u16, property_index: u16, value: u16) -> Result<()> {
-    let object_table = MemoryMappedObjectTable::new(self.memory.property_table_ptr());
-    let object = object_table.object_with_number(object_number);
-    let property_table = object.property_table(&self.memory);
-    Ok(property_table.set_property(property_index, value, &mut self.memory))
-  }
+  // fn sibling_number(&self, object_number: u16) -> Result<u16> {
+  //   let object_table = MemoryMappedObjectTable::new(self.memory.property_table_ptr());
+  //   let object = object_table.object_with_number(object_number);
+  //   Ok(object.sibling(&self.memory))
+  // }
 
-  fn insert_obj(&mut self, object_number: u16, dest_number: u16) -> Result<()> {
-    let object_table = MemoryMappedObjectTable::new(self.memory.property_table_ptr());
-    object_table.insert_obj(object_number, dest_number, &mut self.memory)
-  }
+  // fn attributes(&mut self, object_number: u16) -> Result<u32> {
+  //   let object_table = MemoryMappedObjectTable::new(self.memory.property_table_ptr());
+  //   let object = object_table.object_with_number(object_number);
+  //   Ok(object.attributes(&self.memory))
+  // }
+
+  // fn set_attributes(&mut self, object_number: u16, attrs: u32) -> Result<()> {
+  //   let object_table = MemoryMappedObjectTable::new(self.memory.property_table_ptr());
+  //   let object = object_table.object_with_number(object_number);
+  //   object.set_attributes(attrs, &mut self.memory);
+  //   Ok(())
+  // }
+
+  // fn object_name(&self, object_number: u16) -> Result<RawPtr> {
+  //   let object_table = MemoryMappedObjectTable::new(self.memory.property_table_ptr());
+  //   let object = object_table.object_with_number(object_number);
+  //   let property_table = object.property_table(&self.memory);
+  //   Ok(property_table.name_ptr(&self.memory).into())
+  // }
+
+  // fn get_property(&self, object_number: u16, property_number: u16) -> Result<u16> {
+  //   let object_table = MemoryMappedObjectTable::new(self.memory.property_table_ptr());
+  //   let object = object_table.object_with_number(object_number);
+  //   let property_table = object.property_table(&self.memory);
+  //   let property = property_table.find_property(property_number, &self.memory);
+  //   match property {
+  //     None => Ok(object_table.default_property_value(property_number, &self.memory)),
+  //     Some((size, ptr)) => {
+  //       match size {
+  //         1 => Ok(self.memory.u8_at(ptr) as u16),
+  //         2 => Ok(self.memory.u16_at(ptr)),
+  //         _ => panic!("Bad size"),
+  //       }
+  //     }
+  //   }
+  // }
+
+  // fn put_property(&mut self, object_number: u16, property_index: u16, value: u16) -> Result<()> {
+  //   let object_table = MemoryMappedObjectTable::new(self.memory.property_table_ptr());
+  //   let object = object_table.object_with_number(object_number);
+  //   let property_table = object.property_table(&self.memory);
+  //   Ok(property_table.set_property(property_index, value, &mut self.memory))
+  // }
+
+  // fn insert_obj(&mut self, object_number: u16, dest_number: u16) -> Result<()> {
+  //   let object_table = MemoryMappedObjectTable::new(self.memory.property_table_ptr());
+  //   object_table.insert_obj(object_number, dest_number, &mut self.memory)
+  // }
 
   fn abbrev_addr(&self, abbrev_table: u8, abbrev_index: u8) -> Result<WordPtr> {
     let abbrev_table_ptr = self.memory.abbrev_table_ptr();

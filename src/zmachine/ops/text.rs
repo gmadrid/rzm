@@ -1,6 +1,6 @@
 use result::Result;
 use zmachine::ops::Operand;
-use zmachine::vm::{RawPtr, VM};
+use zmachine::vm::{RawPtr, VM, ZObject, ZObjectTable, ZPropertyTable};
 
 const ROW1: [char; 26] = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n',
                           'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z'];
@@ -119,10 +119,13 @@ pub fn print_num_0x06<T>(vm: &mut T, operands: [Operand; 4]) -> Result<()>
 
 pub fn print_obj_0x0a<T>(vm: &mut T, operand: Operand) -> Result<()>
   where T: VM {
+  let object_table = vm.object_table()?;
+
   // TODO: test print_obj_0x0a
   let object_number = operand.value(vm)?;
-  let text_ptr = vm.object_name(object_number)?;
-  let str = decode_text(vm, TextSource::Memory(text_ptr, false))?;
+  let obj = object_table.object_with_number(object_number);
+  let ptr = obj.property_table(vm.object_storage()).name_ptr(vm.property_storage());
+  let str = decode_text(vm, TextSource::Memory(ptr.into(), false))?;
   print!("{}", str);
   Ok(())
 }

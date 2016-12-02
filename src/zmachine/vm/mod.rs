@@ -10,6 +10,7 @@ mod vm;
 pub mod zvm;
 
 pub use self::memory::Memory;
+pub use self::object_table::{ZObject, ZObjectTable, ZPropertyAccess, ZPropertyTable};
 pub use self::ptrs::BytePtr;
 pub use self::ptrs::PackedAddr;
 pub use self::ptrs::RawPtr;

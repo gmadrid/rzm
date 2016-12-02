@@ -29,6 +29,7 @@ impl ZObjectTable for MemoryMappedObjectTable {
   type ZObject = MemoryMappedObject;
   type DataAccess = Memory;
   type PropertyTable = MemoryMappedPropertyTable;
+  type PropertyAccess = Memory;
 
   fn object_with_number(&self, object_number: u16) -> MemoryMappedObject {
     // TODO: check for 0.
@@ -94,7 +95,6 @@ impl ZObject for MemoryMappedObject {
 
 impl ZPropertyTable for MemoryMappedPropertyTable {
   type PropertyAccess = Memory;
-  type Ref = BytePtr;
 
   fn name_ptr(&self, _: &Memory) -> BytePtr {
     self.ptr.inc_by(1)
@@ -124,7 +124,13 @@ impl ZPropertyTable for MemoryMappedPropertyTable {
 
 impl ZPropertyAccess for Memory {
   // TODO: test ZPropertyAccess for Memory
-  type Ref = BytePtr;
+  fn byte_property(&self, ptr: BytePtr) -> u16 {
+    self.u8_at(ptr) as u16
+  }
+
+  fn word_property(&self, ptr: BytePtr) -> u16 {
+    self.u16_at(ptr)
+  }
 
   fn set_byte_property(&mut self, value: u8, ptr: BytePtr) {
     self.set_u8_at(value, ptr);

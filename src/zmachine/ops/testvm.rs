@@ -143,38 +143,39 @@ impl VM for TestVM {
     Ok(self.heap[ptr.into().ptr()])
   }
 
-  fn attributes(&mut self, object_number: u16) -> Result<u32> {
-    unimplemented!()
-  }
+  // fn attributes(&mut self, object_number: u16) -> Result<u32> {
+  //   unimplemented!()
+  // }
 
-  fn set_attributes(&mut self, object_number: u16, attrs: u32) -> Result<()> {
-    unimplemented!()
-  }
+  // fn set_attributes(&mut self, object_number: u16, attrs: u32) -> Result<()> {
+  //   unimplemented!()
+  // }
 
-  fn parent_number(&self, object_number: u16) -> Result<u16> {
-    unimplemented!()
-  }
+  // fn parent_number(&self, object_number: u16) -> Result<u16> {
+  //   unimplemented!()
+  // }
 
-  fn child_number(&self, object_number: u16) -> Result<u16> {
-    unimplemented!()
-  }
+  // fn child_number(&self, object_number: u16) -> Result<u16> {
+  //   unimplemented!()
+  // }
 
-  fn sibling_number(&self, object_number: u16) -> Result<u16> {
-    unimplemented!()
-  }
+  // fn sibling_number(&self, object_number: u16) -> Result<u16> {
+  //   unimplemented!()
+  // }
 
-  fn put_property(&mut self, object_number: u16, property_index: u16, value: u16) -> Result<()> {
-    unimplemented!()
-  }
-  fn insert_obj(&mut self, object_number: u16, dest_number: u16) -> Result<()> {
-    unimplemented!()
-  }
-  fn object_name(&self, object_number: u16) -> Result<RawPtr> {
-    unimplemented!()
-  }
-  fn get_property(&self, object_number: u16, property_number: u16) -> Result<u16> {
-    unimplemented!()
-  }
+  // fn put_property(&mut self, object_number: u16, property_index: u16, value: u16) -> Result<()> {
+  //   unimplemented!()
+  // }
+  // fn insert_obj(&mut self, object_number: u16, dest_number: u16) -> Result<()> {
+  //   unimplemented!()
+  // }
+  // fn object_name(&self, object_number: u16) -> Result<RawPtr> {
+  //   unimplemented!()
+  // }
+  // fn get_property(&self, object_number: u16, property_number: u16) -> Result<u16> {
+  //   unimplemented!()
+  // }
+
   fn abbrev_addr(&self, abbrev_table: u8, abbrev_index: u8) -> Result<WordPtr> {
     unimplemented!()
   }
