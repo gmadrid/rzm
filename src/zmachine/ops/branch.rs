@@ -71,37 +71,33 @@ pub fn je_0x01<T>(vm: &mut T, operands: [Operand; 4]) -> Result<()>
   where T: VM {
   let value = operands[0].value(vm)?;
 
-  let mut truth = false;
+  let mut condition = false;
   for operand in &operands[1..] {
     match *operand {
       Operand::Omitted => break,
       _ => {
         let operand_value = operand.value(vm)?;
         if value == operand_value {
-          truth = true;
+          condition = true;
           break;
         }
       }
     }
   }
 
-  // TODO: write branch_on_condition to avoid stupid closures like this one.
-  branch_binop(vm,
-               Operand::SmallConstant(0),
-               Operand::SmallConstant(1),
-               |_, _| truth)
+  branch_on_condition(vm, condition)
 }
 
 pub fn jl_0x02<T>(vm: &mut T, lhs: Operand, rhs: Operand) -> Result<()>
   where T: VM {
   // TODO: test jl_0x02
-  branch_binop(vm, lhs, rhs, |l, r| (l as u16) < (r as u16))
+  branch_binop(vm, lhs, rhs, |l, r| l < r)
 }
 
 pub fn jg_0x03<T>(vm: &mut T, lhs: Operand, rhs: Operand) -> Result<()>
   where T: VM {
   // TODO: test jg_0x03
-  branch_binop(vm, lhs, rhs, |l, r| (l as u16) > (r as u16))
+  branch_binop(vm, lhs, rhs, |l, r| l > r)
 }
 
 pub fn inc_chk_0x05<T>(vm: &mut T, var_op: Operand, value: Operand) -> Result<()>
@@ -132,10 +128,7 @@ pub fn jin_0x06<T>(vm: &mut T, lhs: Operand, rhs: Operand) -> Result<()>
   let child_obj = object_table.object_with_number(child_number);
   let childs_parent_number = child_obj.parent(vm.object_storage());
 
-  branch_binop(vm,
-               Operand::LargeConstant(parent_number),
-               Operand::LargeConstant(childs_parent_number),
-               |l, r| l == r)
+  branch_on_condition(vm, parent_number == childs_parent_number)
 }
 
 pub fn get_child_0x02<T>(vm: &mut T, object_number: Operand, variable: VariableRef) -> Result<()>
@@ -147,10 +140,7 @@ pub fn get_child_0x02<T>(vm: &mut T, object_number: Operand, variable: VariableR
   let child_number = obj.child(vm.object_storage());
 
   vm.write_variable(variable, child_number)?;
-  branch_binop(vm,
-               Operand::LargeConstant(child_number),
-               Operand::SmallConstant(0),
-               |child, zero| child != zero)
+  branch_on_condition(vm, child_number != 0)
 }
 
 pub fn get_sibling_0x01<T>(vm: &mut T,
@@ -164,10 +154,7 @@ pub fn get_sibling_0x01<T>(vm: &mut T,
   let obj = object_table.object_with_number(object_number);
   let sibling_number = obj.sibling(vm.object_storage());
   vm.write_variable(variable, sibling_number)?;
-  branch_binop(vm,
-               Operand::LargeConstant(sibling_number),
-               Operand::SmallConstant(0),
-               |sibling, zero| sibling != zero)
+  branch_on_condition(vm, sibling_number != 0)
 }
 
 #[cfg(test)]
