@@ -1,5 +1,6 @@
 use std::collections::HashMap;
 
+use zmachine::vm::{BytePtr, Memory};
 use zmachine::vm::object_table::{ZObject, ZObjectTable, ZPropertyTable};
 
 #[derive(Debug,Clone,Eq,PartialEq)]
@@ -23,7 +24,7 @@ struct MockObjectRep {
   child: u16,
 }
 
-struct MockPropertyTable {
+pub struct MockPropertyTable {
   table: HashMap<u16, MockProperty>,
 }
 
@@ -144,12 +145,11 @@ impl ZObject for MockObject {
 }
 
 impl ZPropertyTable for MockPropertyTable {
-  type PropertyAccess = bool;
-  type Ref = u16;
+  type PropertyAccess = Memory;
 
-  fn name_ptr(&self, helper: &bool) -> u16 {
+  fn name_ptr(&self, helper: &bool) -> BytePtr {
     // TODO: implement a testable version of this.
-    32
+    BytePtr::new(32)
   }
 
   // property numbers are 1-31. Returns the size and ptr to the property.

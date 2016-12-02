@@ -14,7 +14,7 @@ pub trait ZObjectTable {
   type ZObject: ZObject<DataAccess = Self::DataAccess, PropertyTable = Self::PropertyTable>;
   type DataAccess;
   type PropertyTable: ZPropertyTable<PropertyAccess = Self::PropertyAccess>;
-  type PropertyAccess;
+  type PropertyAccess: ZPropertyAccess;
 
   fn object_with_number(&self, object_number: u16) -> Self::ZObject;
   fn default_property_value(&self, property_number: u16, access: &Self::DataAccess) -> u16;
@@ -116,7 +116,7 @@ pub trait ZPropertyAccess {
 }
 
 pub trait ZPropertyTable {
-  type PropertyAccess;
+  type PropertyAccess: ZPropertyAccess;
 
   fn name_ptr(&self, helper: &Self::PropertyAccess) -> BytePtr;
   // property numbers are 1-31. Returns the size and ptr to the property.
