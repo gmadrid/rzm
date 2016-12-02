@@ -1,4 +1,5 @@
 use result::Result;
+use zmachine::vm::BytePtr;
 
 // We create traits for ZObjectTable and ZObject to facilitate testability.
 // In the zmachine, these are memory mapped into the VM's dynamic memory, but
@@ -12,7 +13,8 @@ use result::Result;
 pub trait ZObjectTable {
   type ZObject: ZObject<DataAccess = Self::DataAccess, PropertyTable = Self::PropertyTable>;
   type DataAccess;
-  type PropertyTable: ZPropertyTable;
+  type PropertyTable: ZPropertyTable<PropertyAccess = Self::PropertyAccess>;
+  type PropertyAccess: ZPropertyAccess;
 
   fn object_with_number(&self, object_number: u16) -> Self::ZObject;
   fn default_property_value(&self, property_number: u16, access: &Self::DataAccess) -> u16;
@@ -107,23 +109,22 @@ pub trait ZObject {
 }
 
 pub trait ZPropertyAccess {
-  type Ref;
-
-  fn set_byte_property(&mut self, value: u8, ptr: Self::Ref);
-  fn set_word_property(&mut self, value: u16, ptr: Self::Ref);
+  fn byte_property(&self, ptr: BytePtr) -> u16;
+  fn word_property(&self, ptr: BytePtr) -> u16;
+  fn set_byte_property(&mut self, value: u8, ptr: BytePtr);
+  fn set_word_property(&mut self, value: u16, ptr: BytePtr);
 }
 
 pub trait ZPropertyTable {
-  type PropertyAccess;
-  type Ref;
+  type PropertyAccess: ZPropertyAccess;
 
-  fn name_ptr(&self, helper: &Self::PropertyAccess) -> Self::Ref;
+  fn name_ptr(&self, helper: &Self::PropertyAccess) -> BytePtr;
   // property numbers are 1-31. Returns the size and ptr to the property.
-  fn find_property(&self, number: u16, helper: &Self::PropertyAccess) -> Option<(u16, Self::Ref)>;
+  fn find_property(&self, number: u16, helper: &Self::PropertyAccess) -> Option<(u16, BytePtr)>;
 
   // TODO: test set_property
   fn set_property(&self, number: u16, value: u16, helper: &mut Self::PropertyAccess)
-    where Self::PropertyAccess: ZPropertyAccess<Ref = Self::Ref> {
+    where Self::PropertyAccess: ZPropertyAccess {
     if let Some((size, ptr)) = self.find_property(number, helper) {
       match size {
         1 => helper.set_byte_property(value as u8, ptr),
@@ -147,7 +148,7 @@ mod tests {
   #[test]
   fn test_insert_0_obj() {
     let mut storage = MockObjectTableStorage::new();
-    let table = MockObjectTable::new(&storage);
+    let table = MockObjectTable::new();
     table.insert_obj(0, 0, &mut storage).unwrap();
   }
 
@@ -157,7 +158,7 @@ mod tests {
     storage.add_mock_object(0x11223344, 0, 0, 0);
     let storage2 = storage.clone();
 
-    let table = MockObjectTable::new(&storage);
+    let table = MockObjectTable::new();
 
     table.remove_object_from_parent(1, &mut storage);
 
@@ -176,7 +177,7 @@ mod tests {
     storage.add_mock_object(0x11223344, 1, 4, 0); // 3
     storage.add_mock_object(0x11223344, 1, 0, 0); // 4
 
-    let table = MockObjectTable::new(&storage);
+    let table = MockObjectTable::new();
     table.remove_object_from_parent(2, &mut storage).unwrap();
 
     let mut storage2 = MockObjectTableStorage::new();
@@ -204,7 +205,7 @@ mod tests {
     storage.add_mock_object(0x11223344, 1, 4, 0); // 3
     storage.add_mock_object(0x11223344, 1, 0, 0); // 4
 
-    let table = MockObjectTable::new(&mut storage);
+    let table = MockObjectTable::new();
     table.remove_object_from_parent(3, &mut storage).unwrap();
 
     let mut storage2 = MockObjectTableStorage::new();
@@ -229,7 +230,7 @@ mod tests {
     storage.add_mock_object(0x11223344, 0, 0, 0); // 4
     storage.add_mock_object(0x11223344, 0, 0, 0); // 5
 
-    let table = MockObjectTable::new(&mut storage);
+    let table = MockObjectTable::new();
     table.add_object_to_parent(2, 1, &mut storage);
     table.add_object_to_parent(3, 1, &mut storage);
     table.add_object_to_parent(4, 1, &mut storage);

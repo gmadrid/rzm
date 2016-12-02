@@ -18,7 +18,7 @@
 use result::Result;
 use zmachine::ops::Operand;
 use zmachine::ops::branch::branch_binop;
-use zmachine::vm::{VM, VariableRef};
+use zmachine::vm::{VM, VariableRef, ZObject, ZObjectTable, ZPropertyAccess, ZPropertyTable};
 
 pub fn put_prop_0x03<T>(vm: &mut T, operands: [Operand; 4]) -> Result<()>
   where T: VM {
@@ -27,9 +27,10 @@ pub fn put_prop_0x03<T>(vm: &mut T, operands: [Operand; 4]) -> Result<()>
   let property_number = operands[1].value(vm)?;
   let new_value = operands[2].value(vm)?;
 
-  vm.put_property(object_index, property_number, new_value)?;
-
-  Ok(())
+  let object_table = vm.object_table()?;
+  let object = object_table.object_with_number(object_index);
+  let property_table = object.property_table(vm.object_storage());
+  Ok(property_table.set_property(property_number, new_value, vm.property_storage_mut()))
 }
 
 pub fn insert_obj_0x0e<T>(vm: &mut T, object_op: Operand, dest_op: Operand) -> Result<()>
@@ -37,14 +38,23 @@ pub fn insert_obj_0x0e<T>(vm: &mut T, object_op: Operand, dest_op: Operand) -> R
   let object_index = object_op.value(vm)?;
   let dest_index = dest_op.value(vm)?;
 
-  vm.insert_obj(object_index, dest_index)?;
-  Ok(())
+  vm.object_table()?.insert_obj(object_index, dest_index, vm.object_storage_mut())
+
+  //  vm.insert_obj(object_index, dest_index)?;
+  //  Ok(())
 }
 
-pub fn test_attr_0x0a<T>(vm: &mut T, object_index: Operand, attr_number: Operand) -> Result<()>
+// fn insert_obj(&mut self, object_number: u16, dest_number: u16) -> Result<()> {
+//   let object_table = MemoryMappedObjectTable::new(self.memory.property_table_ptr());
+//   object_table.insert_obj(object_number, dest_number, &mut self.memory)
+// }
+
+pub fn test_attr_0x0a<T>(vm: &mut T, object_number: Operand, attr_number: Operand) -> Result<()>
   where T: VM {
-  let object_index = object_index.value(vm)?;
-  let attrs = vm.attributes(object_index)?;
+  let object_number = object_number.value(vm)?;
+  let object_table = vm.object_table()?;
+  let obj = object_table.object_with_number(object_number);
+  let attrs = obj.attributes(vm.object_storage());
 
   let attr_number = attr_number.value(vm)?;
 
@@ -62,21 +72,28 @@ pub fn test_attr_0x0a<T>(vm: &mut T, object_index: Operand, attr_number: Operand
 pub fn set_attr_0x0b<T>(vm: &mut T, object_number: Operand, attr_number: Operand) -> Result<()>
   where T: VM {
   let object_number = object_number.value(vm)?;
-  let attr_number = attr_number.value(vm)?;
+  let object_table = vm.object_table()?;
+  let obj = object_table.object_with_number(object_number);
+  let attrs = {
+    obj.attributes(vm.object_storage())
+  };
 
-  let attrs = vm.attributes(object_number)?;
+  let attr_number = attr_number.value(vm)?;
 
   // attribute bits are 0..31 - the reverse of what I expect.
   let mask = 1u32 << (31u8 - attr_number as u8);
   let new_attrs = attrs | mask;
-  vm.set_attributes(object_number, new_attrs)
+  obj.set_attributes(new_attrs, vm.object_storage_mut());
+  Ok(())
 }
 
 pub fn get_parent_0x03<T>(vm: &mut T, object_number: Operand, variable: VariableRef) -> Result<()>
   where T: VM {
   // TODO: test get_parent_0x03
   let object_number = object_number.value(vm)?;
-  let parent_number = vm.parent_number(object_number)?;
+  let obj = vm.object_table()?.object_with_number(object_number);
+
+  let parent_number = obj.parent(vm.object_storage());
   vm.write_variable(variable, parent_number)
 }
 
@@ -89,10 +106,28 @@ pub fn get_prop_0x11<T>(vm: &mut T,
   // TODO: test get_prop_0x11
   let object_number = object_number.value(vm)?;
   let property_number = property_number.value(vm)?;
-  let value = vm.get_property(object_number, property_number)?;
-  vm.write_variable(variable, value)
-}
 
+  let property_value = {
+    let object_table = vm.object_table()?;
+    let object_storage = vm.object_storage();
+    let property_storage = vm.property_storage();
+    let property_table = object_table.object_with_number(object_number)
+      .property_table(object_storage);
+    let property = property_table.find_property(property_number, property_storage);
+
+    match property {
+      None => object_table.default_property_value(property_number, object_storage),
+      Some((size, ptr)) => {
+        match size {
+          1 => property_storage.byte_property(ptr),
+          2 => property_storage.word_property(ptr),
+          _ => panic!("Bad size"),
+        }
+      }
+    }
+  };
+  vm.write_variable(variable, property_value)
+}
 
 #[cfg(test)]
 mod tests {

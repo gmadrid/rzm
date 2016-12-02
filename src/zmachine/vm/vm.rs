@@ -1,7 +1,6 @@
-// YES
-
 use result::Result;
 use super::ptrs::{RawPtr, WordPtr};
+use zmachine::vm::object_table::{ZObjectTable, ZPropertyAccess, ZPropertyTable};
 
 /// Trait for an abstract mid-level virtual machine for running the ZMachine.
 ///
@@ -22,6 +21,11 @@ use super::ptrs::{RawPtr, WordPtr};
 ///   encapsulate that complexity.
 ///
 pub trait VM: Sized {
+  type ObjTable: ZObjectTable<DataAccess = Self::ObjStorage, PropertyAccess = Self::PropertyAccess>;
+  type ObjStorage;
+  type PropertyTable: ZPropertyTable<PropertyAccess = Self::PropertyAccess>;
+  type PropertyAccess: ZPropertyAccess;
+
   /// Advance the PC past the next byte, returning that byte.
   fn read_pc_byte(&mut self) -> u8;
   /// Advance the PC past the next word, returning that word.
@@ -82,21 +86,11 @@ pub trait VM: Sized {
   /// Read the single byte at `ptr` in the vm's memory.
   fn read_memory_u8<T>(&self, ptr: T) -> Result<u8> where T: Into<RawPtr>;
 
-  /// Return all of the attributes for the object with number `object_number`.
-  fn attributes(&mut self, object_number: u16) -> Result<u32>;
-  fn set_attributes(&mut self, object_number: u16, attrs: u32) -> Result<()>;
-  fn parent_number(&self, object_number: u16) -> Result<u16>;
-  fn child_number(&self, object_number: u16) -> Result<u16>;
-  fn sibling_number(&self, object_number: u16) -> Result<u16>;
-  fn object_name(&self, object_number: u16) -> Result<RawPtr>;
-
-  fn get_property(&self, object_number: u16, property_number: u16) -> Result<u16>;
-
-  /// Set `property_index` in `object_number` to `value`.
-  fn put_property(&mut self, object_number: u16, property_index: u16, value: u16) -> Result<()>;
-  /// Make the object at `object_number` be the first child of the object
-  /// at `dest_number`.
-  fn insert_obj(&mut self, object_number: u16, dest_number: u16) -> Result<()>;
+  fn object_table(&self) -> Result<Self::ObjTable>;
+  fn object_storage(&self) -> &Self::ObjStorage;
+  fn object_storage_mut(&mut self) -> &mut Self::ObjStorage;
+  fn property_storage(&self) -> &Self::PropertyAccess;
+  fn property_storage_mut(&mut self) -> &mut Self::PropertyAccess;
 
   /// Return the address as a WordPtr of the specified abbrev.
   fn abbrev_addr(&self, abbrev_table: u8, abbrev_index: u8) -> Result<WordPtr>;

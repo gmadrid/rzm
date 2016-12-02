@@ -1,5 +1,3 @@
-// YES
-
 use byteorder::{BigEndian, ByteOrder};
 use std::u16;
 use super::vm::VariableRef;

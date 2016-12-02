@@ -50,3 +50,16 @@ My next ops will probably be:
     15. inc_chk      Done
     16. print_char   Done
     17. rtrue        Done
+
+# Stuff in zvm that probably shouldn't be.
+  * parent_number
+  * child_number
+  * sibling_number 
+  * attributes 
+  * set_attributes
+  * object_name
+  * get_property
+  * put_property
+  * insert_obj
+
+

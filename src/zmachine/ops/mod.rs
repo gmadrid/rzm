@@ -4,6 +4,7 @@ use zmachine::vm::{VM, VariableRef};
 mod binop;
 mod branch;
 mod call;
+mod input;
 mod load;
 mod properties;
 mod stackops;
@@ -72,6 +73,7 @@ pub mod twoops {
 
 pub mod varops {
   pub use super::call::call_0x00;
+  pub use super::input::read_0x04;
   pub use super::load::storew_0x01;
   pub use super::properties::put_prop_0x03;
   pub use super::stackops::pull_0x09;

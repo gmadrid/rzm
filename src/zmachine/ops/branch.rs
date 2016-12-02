@@ -1,6 +1,6 @@
 use result::Result;
 use zmachine::ops::Operand;
-use zmachine::vm::{VM, VariableRef};
+use zmachine::vm::{VM, VariableRef, ZObject, ZObjectTable};
 
 const BRANCH_POLARITY_MASK: u8 = 0b10000000;
 const BRANCH_LENGTH_MASK: u8 = 0b01000000;
@@ -50,7 +50,7 @@ pub fn branch_binop<F, T>(vm: &mut T, op1: Operand, op2: Operand, pred: F) -> Re
       // return true from the current routine
       vm.ret_value(1)?;
     } else {
-      vm.offset_pc(offset - 2);
+      vm.offset_pc(offset - 2)?;
     }
   }
   Ok(())
@@ -98,7 +98,6 @@ pub fn inc_chk_0x05<T>(vm: &mut T, var_op: Operand, value: Operand) -> Result<()
   let encoded = var_op.value(vm)?;
   let variable = VariableRef::decode(encoded as u8);
   let var_value = vm.read_variable(variable)?;
-  let cmp_value = value.value(vm)?;
   let new_value = (var_value as u32 + 1) as u16;
   vm.write_variable(variable, new_value)?;
   branch_binop(vm, Operand::LargeConstant(new_value), value, |l, r| l > r)
@@ -118,8 +117,10 @@ pub fn jin_0x06<T>(vm: &mut T, lhs: Operand, rhs: Operand) -> Result<()>
   // TODO: test jin_0x06
   let child_number = lhs.value(vm)?;
   let parent_number = rhs.value(vm)?;
+  let object_table = vm.object_table()?;
+  let child_obj = object_table.object_with_number(child_number);
+  let childs_parent_number = child_obj.parent(vm.object_storage());
 
-  let childs_parent_number = vm.parent_number(child_number)?;
   branch_binop(vm,
                Operand::LargeConstant(parent_number),
                Operand::LargeConstant(childs_parent_number),
@@ -129,7 +130,11 @@ pub fn jin_0x06<T>(vm: &mut T, lhs: Operand, rhs: Operand) -> Result<()>
 pub fn get_child_0x02<T>(vm: &mut T, object_number: Operand, variable: VariableRef) -> Result<()>
   where T: VM {
   let object_number = object_number.value(vm)?;
-  let child_number = vm.child_number(object_number)?;
+  let object_table = vm.object_table()?;
+
+  let obj = object_table.object_with_number(object_number);
+  let child_number = obj.child(vm.object_storage());
+
   vm.write_variable(variable, child_number)?;
   branch_binop(vm,
                Operand::LargeConstant(child_number),
@@ -143,7 +148,10 @@ pub fn get_sibling_0x01<T>(vm: &mut T,
                            -> Result<()>
   where T: VM {
   let object_number = object_number.value(vm)?;
-  let sibling_number = vm.sibling_number(object_number)?;
+  let object_table = vm.object_table()?;
+
+  let obj = object_table.object_with_number(object_number);
+  let sibling_number = obj.sibling(vm.object_storage());
   vm.write_variable(variable, sibling_number)?;
   branch_binop(vm,
                Operand::LargeConstant(sibling_number),
