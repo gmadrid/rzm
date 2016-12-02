@@ -1,7 +1,8 @@
 use byteorder::{BigEndian, ByteOrder};
 use result::Result;
 use zmachine::vm::{BytePtr, Memory, RawPtr, VM, VariableRef, WordPtr};
-use zmachine::vm::test::{MockObjectTable, MockObjectTableStorage, MockPropertyTable};
+use zmachine::vm::test::{MockObjectTable, MockObjectTableStorage, MockPropertyTable,
+                         MockPropertyTableStorage};
 
 /// All opcodes are implemented in terms of the VM trait.
 /// This means that we can test all of the opcodes without creating an
@@ -15,6 +16,7 @@ pub struct TestVM {
   pub pc: usize,
   pub pcbytes: Vec<u8>,
   pub object_storage: MockObjectTableStorage,
+  pub property_storage: MockPropertyTableStorage,
 }
 
 impl TestVM {
@@ -26,7 +28,8 @@ impl TestVM {
       globals: [0; 240],
       pc: 0,
       pcbytes: Vec::new(),
-      object_table: MockObjectTableStorage::new(),
+      object_storage: MockObjectTableStorage::new(),
+      property_storage: MockPropertyTableStorage::new(),
     }
   }
 
@@ -68,7 +71,7 @@ impl VM for TestVM {
   type ObjTable = MockObjectTable;
   type ObjStorage = MockObjectTableStorage;
   type PropertyTable = MockPropertyTable;
-  type PropertyAccess = Memory;
+  type PropertyAccess = MockPropertyTableStorage;
 
   fn read_pc_byte(&mut self) -> u8 {
     let val = self.pcbytes[self.pc];
@@ -161,6 +164,14 @@ impl VM for TestVM {
 
   fn object_storage_mut(&mut self) -> &mut Self::ObjStorage {
     &mut self.object_storage
+  }
+
+  fn property_storage(&self) -> &Self::PropertyAccess {
+    &self.property_storage
+  }
+
+  fn property_storage_mut(&mut self) -> &mut Self::PropertyAccess {
+    &mut self.property_storage
   }
 
   // fn attributes(&mut self, object_number: u16) -> Result<u32> {

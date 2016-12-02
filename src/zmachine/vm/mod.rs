@@ -21,5 +21,6 @@ pub use self::vm::VariableRef;
 
 #[cfg(test)]
 pub mod test {
-  pub use super::mock_object_table::{MockObjectTable, MockObjectTableStorage, MockPropertyTable};
+  pub use super::mock_object_table::{MockObjectTable, MockObjectTableStorage, MockPropertyTable,
+                                     MockPropertyTableStorage};
 }

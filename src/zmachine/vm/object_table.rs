@@ -148,7 +148,7 @@ mod tests {
   #[test]
   fn test_insert_0_obj() {
     let mut storage = MockObjectTableStorage::new();
-    let table = MockObjectTable::new(&storage);
+    let table = MockObjectTable::new();
     table.insert_obj(0, 0, &mut storage).unwrap();
   }
 
@@ -158,7 +158,7 @@ mod tests {
     storage.add_mock_object(0x11223344, 0, 0, 0);
     let storage2 = storage.clone();
 
-    let table = MockObjectTable::new(&storage);
+    let table = MockObjectTable::new();
 
     table.remove_object_from_parent(1, &mut storage);
 
@@ -177,7 +177,7 @@ mod tests {
     storage.add_mock_object(0x11223344, 1, 4, 0); // 3
     storage.add_mock_object(0x11223344, 1, 0, 0); // 4
 
-    let table = MockObjectTable::new(&storage);
+    let table = MockObjectTable::new();
     table.remove_object_from_parent(2, &mut storage).unwrap();
 
     let mut storage2 = MockObjectTableStorage::new();
@@ -205,7 +205,7 @@ mod tests {
     storage.add_mock_object(0x11223344, 1, 4, 0); // 3
     storage.add_mock_object(0x11223344, 1, 0, 0); // 4
 
-    let table = MockObjectTable::new(&mut storage);
+    let table = MockObjectTable::new();
     table.remove_object_from_parent(3, &mut storage).unwrap();
 
     let mut storage2 = MockObjectTableStorage::new();
@@ -230,7 +230,7 @@ mod tests {
     storage.add_mock_object(0x11223344, 0, 0, 0); // 4
     storage.add_mock_object(0x11223344, 0, 0, 0); // 5
 
-    let table = MockObjectTable::new(&mut storage);
+    let table = MockObjectTable::new();
     table.add_object_to_parent(2, 1, &mut storage);
     table.add_object_to_parent(3, 1, &mut storage);
     table.add_object_to_parent(4, 1, &mut storage);

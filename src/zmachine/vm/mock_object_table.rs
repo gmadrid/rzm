@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 
-use zmachine::vm::{BytePtr, Memory};
-use zmachine::vm::object_table::{ZObject, ZObjectTable, ZPropertyTable};
+use zmachine::vm::BytePtr;
+use zmachine::vm::object_table::{ZObject, ZObjectTable, ZPropertyAccess, ZPropertyTable};
 
 #[derive(Debug,Clone,Eq,PartialEq)]
 pub struct MockObjectTableStorage {
@@ -22,6 +22,10 @@ struct MockObjectRep {
   parent: u16,
   sibling: u16,
   child: u16,
+}
+
+pub struct MockPropertyTableStorage {
+  table: HashMap<(u16, u16), MockProperty>,
 }
 
 pub struct MockPropertyTable {
@@ -84,7 +88,7 @@ impl MockObjectTableStorage {
 }
 
 impl MockObjectTable {
-  pub fn new(storage: &MockObjectTableStorage) -> MockObjectTable {
+  pub fn new() -> MockObjectTable {
     MockObjectTable {}
   }
 }
@@ -93,6 +97,7 @@ impl ZObjectTable for MockObjectTable {
   type ZObject = MockObject;
   type DataAccess = MockObjectTableStorage;
   type PropertyTable = MockPropertyTable;
+  type PropertyAccess = MockPropertyTableStorage;
 
   fn object_with_number(&self, object_number: u16) -> MockObject {
     MockObject { object_number: object_number }
@@ -144,16 +149,36 @@ impl ZObject for MockObject {
   }
 }
 
-impl ZPropertyTable for MockPropertyTable {
-  type PropertyAccess = Memory;
+impl MockPropertyTableStorage {
+  pub fn new() -> MockPropertyTableStorage {
+    MockPropertyTableStorage { table: HashMap::new() }
+  }
+}
 
-  fn name_ptr(&self, helper: &bool) -> BytePtr {
+impl ZPropertyAccess for MockPropertyTableStorage {
+  fn byte_property(&self, ptr: BytePtr) -> u16 {
+    0
+  }
+  fn word_property(&self, ptr: BytePtr) -> u16 {
+    0
+  }
+  fn set_byte_property(&mut self, value: u8, ptr: BytePtr) {}
+  fn set_word_property(&mut self, value: u16, ptr: BytePtr) {}
+}
+
+impl ZPropertyTable for MockPropertyTable {
+  type PropertyAccess = MockPropertyTableStorage;
+
+  fn name_ptr(&self, helper: &MockPropertyTableStorage) -> BytePtr {
     // TODO: implement a testable version of this.
     BytePtr::new(32)
   }
 
   // property numbers are 1-31. Returns the size and ptr to the property.
-  fn find_property(&self, number: u16, helper: &bool) -> Option<(u16, u16)> {
+  fn find_property(&self,
+                   number: u16,
+                   helper: &MockPropertyTableStorage)
+                   -> Option<(u16, BytePtr)> {
     // TODO: implement a testable version of this.
     None
   }
@@ -169,7 +194,7 @@ mod tests {
     // This is a very simple data structure. We only really have to test that
     // objects are mapped to the correct place.
     let storage = MockObjectTableStorage::new();
-    let object_table = MockObjectTable::new(&storage);
+    let object_table = MockObjectTable::new();
     let object = object_table.object_with_number(1);
     assert_eq!(1, object.object_number);
 
@@ -188,7 +213,7 @@ mod tests {
     let mut storage = MockObjectTableStorage::new();
     storage.add_mock_object(0x3456789a, 0x12, 0x13, 0x23);
 
-    let object_table = MockObjectTable::new(&storage);
+    let object_table = MockObjectTable::new();
     let obj = object_table.object_with_number(1);
 
     assert_eq!(0x3456789a, obj.attributes(&storage));
