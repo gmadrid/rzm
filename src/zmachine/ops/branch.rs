@@ -19,14 +19,8 @@ fn fourteen_bit_signed(b1: u8, b2: u8) -> i16 {
   }
 }
 
-pub fn branch_binop<F, T>(vm: &mut T, op1: Operand, op2: Operand, pred: F) -> Result<()>
-  where F: Fn(i16, i16) -> bool,
-        T: VM {
-  // Rust will panic if we overflow, so do arithmetic as i32 and downcast.
-  let lhs = op1.value(vm)? as i16;
-  let rhs = op2.value(vm)? as i16;
-  let cmp = pred(lhs, rhs);
-
+pub fn branch_on_condition<T>(vm: &mut T, condition: bool) -> Result<()>
+  where T: VM {
   let first_label_byte = vm.read_pc_byte();
   let offset: i16;
   if first_label_byte & BRANCH_LENGTH_MASK == 0 {
@@ -38,11 +32,10 @@ pub fn branch_binop<F, T>(vm: &mut T, op1: Operand, op2: Operand, pred: F) -> Re
     offset = (first_label_byte & 0b00111111) as i16;
   }
 
-  // Branch on false iff LABEL_POLARITY_MASK is 0.
+  // Branch on false iff BRANCH_POLARITY_MASK is 0.
   let branch_on = (first_label_byte & BRANCH_POLARITY_MASK) != 0;
-  //  println!("je {:x} == {:x} when {}", lhs, rhs, branch_on);
 
-  if cmp == branch_on {
+  if condition == branch_on {
     if offset == 0 {
       // return false from the current routine
       vm.ret_value(0)?;
@@ -56,16 +49,22 @@ pub fn branch_binop<F, T>(vm: &mut T, op1: Operand, op2: Operand, pred: F) -> Re
   Ok(())
 }
 
-pub fn jz_0x00<T>(vm: &mut T, operand: Operand) -> Result<()>
-  where T: VM {
-  je_0x01(vm,
-          [operand, Operand::SmallConstant(0), Operand::Omitted, Operand::Omitted])
+pub fn branch_binop<F, T>(vm: &mut T, op1: Operand, op2: Operand, pred: F) -> Result<()>
+  where F: Fn(i16, i16) -> bool,
+        T: VM {
+  // Rust will panic if we overflow, so do arithmetic as i32 and downcast.
+  let lhs = op1.value(vm)? as i16;
+  let rhs = op2.value(vm)? as i16;
+  let condition = pred(lhs, rhs);
+
+  branch_on_condition(vm, condition)
 }
 
-pub fn jl_0x02<T>(vm: &mut T, lhs: Operand, rhs: Operand) -> Result<()>
+pub fn jz_0x00<T>(vm: &mut T, operand: Operand) -> Result<()>
   where T: VM {
-  // TODO: test jl_0x02
-  branch_binop(vm, lhs, rhs, |l, r| (l as u16) < (r as u16))
+  // TODO: test jz
+  let value = operand.value(vm)?;
+  branch_on_condition(vm, value == 0)
 }
 
 pub fn je_0x01<T>(vm: &mut T, operands: [Operand; 4]) -> Result<()>
@@ -91,6 +90,18 @@ pub fn je_0x01<T>(vm: &mut T, operands: [Operand; 4]) -> Result<()>
                Operand::SmallConstant(0),
                Operand::SmallConstant(1),
                |_, _| truth)
+}
+
+pub fn jl_0x02<T>(vm: &mut T, lhs: Operand, rhs: Operand) -> Result<()>
+  where T: VM {
+  // TODO: test jl_0x02
+  branch_binop(vm, lhs, rhs, |l, r| (l as u16) < (r as u16))
+}
+
+pub fn jg_0x03<T>(vm: &mut T, lhs: Operand, rhs: Operand) -> Result<()>
+  where T: VM {
+  // TODO: test jg_0x03
+  branch_binop(vm, lhs, rhs, |l, r| (l as u16) > (r as u16))
 }
 
 pub fn inc_chk_0x05<T>(vm: &mut T, var_op: Operand, value: Operand) -> Result<()>

@@ -217,6 +217,7 @@ impl ZMachine {
     match opcode {
       0x01 => ops::twoops::je_0x01(self, operands),
       0x02 => self.dispatch_basic_2op(operands, &ops::twoops::jl_0x02),
+      0x03 => self.dispatch_basic_2op(operands, &ops::twoops::jg_0x03),
       0x05 => self.dispatch_basic_2op(operands, &ops::twoops::inc_chk_0x05),
       0x06 => self.dispatch_basic_2op(operands, &ops::twoops::jin_0x06),
       0x09 => self.dispatch_2op_with_return(operands, &ops::twoops::and_0x09),
