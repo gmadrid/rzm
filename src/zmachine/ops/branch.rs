@@ -62,7 +62,6 @@ pub fn branch_binop<F, T>(vm: &mut T, op1: Operand, op2: Operand, pred: F) -> Re
 
 pub fn jz_0x00<T>(vm: &mut T, operand: Operand) -> Result<()>
   where T: VM {
-  // TODO: test jz
   let value = operand.value(vm)?;
   branch_on_condition(vm, value == 0)
 }
@@ -90,18 +89,17 @@ pub fn je_0x01<T>(vm: &mut T, operands: [Operand; 4]) -> Result<()>
 
 pub fn jl_0x02<T>(vm: &mut T, lhs: Operand, rhs: Operand) -> Result<()>
   where T: VM {
-  // TODO: test jl_0x02
   branch_binop(vm, lhs, rhs, |l, r| l < r)
 }
 
 pub fn jg_0x03<T>(vm: &mut T, lhs: Operand, rhs: Operand) -> Result<()>
   where T: VM {
-  // TODO: test jg_0x03
   branch_binop(vm, lhs, rhs, |l, r| l > r)
 }
 
 pub fn inc_chk_0x05<T>(vm: &mut T, var_op: Operand, value: Operand) -> Result<()>
   where T: VM {
+  // TODO: test inc_chk_0x05
   let encoded = var_op.value(vm)?;
   let variable = VariableRef::decode(encoded as u8);
   let var_value = vm.read_variable(variable)?;
@@ -112,6 +110,7 @@ pub fn inc_chk_0x05<T>(vm: &mut T, var_op: Operand, value: Operand) -> Result<()
 
 pub fn jump_0x0c<T>(vm: &mut T, operand: Operand) -> Result<()>
   where T: VM {
+  // TODO: test jump_0x0c
   let value = operand.value(vm)? as i16 as isize;
   let current_pc = vm.current_pc();
   let new_pc = ((current_pc as isize) + value) as usize - 2;
@@ -133,6 +132,7 @@ pub fn jin_0x06<T>(vm: &mut T, lhs: Operand, rhs: Operand) -> Result<()>
 
 pub fn get_child_0x02<T>(vm: &mut T, object_number: Operand, variable: VariableRef) -> Result<()>
   where T: VM {
+  // TODO: test get_child_0x02
   let object_number = object_number.value(vm)?;
   let object_table = vm.object_table()?;
 
@@ -148,6 +148,7 @@ pub fn get_sibling_0x01<T>(vm: &mut T,
                            variable: VariableRef)
                            -> Result<()>
   where T: VM {
+  // TODO: test get_sibling_0x01
   let object_number = object_number.value(vm)?;
   let object_table = vm.object_table()?;
 
@@ -159,8 +160,8 @@ pub fn get_sibling_0x01<T>(vm: &mut T,
 
 #[cfg(test)]
 mod test {
+  use super::*;
   use super::fourteen_bit_signed;
-  use super::je_0x01;
   use zmachine::ops::Operand;
   use zmachine::ops::testvm::TestVM;
   use zmachine::vm::{VM, VariableRef};
@@ -175,80 +176,225 @@ mod test {
   }
 
   #[test]
-  fn test_je_false() {
+  fn test_branch_on_condition() {
+    // Since almost all of the branch opcodes call branch_on_condition, we use
+    // this test as a proxy for all of the weird cases with the 1 vs 2 byte
+    // offset values and the condition bits. Then we make the bold assumption
+    // that it is sufficient just to test a few cases for each opcode.
     let mut vm = TestVM::new();
-    vm.set_jump_offset_byte(6, false);
-    je_0x01(&mut vm,
-            [Operand::SmallConstant(0x03),
-             Operand::SmallConstant(0x03),
-             Operand::Omitted,
-             Operand::Omitted])
-      .unwrap();
-    assert_eq!(1, vm.current_pc());
+    vm.set_jump_offset_byte(4, true);
+    branch_on_condition(&mut vm, true);
+    // offset - 2, plus 1 for the pc++ in branch_on_condition.
+    // Other tests will be similar.
+    assert_eq!(3, vm.current_pc());
 
-    vm.set_jump_offset_byte(6, false);
-    je_0x01(&mut vm,
-            [Operand::LargeConstant(0x03),
-             Operand::SmallConstant(0x04),
-             Operand::Omitted,
-             Operand::Omitted])
-      .unwrap();
-    assert_eq!(5, vm.current_pc());
-  }
-
-  // TODO: test the multi-operand je opcode.
-
-  #[test]
-  fn test_je_true() {
-    let mut vm = TestVM::new();
-    vm.set_jump_offset_byte(8, true);
-    vm.write_local(3, 0x45);
-    vm.push_stack(0x44);
-    je_0x01(&mut vm,
-            [Operand::Variable(VariableRef::Stack),
-             Operand::Variable(VariableRef::Local(3)),
-             Operand::Omitted,
-             Operand::Omitted])
-      .unwrap();
-    assert_eq!(1, vm.current_pc());
-
-    vm.set_jump_offset_byte(8, true);
-    vm.write_local(3, 0x45);
-    vm.write_global(200, 0x45);
-    je_0x01(&mut vm,
-            [Operand::Variable(VariableRef::Global(200)),
-             Operand::Variable(VariableRef::Local(3)),
-             Operand::Omitted,
-             Operand::Omitted])
-      .unwrap();
+    vm.set_jump_offset_byte(8, false);
+    branch_on_condition(&mut vm, false);
     assert_eq!(7, vm.current_pc());
-  }
 
-  #[test]
-  fn test_je_two_bytes() {
-    // TODO: check that these are testing correctly.
-    let mut vm = TestVM::new();
-    // TODO: write these tests
-    vm.set_jump_offset_word(400, true);
-    je_0x01(&mut vm,
-            [Operand::SmallConstant(4),
-             Operand::SmallConstant(4),
-             Operand::Omitted,
-             Operand::Omitted])
-      .unwrap();
-    assert_eq!(400, vm.current_pc());
+    vm.set_jump_offset_byte(12, true);
+    branch_on_condition(&mut vm, false);
+    assert_eq!(1, vm.current_pc());
 
+    vm.set_jump_offset_byte(16, false);
+    branch_on_condition(&mut vm, true);
+    assert_eq!(1, vm.current_pc());
+
+    // Test the two byte versions
+    vm.set_jump_offset_word(7002, true);
+    branch_on_condition(&mut vm, true);
+    assert_eq!(7002, vm.current_pc());
+
+    vm.set_jump_offset_word(8002, false);
+    branch_on_condition(&mut vm, false);
+    assert_eq!(8002, vm.current_pc());
+
+    // Test the two-byte versions with negative numbers.
+    // We have to make the pcbytes vec big enough to read with a two-byte pc.
     let mut vec = vec![0u8; 500];
     vm.set_jump_offset_word(-400, true);
     vec.append(&mut vm.pcbytes);
     vm.set_pcbytes(vec);
     vm.pc = 500;
+    branch_on_condition(&mut vm, true);
+    assert_eq!(100, vm.current_pc());
+  }
+
+  #[test]
+  fn test_branch_binop() {
+    let mut vm = TestVM::new();
+    vm.set_jump_offset_byte(5, true);
+    branch_binop(&mut vm,
+                 Operand::SmallConstant(1),
+                 Operand::LargeConstant(32),
+                 |l, r| 1 == r - 31);
+    assert_eq!(4, vm.current_pc());
+
+    vm.set_jump_offset_byte(7, true);
+    branch_binop(&mut vm,
+                 Operand::SmallConstant(1),
+                 Operand::LargeConstant(32),
+                 |l, r| 1 == r - 310);
+    assert_eq!(1, vm.current_pc());
+  }
+
+  #[test]
+  fn test_jz_0x00() {
+    let mut vm = TestVM::new();
+    vm.set_jump_offset_byte(6, false);
+    jz_0x00(&mut vm, Operand::SmallConstant(0x00)).unwrap();
+    assert_eq!(1, vm.current_pc());
+
+    vm.set_jump_offset_byte(7, false);
+    jz_0x00(&mut vm, Operand::SmallConstant(0x01)).unwrap();
+    assert_eq!(6, vm.current_pc());
+
+    vm.set_jump_offset_byte(8, true);
+    jz_0x00(&mut vm, Operand::SmallConstant(0x00)).unwrap();
+    assert_eq!(7, vm.current_pc());
+
+    vm.set_jump_offset_byte(9, true);
+    jz_0x00(&mut vm, Operand::SmallConstant(0x01)).unwrap();
+    assert_eq!(1, vm.current_pc());
+  }
+
+  #[test]
+  fn test_je_0x01() {
+    let mut vm = TestVM::new();
+
+    vm.set_jump_offset_byte(9, true);
     je_0x01(&mut vm,
-            [Operand::SmallConstant(6),
-             Operand::SmallConstant(6),
+            [Operand::SmallConstant(1),
+             Operand::SmallConstant(1),
              Operand::Omitted,
              Operand::Omitted])
       .unwrap();
-    assert_eq!(100, vm.current_pc());
+    assert_eq!(8, vm.current_pc());
+
+    vm.set_jump_offset_byte(9, true);
+    je_0x01(&mut vm,
+            [Operand::SmallConstant(1),
+             Operand::SmallConstant(2),
+             Operand::Omitted,
+             Operand::Omitted])
+      .unwrap();
+    assert_eq!(1, vm.current_pc());
+
+    vm.set_jump_offset_byte(9, true);
+    je_0x01(&mut vm,
+            [Operand::SmallConstant(1),
+             Operand::SmallConstant(32),
+             Operand::SmallConstant(1),
+             Operand::Omitted])
+      .unwrap();
+    assert_eq!(8, vm.current_pc());
+
+    vm.set_jump_offset_byte(9, true);
+    je_0x01(&mut vm,
+            [Operand::SmallConstant(1),
+             Operand::SmallConstant(64),
+             Operand::SmallConstant(32),
+             Operand::SmallConstant(1)])
+      .unwrap();
+    assert_eq!(8, vm.current_pc());
+
+    vm.set_jump_offset_byte(9, true);
+    je_0x01(&mut vm,
+            [Operand::SmallConstant(1),
+             Operand::SmallConstant(64),
+             Operand::SmallConstant(32),
+             Operand::SmallConstant(18)])
+      .unwrap();
+    assert_eq!(1, vm.current_pc());
+
+    vm.set_jump_offset_byte(9, true);
+    je_0x01(&mut vm,
+            [Operand::SmallConstant(1),
+             Operand::SmallConstant(64),
+             Operand::Omitted,
+             Operand::SmallConstant(1)])
+      .unwrap();
+    assert_eq!(1, vm.current_pc());
   }
+
+  #[test]
+  fn test_jl_0x02() {
+    let mut vm = TestVM::new();
+
+    vm.set_jump_offset_byte(5, true);
+    jl_0x02(&mut vm,
+            Operand::SmallConstant(1),
+            Operand::SmallConstant(3))
+      .unwrap();
+    assert_eq!(4, vm.current_pc());
+
+    vm.set_jump_offset_byte(5, true);
+    jl_0x02(&mut vm,
+            Operand::SmallConstant(5),
+            Operand::SmallConstant(3))
+      .unwrap();
+    assert_eq!(1, vm.current_pc());
+
+    vm.set_jump_offset_byte(5, true);
+    jl_0x02(&mut vm,
+            Operand::SmallConstant(3),
+            Operand::SmallConstant(3))
+      .unwrap();
+    assert_eq!(1, vm.current_pc());
+
+    vm.set_jump_offset_byte(5, true);
+    jl_0x02(&mut vm,
+            Operand::LargeConstant(-3i16 as u16),
+            Operand::SmallConstant(3))
+      .unwrap();
+    assert_eq!(4, vm.current_pc());
+
+    vm.set_jump_offset_byte(5, true);
+    jl_0x02(&mut vm,
+            Operand::LargeConstant(0),
+            Operand::LargeConstant(-33i16 as u16))
+      .unwrap();
+    assert_eq!(1, vm.current_pc());
+  }
+
+  #[test]
+  fn test_jg_0x03() {
+    let mut vm = TestVM::new();
+
+    vm.set_jump_offset_byte(5, true);
+    jg_0x03(&mut vm,
+            Operand::SmallConstant(1),
+            Operand::SmallConstant(3))
+      .unwrap();
+    assert_eq!(1, vm.current_pc());
+
+    vm.set_jump_offset_byte(5, true);
+    jg_0x03(&mut vm,
+            Operand::SmallConstant(5),
+            Operand::SmallConstant(3))
+      .unwrap();
+    assert_eq!(4, vm.current_pc());
+
+    vm.set_jump_offset_byte(5, true);
+    jg_0x03(&mut vm,
+            Operand::SmallConstant(3),
+            Operand::SmallConstant(3))
+      .unwrap();
+    assert_eq!(1, vm.current_pc());
+
+    vm.set_jump_offset_byte(5, true);
+    jg_0x03(&mut vm,
+            Operand::LargeConstant(-3i16 as u16),
+            Operand::SmallConstant(3))
+      .unwrap();
+    assert_eq!(1, vm.current_pc());
+
+    vm.set_jump_offset_byte(5, true);
+    jg_0x03(&mut vm,
+            Operand::LargeConstant(0),
+            Operand::LargeConstant(-33i16 as u16))
+      .unwrap();
+    assert_eq!(4, vm.current_pc());
+  }
+
 }
