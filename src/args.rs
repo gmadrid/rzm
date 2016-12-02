@@ -23,13 +23,13 @@ impl<'a> Args<'a> {
     Cow::Borrowed(Path::new(self.matches.value_of(ZFILE).unwrap()))
   }
 
-  pub fn stacksize(&self) -> Result<u16> {
-    self.matches
-      .value_of(STACK_SIZE)
-      .unwrap_or(DEFAULT_STACK_SIZE)
-      .parse::<u16>()
-      .map_err(|e| Error::ParseIntError(STACK_SIZE, e))
-  }
+  // pub fn stacksize(&self) -> Result<u16> {
+  //   self.matches
+  //     .value_of(STACK_SIZE)
+  //     .unwrap_or(DEFAULT_STACK_SIZE)
+  //     .parse::<u16>()
+  //     .map_err(|e| Error::ParseIntError(STACK_SIZE, e))
+  // }
 }
 
 fn parse_from<'a, I, T>(itr: I) -> Result<ArgMatches<'a>>
