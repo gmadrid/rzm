@@ -16,6 +16,28 @@ pub fn storew_0x01<T>(vm: &mut T, operands: [Operand; 4]) -> Result<()>
   Ok(())
 }
 
+pub fn storeb_0x02<T>(vm: &mut T, operands: [Operand; 4]) -> Result<()>
+  where T: VM {
+  if operands[0..2].iter().any(|o| *o == Operand::Omitted) {
+    panic!("3 operands required: {:?}", operands);
+  }
+  let array_val = operands[0].value(vm)?;
+  let word_index_val = operands[1].value(vm)?;
+  let word_ptr = BytePtr::new(array_val).inc_by(word_index_val);
+  // TODO: look at loadb spec to see if this is the right thing to do with overflow.
+  let val = operands[2].value(vm)? as u8;
+  vm.write_memory_u8(word_ptr, val)?;
+
+  Ok(())
+}
+
+pub fn random_0x07<T>(vm: &mut T, operands: [Operand; 4], variable: VariableRef) -> Result<()>
+  where T: VM {
+  let range = operands[0].value(vm)?;
+  let value = vm.rand(range);
+  vm.write_variable(variable, value)
+}
+
 pub fn store_0x0d<T>(vm: &mut T, encoded_var_op: Operand, value_op: Operand) -> Result<()>
   where T: VM {
   let encoded_var_val = encoded_var_op.value(vm)?;

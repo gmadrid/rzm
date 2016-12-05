@@ -59,6 +59,7 @@ pub mod oneops {
 pub mod twoops {
   pub use super::binop::add_0x14;
   pub use super::binop::and_0x09;
+  pub use super::binop::div_0x17;
   pub use super::binop::mul_0x16;
   pub use super::binop::sub_0x15;
   pub use super::branch::dec_chk_0x04;
@@ -82,6 +83,8 @@ pub mod twoops {
 pub mod varops {
   pub use super::call::call_0x00;
   pub use super::input::read_0x04;
+  pub use super::load::random_0x07;
+  pub use super::load::storeb_0x02;
   pub use super::load::storew_0x01;
   pub use super::properties::put_prop_0x03;
   pub use super::stackops::pull_0x09;

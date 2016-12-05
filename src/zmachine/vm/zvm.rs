@@ -92,10 +92,16 @@ impl ZMachine {
       match opcode_number {
         0x00 => ops::varops::call_0x00(self, operands),
         0x01 => ops::varops::storew_0x01(self, operands),
+        0x02 => ops::varops::storeb_0x02(self, operands),
         0x03 => ops::varops::put_prop_0x03(self, operands),
         0x04 => ops::varops::read_0x04(self, operands),
         0x05 => ops::varops::print_char_0x05(self, operands),
         0x06 => ops::varops::print_num_0x06(self, operands),
+        0x07 => {
+          let encoded = self.read_pc_byte();
+          let variable = VariableRef::decode(encoded);
+          ops::varops::random_0x07(self, operands, variable)
+        }
         0x08 => ops::varops::push_0x08(self, operands),
         0x09 => ops::varops::pull_0x09(self, operands),
         _ => Err(Error::UnknownOpcode("VAR", opcode_number, start_pc)),
@@ -238,6 +244,7 @@ impl ZMachine {
       0x14 => self.dispatch_2op_with_return(operands, &ops::twoops::add_0x14),
       0x15 => self.dispatch_2op_with_return(operands, &ops::twoops::sub_0x15),
       0x16 => self.dispatch_2op_with_return(operands, &ops::twoops::mul_0x16),
+      0x17 => self.dispatch_2op_with_return(operands, &ops::twoops::div_0x17),
       _ => panic!("Unknown long opcode: {:#x} @{:#x}", opcode, start_pc),
     }
   }
@@ -367,72 +374,14 @@ impl VM for ZMachine {
     Dictionary::new(&self.memory).entry_ptr(number)
   }
 
-  // fn parent_number(&self, object_number: u16) -> Result<u16> {
-  //   let object_table = MemoryMappedObjectTable::new(self.memory.property_table_ptr());
-  //   let object = object_table.object_with_number(object_number);
-  //   Ok(object.parent(&self.memory))
-  // }
+  fn rand(&self, range: u16) -> u16 {
+    if range <= 0 {
+      unimplemented!();
+    }
 
-  // fn child_number(&self, object_number: u16) -> Result<u16> {
-  //   let object_table = MemoryMappedObjectTable::new(self.memory.property_table_ptr());
-  //   let object = object_table.object_with_number(object_number);
-  //   Ok(object.child(&self.memory))
-  // }
-
-  // fn sibling_number(&self, object_number: u16) -> Result<u16> {
-  //   let object_table = MemoryMappedObjectTable::new(self.memory.property_table_ptr());
-  //   let object = object_table.object_with_number(object_number);
-  //   Ok(object.sibling(&self.memory))
-  // }
-
-  // fn attributes(&mut self, object_number: u16) -> Result<u32> {
-  //   let object_table = MemoryMappedObjectTable::new(self.memory.property_table_ptr());
-  //   let object = object_table.object_with_number(object_number);
-  //   Ok(object.attributes(&self.memory))
-  // }
-
-  // fn set_attributes(&mut self, object_number: u16, attrs: u32) -> Result<()> {
-  //   let object_table = MemoryMappedObjectTable::new(self.memory.property_table_ptr());
-  //   let object = object_table.object_with_number(object_number);
-  //   object.set_attributes(attrs, &mut self.memory);
-  //   Ok(())
-  // }
-
-  // fn object_name(&self, object_number: u16) -> Result<RawPtr> {
-  //   let object_table = MemoryMappedObjectTable::new(self.memory.property_table_ptr());
-  //   let object = object_table.object_with_number(object_number);
-  //   let property_table = object.property_table(&self.memory);
-  //   Ok(property_table.name_ptr(&self.memory).into())
-  // }
-
-  // fn get_property(&self, object_number: u16, property_number: u16) -> Result<u16> {
-  //   let object_table = MemoryMappedObjectTable::new(self.memory.property_table_ptr());
-  //   let object = object_table.object_with_number(object_number);
-  //   let property_table = object.property_table(&self.memory);
-  //   let property = property_table.find_property(property_number, &self.memory);
-  //   match property {
-  //     None => Ok(object_table.default_property_value(property_number, &self.memory)),
-  //     Some((size, ptr)) => {
-  //       match size {
-  //         1 => Ok(self.memory.u8_at(ptr) as u16),
-  //         2 => Ok(self.memory.u16_at(ptr)),
-  //         _ => panic!("Bad size"),
-  //       }
-  //     }
-  //   }
-  // }
-
-  // fn put_property(&mut self, object_number: u16, property_index: u16, value: u16) -> Result<()> {
-  //   let object_table = MemoryMappedObjectTable::new(self.memory.property_table_ptr());
-  //   let object = object_table.object_with_number(object_number);
-  //   let property_table = object.property_table(&self.memory);
-  //   Ok(property_table.set_property(property_index, value, &mut self.memory))
-  // }
-
-  // fn insert_obj(&mut self, object_number: u16, dest_number: u16) -> Result<()> {
-  //   let object_table = MemoryMappedObjectTable::new(self.memory.property_table_ptr());
-  //   object_table.insert_obj(object_number, dest_number, &mut self.memory)
-  // }
+    // TODO: write real randomness.
+    3235 % range
+  }
 
   fn abbrev_addr(&self, abbrev_table: u8, abbrev_index: u8) -> Result<WordPtr> {
     let abbrev_table_ptr = self.memory.abbrev_table_ptr();
