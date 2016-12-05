@@ -95,6 +95,7 @@ fn decode_text<T>(vm: &mut T, src: TextSource) -> Result<String>
           }
           State::SecondHalfZChar => {
             let zchar = (first_half + *ch) as u8 as char;
+            print!("{}", zchar);
             state = State::Normal;
           }
         }
