@@ -1,5 +1,5 @@
 use result::Result;
-use super::ptrs::{RawPtr, WordPtr};
+use super::ptrs::{BytePtr, RawPtr, WordPtr};
 use zmachine::vm::object_table::{ZObjectTable, ZPropertyAccess, ZPropertyTable};
 
 /// Trait for an abstract mid-level virtual machine for running the ZMachine.
@@ -85,12 +85,17 @@ pub trait VM: Sized {
   fn write_memory<T>(&mut self, ptr: T, val: u16) -> Result<()> where T: Into<RawPtr>;
   /// Read the single byte at `ptr` in the vm's memory.
   fn read_memory_u8<T>(&self, ptr: T) -> Result<u8> where T: Into<RawPtr>;
+  // Write the single byte, `val`, at ptr in the vm's memory.
+  fn write_memory_u8<T>(&mut self, ptr: T, val: u8) -> Result<()> where T: Into<RawPtr>;
 
   fn object_table(&self) -> Result<Self::ObjTable>;
   fn object_storage(&self) -> &Self::ObjStorage;
   fn object_storage_mut(&mut self) -> &mut Self::ObjStorage;
   fn property_storage(&self) -> &Self::PropertyAccess;
   fn property_storage_mut(&mut self) -> &mut Self::PropertyAccess;
+
+  fn num_dict_entries(&self) -> u16;
+  fn dict_entry(&self, number: u16) -> BytePtr;
 
   /// Return the address as a WordPtr of the specified abbrev.
   fn abbrev_addr(&self, abbrev_table: u8, abbrev_index: u8) -> Result<WordPtr>;

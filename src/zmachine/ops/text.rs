@@ -1,6 +1,6 @@
 use result::Result;
 use zmachine::ops::Operand;
-use zmachine::vm::{RawPtr, VM, ZObject, ZObjectTable, ZPropertyTable};
+use zmachine::vm::{BytePtr, RawPtr, VM, ZObject, ZObjectTable, ZPropertyTable};
 
 const ROW1: [char; 26] = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n',
                           'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z'];
@@ -9,6 +9,7 @@ const ROW2: [char; 26] = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K',
 const ROW3: [char; 26] = ['@', '\n', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '.', ',',
                           '!', '?', '_', '#', '\'', '"', '/', '\\', '-', ':', '(', ')'];
 
+// TODO: remove all of the BytePtrs from the API and replace with RawPtr.
 enum State {
   Normal,
   FirstHalfZChar,
@@ -18,6 +19,12 @@ enum State {
 enum TextSource {
   PC,
   Memory(RawPtr, bool),
+}
+
+pub fn decode_at<T>(vm: &mut T, ptr: BytePtr) -> Result<String>
+  where T: VM {
+  let source = TextSource::Memory(ptr.into(), false);
+  decode_text(vm, source)
 }
 
 fn decode_text<T>(vm: &mut T, src: TextSource) -> Result<String>

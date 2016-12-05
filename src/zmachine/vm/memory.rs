@@ -3,6 +3,7 @@ use super::ptrs::{BytePtr, RawPtr};
 
 const FLAG1_INDEX: u16 = 0x01;
 const STARTING_PC_INDEX: u16 = 0x06;
+const DICTIONARY_INDEX: u16 = 0x08;
 const PROPERTY_TABLE_INDEX: u16 = 0x0a;
 const GLOBAL_TABLE_INDEX: u16 = 0x0c;
 const ABBREV_TABLE_INDEX: u16 = 0x18;
@@ -77,6 +78,10 @@ impl Memory {
 
   pub fn abbrev_table_ptr(&self) -> BytePtr {
     BytePtr::new(self.u16_at(BytePtr::new(ABBREV_TABLE_INDEX)))
+  }
+
+  pub fn dictionary_table_ptr(&self) -> BytePtr {
+    BytePtr::new(self.u16_at(BytePtr::new(DICTIONARY_INDEX)))
   }
 
   pub fn global_base_ptr(&self) -> BytePtr {
