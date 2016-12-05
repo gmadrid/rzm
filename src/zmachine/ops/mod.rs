@@ -57,12 +57,15 @@ pub mod oneops {
 pub mod twoops {
   pub use super::binop::add_0x14;
   pub use super::binop::and_0x09;
+  pub use super::binop::mul_0x16;
   pub use super::binop::sub_0x15;
+  pub use super::branch::dec_chk_0x04;
   pub use super::branch::inc_chk_0x05;
   pub use super::branch::je_0x01;
   pub use super::branch::jg_0x03;
   pub use super::branch::jin_0x06;
   pub use super::branch::jl_0x02;
+  pub use super::branch::test_0x07;
   pub use super::load::loadb_0x10;
   pub use super::load::loadw_0x0f;
   pub use super::load::store_0x0d;

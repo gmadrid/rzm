@@ -108,6 +108,22 @@ pub fn inc_chk_0x05<T>(vm: &mut T, var_op: Operand, value: Operand) -> Result<()
   branch_binop(vm, Operand::LargeConstant(new_value), value, |l, r| l > r)
 }
 
+pub fn dec_chk_0x04<T>(vm: &mut T, var_op: Operand, value: Operand) -> Result<()>
+  where T: VM {
+  // TODO: test dec_chk_0x04
+  let encoded = var_op.value(vm)?;
+  let variable = VariableRef::decode(encoded as u8);
+  let var_value = vm.read_variable(variable)?;
+  let new_value = (var_value as i16 as i32 - 1) as u16;
+  vm.write_variable(variable, new_value)?;
+  branch_binop(vm, Operand::LargeConstant(new_value), value, |l, r| l < r)
+}
+
+pub fn test_0x07<T>(vm: &mut T, test_op: Operand, mask_op: Operand) -> Result<()>
+  where T: VM {
+  branch_binop(vm, test_op, mask_op, |test, mask| test & mask == mask)
+}
+
 pub fn jump_0x0c<T>(vm: &mut T, operand: Operand) -> Result<()>
   where T: VM {
   // TODO: test jump_0x0c

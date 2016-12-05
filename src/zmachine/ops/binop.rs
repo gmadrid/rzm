@@ -38,6 +38,11 @@ pub fn sub_0x15<T>(vm: &mut T, lhs: Operand, rhs: Operand, result_ref: VariableR
   signed_binop(vm, lhs, rhs, |l, r| l - r, result_ref)
 }
 
+pub fn mul_0x16<T>(vm: &mut T, lhs: Operand, rhs: Operand, result_ref: VariableRef) -> Result<()>
+  where T: VM {
+  signed_binop(vm, lhs, rhs, |l, r| l * r, result_ref)
+}
+
 pub fn and_0x09<T>(vm: &mut T, lhs: Operand, rhs: Operand, result_ref: VariableRef) -> Result<()>
   where T: VM {
   // TODO: convert this to use unsigned_binop

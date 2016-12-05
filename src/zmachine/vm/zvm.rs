@@ -2,7 +2,8 @@ use result::{Error, Result};
 use std::io::Read;
 use zmachine::ops;
 use zmachine::ops::Operand;
-use zmachine::vm::{RawPtr, VM, VariableRef, WordPtr};
+use zmachine::vm::{BytePtr, RawPtr, VM, VariableRef, WordPtr};
+use zmachine::vm::dictionary::Dictionary;
 use zmachine::vm::memory::Memory;
 use zmachine::vm::mm_object_table::{MemoryMappedObjectTable, MemoryMappedPropertyTable};
 use zmachine::vm::object_table::{ZObject, ZObjectTable, ZPropertyAccess, ZPropertyTable};
@@ -66,8 +67,8 @@ impl ZMachine {
   }
 
   fn process_opcode(&mut self) -> Result<()> {
-    // let pcvalue = usize::from(self.pc.pc());
-    //    println!("pcvalue: {:#x}", pcvalue);
+    let pcvalue = usize::from(self.pc.pc());
+    println!("PC: {:#x}", pcvalue);
     let first_byte = self.read_pc_byte();
     let top_two_bits = first_byte & 0b11000000;
 
@@ -218,8 +219,10 @@ impl ZMachine {
       0x01 => ops::twoops::je_0x01(self, operands),
       0x02 => self.dispatch_basic_2op(operands, &ops::twoops::jl_0x02),
       0x03 => self.dispatch_basic_2op(operands, &ops::twoops::jg_0x03),
+      0x04 => self.dispatch_basic_2op(operands, &ops::twoops::dec_chk_0x04),
       0x05 => self.dispatch_basic_2op(operands, &ops::twoops::inc_chk_0x05),
       0x06 => self.dispatch_basic_2op(operands, &ops::twoops::jin_0x06),
+      0x07 => self.dispatch_basic_2op(operands, &ops::twoops::test_0x07),
       0x09 => self.dispatch_2op_with_return(operands, &ops::twoops::and_0x09),
       0x0a => self.dispatch_basic_2op(operands, &ops::twoops::test_attr_0x0a),
       0x0b => self.dispatch_basic_2op(operands, &ops::twoops::set_attr_0x0b),
@@ -230,6 +233,7 @@ impl ZMachine {
       0x11 => self.dispatch_2op_with_return(operands, &ops::twoops::get_prop_0x11),
       0x14 => self.dispatch_2op_with_return(operands, &ops::twoops::add_0x14),
       0x15 => self.dispatch_2op_with_return(operands, &ops::twoops::sub_0x15),
+      0x16 => self.dispatch_2op_with_return(operands, &ops::twoops::mul_0x16),
       _ => panic!("Unknown long opcode: {:#x} @{:#x}", opcode, start_pc),
     }
   }
@@ -322,6 +326,12 @@ impl VM for ZMachine {
     Ok(self.memory.u8_at(ptr))
   }
 
+  fn write_memory_u8<T>(&mut self, ptr: T, val: u8) -> Result<()>
+    where T: Into<RawPtr> {
+    self.memory.set_u8_at(val, ptr);
+    Ok(())
+  }
+
   fn object_table(&self) -> Result<MemoryMappedObjectTable> {
     let ptr = self.memory.property_table_ptr();
     Ok(MemoryMappedObjectTable::new(ptr))
@@ -343,6 +353,14 @@ impl VM for ZMachine {
 
   fn property_storage_mut(&mut self) -> &mut Memory {
     &mut self.memory
+  }
+
+  fn num_dict_entries(&self) -> u16 {
+    Dictionary::new(&self.memory).num_entries()
+  }
+
+  fn dict_entry(&self, number: u16) -> BytePtr {
+    Dictionary::new(&self.memory).entry_ptr(number)
   }
 
   // fn parent_number(&self, object_number: u16) -> Result<u16> {
