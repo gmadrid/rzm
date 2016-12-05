@@ -1,6 +1,6 @@
 use result::Result;
 use zmachine::ops::Operand;
-use zmachine::vm::{BytePtr, RawPtr, VM, ZObject, ZObjectTable, ZPropertyTable};
+use zmachine::vm::{BytePtr, PackedAddr, RawPtr, VM, ZObject, ZObjectTable, ZPropertyTable};
 
 const ROW1: [char; 26] = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n',
                           'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z'];
@@ -95,7 +95,7 @@ fn decode_text<T>(vm: &mut T, src: TextSource) -> Result<String>
           }
           State::SecondHalfZChar => {
             let zchar = (first_half + *ch) as u8 as char;
-            print!("{}", zchar);
+            s.push(zchar);
             state = State::Normal;
           }
         }
@@ -133,6 +133,14 @@ pub fn print_obj_0x0a<T>(vm: &mut T, operand: Operand) -> Result<()>
   let obj = object_table.object_with_number(object_number);
   let ptr = obj.property_table(vm.object_storage()).name_ptr(vm.property_storage());
   let str = decode_text(vm, TextSource::Memory(ptr.into(), false))?;
+  print!("{}", str);
+  Ok(())
+}
+
+pub fn print_paddr_0x0d<T>(vm: &mut T, operand: Operand) -> Result<()>
+  where T: VM {
+  let paddr = PackedAddr::new(operand.value(vm)?);
+  let str = decode_text(vm, TextSource::Memory(paddr.into(), false))?;
   print!("{}", str);
   Ok(())
 }

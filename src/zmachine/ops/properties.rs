@@ -125,7 +125,7 @@ pub fn get_prop_len_0x04<T>(vm: &mut T, prop_addr: Operand, variable: VariableRe
     // TODO: fix this abstraction violation. Storage of the length is impl. dependent.
     let ptr = BytePtr::new(addr - 1);
     let byte = vm.read_memory_u8(ptr)?;
-    byte / 32
+    byte / 32 + 1
   };
   vm.write_variable(variable, val as u16)
 }
