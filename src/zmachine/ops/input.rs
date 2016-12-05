@@ -104,7 +104,6 @@ impl Tokenizer {
       let entry_ptr = vm.dict_entry(entry_number);
       let dict_str = decode_at(vm, entry_ptr).unwrap();
       if str == dict_str.as_str() {
-        println!("Found: {}, {:?}", entry_number, entry_ptr);
         return Some(entry_ptr);
       }
     }
@@ -164,18 +163,14 @@ pub fn read_0x04<T>(vm: &mut T, operands: [Operand; 4]) -> Result<()>
   // TODO: add code to respect the end of the tbuf and pbuf.
   let mut ptr = pbuf.inc_by(1);
   vm.write_memory_u8(ptr, tokens.len() as u8);
-  ptr = pbuf.inc_by(1);
+  ptr = ptr.inc_by(1);
   for token in tokens {
-    println!("TOKEN: {:?}", token);
     let val = token.ptr.map(|p| RawPtr::from(p).into()).unwrap_or(0usize) as u16;
     vm.write_memory(ptr, val);
-    println!("WROTE: {:?}", val);
     ptr = ptr.inc_by(2);
     vm.write_memory_u8(ptr, token.len);
-    println!("WROTE: {:?}", token.len);
     ptr = ptr.inc_by(1);
     vm.write_memory_u8(ptr, token.offset);
-    println!("WROTE: {:?}", token.offset);
     ptr = ptr.inc_by(1);
   }
   Ok(())

@@ -68,7 +68,7 @@ impl ZMachine {
 
   fn process_opcode(&mut self) -> Result<()> {
     let pcvalue = usize::from(self.pc.pc());
-    println!("PC: {:#x}", pcvalue);
+    //    println!("PC: {:#x}", pcvalue);
     let first_byte = self.read_pc_byte();
     let top_two_bits = first_byte & 0b11000000;
 
