@@ -18,7 +18,8 @@
 use result::Result;
 use zmachine::ops::Operand;
 use zmachine::ops::branch::branch_binop;
-use zmachine::vm::{VM, VariableRef, ZObject, ZObjectTable, ZPropertyAccess, ZPropertyTable};
+use zmachine::vm::{BytePtr, RawPtr, VM, VariableRef, ZObject, ZObjectTable, ZPropertyAccess,
+                   ZPropertyTable};
 
 pub fn put_prop_0x03<T>(vm: &mut T, operands: [Operand; 4]) -> Result<()>
   where T: VM {
@@ -97,6 +98,20 @@ pub fn get_parent_0x03<T>(vm: &mut T, object_number: Operand, variable: Variable
   vm.write_variable(variable, parent_number)
 }
 
+pub fn get_prop_len_0x04<T>(vm: &mut T, prop_addr: Operand, variable: VariableRef) -> Result<()>
+  where T: VM {
+  let addr = prop_addr.value(vm)?;
+  let val = if addr == 0 {
+    0
+  } else {
+    // TODO: fix this abstraction violation. Storage of the length is impl. dependent.
+    let ptr = BytePtr::new(addr - 1);
+    let byte = vm.read_memory_u8(ptr)?;
+    byte / 32
+  };
+  vm.write_variable(variable, val as u16)
+}
+
 pub fn get_prop_0x11<T>(vm: &mut T,
                         object_number: Operand,
                         property_number: Operand,
@@ -127,6 +142,28 @@ pub fn get_prop_0x11<T>(vm: &mut T,
     }
   };
   vm.write_variable(variable, property_value)
+}
+
+pub fn get_prop_addr_0x12<T>(vm: &mut T,
+                             object_number: Operand,
+                             property_number: Operand,
+                             variable: VariableRef)
+                             -> Result<()>
+  where T: VM {
+  // TODO: test get_prop_0x11
+  let object_number = object_number.value(vm)?;
+  let property_number = property_number.value(vm)?;
+
+  let value = {
+    let object_table = vm.object_table()?;
+    let object_storage = vm.object_storage();
+    let property_storage = vm.property_storage();
+    let property_table = object_table.object_with_number(object_number)
+      .property_table(object_storage);
+    let property = property_table.find_property(property_number, property_storage);
+    property.map(|(_, ptr)| RawPtr::from(ptr).into()).unwrap_or(0)
+  };
+  vm.write_variable(variable, value as u16)
 }
 
 #[cfg(test)]

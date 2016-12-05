@@ -51,6 +51,7 @@ pub mod oneops {
   pub use super::call::ret_0x0b;
   pub use super::load::inc_0x05;
   pub use super::properties::get_parent_0x03;
+  pub use super::properties::get_prop_len_0x04;
   pub use super::text::print_obj_0x0a;
 }
 
@@ -70,6 +71,7 @@ pub mod twoops {
   pub use super::load::loadw_0x0f;
   pub use super::load::store_0x0d;
   pub use super::properties::get_prop_0x11;
+  pub use super::properties::get_prop_addr_0x12;
   pub use super::properties::insert_obj_0x0e;
   pub use super::properties::set_attr_0x0b;
   pub use super::properties::test_attr_0x0a;
