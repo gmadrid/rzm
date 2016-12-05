@@ -53,6 +53,7 @@ pub mod oneops {
   pub use super::properties::get_parent_0x03;
   pub use super::properties::get_prop_len_0x04;
   pub use super::text::print_obj_0x0a;
+  pub use super::text::print_paddr_0x0d;
 }
 
 pub mod twoops {

@@ -68,7 +68,7 @@ impl ZMachine {
 
   fn process_opcode(&mut self) -> Result<()> {
     let pcvalue = usize::from(self.pc.pc());
-    //    println!("PC: {:#x}", pcvalue);
+    // println!("PC: {:#x}", pcvalue);
     let first_byte = self.read_pc_byte();
     let top_two_bits = first_byte & 0b11000000;
 
@@ -170,6 +170,7 @@ impl ZMachine {
       0x0a => ops::oneops::print_obj_0x0a(self, operand),
       0x0b => ops::oneops::ret_0x0b(self, operand),
       0x0c => ops::oneops::jump_0x0c(self, operand),
+      0x0d => ops::oneops::print_paddr_0x0d(self, operand),
       _ => {
         panic!("Unknown short 1op opcode: {:#x} @{:#x}", op, start_pc);
       }
