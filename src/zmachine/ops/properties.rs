@@ -88,6 +88,24 @@ pub fn set_attr_0x0b<T>(vm: &mut T, object_number: Operand, attr_number: Operand
   Ok(())
 }
 
+pub fn clear_attr_0x0c<T>(vm: &mut T, object_number: Operand, attr_number: Operand) -> Result<()>
+  where T: VM {
+  let object_number = object_number.value(vm)?;
+  let object_table = vm.object_table()?;
+  let obj = object_table.object_with_number(object_number);
+  let attrs = {
+    obj.attributes(vm.object_storage())
+  };
+
+  let attr_number = attr_number.value(vm)?;
+
+  // attribute bits are 0..31 - the reverse of what I expect.
+  let mask = !(1u32 << (31u8 - attr_number as u8));
+  let new_attrs = attrs & mask;
+  obj.set_attributes(new_attrs, vm.object_storage_mut());
+  Ok(())
+}
+
 pub fn get_parent_0x03<T>(vm: &mut T, object_number: Operand, variable: VariableRef) -> Result<()>
   where T: VM {
   // TODO: test get_parent_0x03

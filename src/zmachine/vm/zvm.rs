@@ -227,6 +227,7 @@ impl ZMachine {
       0x09 => self.dispatch_2op_with_return(operands, &ops::twoops::and_0x09),
       0x0a => self.dispatch_basic_2op(operands, &ops::twoops::test_attr_0x0a),
       0x0b => self.dispatch_basic_2op(operands, &ops::twoops::set_attr_0x0b),
+      0x0c => self.dispatch_basic_2op(operands, &ops::twoops::clear_attr_0x0c),
       0x0d => self.dispatch_basic_2op(operands, &ops::twoops::store_0x0d),
       0x0e => self.dispatch_basic_2op(operands, &ops::twoops::insert_obj_0x0e),
       0x0f => self.dispatch_2op_with_return(operands, &ops::twoops::loadw_0x0f),

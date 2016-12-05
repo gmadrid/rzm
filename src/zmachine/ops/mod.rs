@@ -70,6 +70,7 @@ pub mod twoops {
   pub use super::load::loadb_0x10;
   pub use super::load::loadw_0x0f;
   pub use super::load::store_0x0d;
+  pub use super::properties::clear_attr_0x0c;
   pub use super::properties::get_prop_0x11;
   pub use super::properties::get_prop_addr_0x12;
   pub use super::properties::insert_obj_0x0e;
