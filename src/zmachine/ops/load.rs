@@ -87,6 +87,16 @@ pub fn inc_0x05<T>(vm: &mut T, encoded_variable: Operand) -> Result<()>
   vm.write_variable(variable, (old_value + 1) as u16)
 }
 
+pub fn dec_0x06<T>(vm: &mut T, encoded_variable: Operand) -> Result<()>
+  where T: VM {
+  // TODO: test this.
+  // TODO: make sure this is a signed computation. (0-- = -1)
+  let encoded = encoded_variable.value(vm)?;
+  let variable = VariableRef::decode(encoded as u8);
+  let old_value = vm.read_variable(variable)? as i16;
+  vm.write_variable(variable, (old_value - 1) as u16)
+}
+
 #[cfg(test)]
 mod test {
   use result::Result;

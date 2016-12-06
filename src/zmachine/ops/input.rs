@@ -130,6 +130,7 @@ pub fn read_0x04<T>(vm: &mut T, operands: [Operand; 4]) -> Result<()>
 
   // TODO: put the status line in there.
   //          vm.display_status_line();
+  // TODO: separators not getting tokenized correctly. "hi, sailor"
   io::stdout().flush()?;
 
   let s = io::stdin();

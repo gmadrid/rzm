@@ -51,13 +51,14 @@ pub mod zeroops {
 }
 
 pub mod oneops {
-  // 2do: dec_0x06, load_0x0e
+  // 2do: load_0x0e
 
   pub use super::branch::get_child_0x02;
   pub use super::branch::get_sibling_0x01;
   pub use super::branch::jump_0x0c;
   pub use super::branch::jz_0x00;
   pub use super::call::ret_0x0b;
+  pub use super::load::dec_0x06;
   pub use super::load::inc_0x05;
   pub use super::properties::get_parent_0x03;
   pub use super::properties::get_prop_len_0x04;
