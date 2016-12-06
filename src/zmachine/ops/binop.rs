@@ -54,6 +54,17 @@ pub fn and_0x09<T>(vm: &mut T, lhs: Operand, rhs: Operand, result_ref: VariableR
   signed_binop(vm, lhs, rhs, |l, r| l & r, result_ref)
 }
 
+pub fn or_0x08<T>(vm: &mut T, lhs: Operand, rhs: Operand, result_ref: VariableRef) -> Result<()>
+  where T: VM {
+  // TODO: convert this to use unsigned_binop
+  signed_binop(vm, lhs, rhs, |l, r| l | r, result_ref)
+}
+
+pub fn mod_0x18<T>(vm: &mut T, lhs: Operand, rhs: Operand, result_ref: VariableRef) -> Result<()>
+  where T: VM {
+  // TODO: convert this to use unsigned_binop
+  signed_binop(vm, lhs, rhs, |l, r| l % r, result_ref)
+}
 
 #[cfg(test)]
 mod test {

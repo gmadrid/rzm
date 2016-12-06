@@ -242,6 +242,7 @@ impl ZMachine {
       0x05 => self.dispatch_basic_2op(operands, &ops::twoops::inc_chk_0x05),
       0x06 => self.dispatch_basic_2op(operands, &ops::twoops::jin_0x06),
       0x07 => self.dispatch_basic_2op(operands, &ops::twoops::test_0x07),
+      0x08 => self.dispatch_2op_with_return(operands, &ops::twoops::or_0x08),
       0x09 => self.dispatch_2op_with_return(operands, &ops::twoops::and_0x09),
       0x0a => self.dispatch_basic_2op(operands, &ops::twoops::test_attr_0x0a),
       0x0b => self.dispatch_basic_2op(operands, &ops::twoops::set_attr_0x0b),
@@ -256,6 +257,8 @@ impl ZMachine {
       0x15 => self.dispatch_2op_with_return(operands, &ops::twoops::sub_0x15),
       0x16 => self.dispatch_2op_with_return(operands, &ops::twoops::mul_0x16),
       0x17 => self.dispatch_2op_with_return(operands, &ops::twoops::div_0x17),
+      0x18 => self.dispatch_2op_with_return(operands, &ops::twoops::mod_0x18),
+
       _ => panic!("Unknown long opcode: {:#x} @{:#x}", opcode, start_pc),
     }
   }

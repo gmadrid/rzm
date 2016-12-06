@@ -68,12 +68,14 @@ pub mod oneops {
 }
 
 pub mod twoops {
-  // 2do: or_0x08, get_next_prop_0x13, mod_0x18
+  // 2do: get_next_prop_0x13
 
   pub use super::binop::add_0x14;
   pub use super::binop::and_0x09;
   pub use super::binop::div_0x17;
+  pub use super::binop::mod_0x18;
   pub use super::binop::mul_0x16;
+  pub use super::binop::or_0x08;
   pub use super::binop::sub_0x15;
   pub use super::branch::dec_chk_0x04;
   pub use super::branch::inc_chk_0x05;
