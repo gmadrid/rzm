@@ -13,6 +13,8 @@ pub enum Error {
   ParseIntError(&'static str, num::ParseIntError),
   UnknownOpcode(&'static str, u8, usize),
   ZFileTooShort,
+
+  Quitting,
 }
 
 pub type Result<T> = result::Result<T, Error>;

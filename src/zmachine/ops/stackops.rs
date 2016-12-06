@@ -16,6 +16,12 @@ pub fn pull_0x09<T>(vm: &mut T, operands: [Operand; 4]) -> Result<()>
   vm.write_variable(variable, val)
 }
 
+pub fn pop_0x09<T>(vm: &mut T) -> Result<()>
+  where T: VM {
+  vm.pop_stack()?;
+  Ok(())
+}
+
 #[cfg(test)]
 mod tests {
   use zmachine::ops::Operand;

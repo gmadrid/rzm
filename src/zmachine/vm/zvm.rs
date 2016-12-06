@@ -61,8 +61,14 @@ impl ZMachine {
   pub fn run(&mut self) -> Result<()> {
     // TODO: check version number
     loop {
-      self.process_opcode()?
+      let r = self.process_opcode();
+      match r {
+        Err(Error::Quitting) => break,
+        Err(_) => return r,
+        _ => {}
+      }
     }
+    Ok(())
   }
 
   fn process_opcode(&mut self) -> Result<()> {
@@ -150,6 +156,8 @@ impl ZMachine {
       0x03 => ops::zeroops::print_ret_0x03(self),
       0x04 => ops::zeroops::nop_0x04(self),
       0x08 => ops::zeroops::ret_popped_0x08(self),
+      0x09 => ops::zeroops::pop_0x09(self),
+      0x0a => ops::zeroops::quit_0x0a(self),
       0x0b => ops::zeroops::new_line_0x0b(self),
       _ => {
         panic!("Unknown short 0op opcode: {:x} @{:x}", op, start_pc);
