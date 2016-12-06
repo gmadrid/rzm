@@ -1,6 +1,6 @@
 use zmachine::vm::memory::Memory;
 use zmachine::vm::object_table::{ZObject, ZObjectTable, ZPropertyAccess, ZPropertyTable};
-use zmachine::vm::ptrs::BytePtr;
+use zmachine::vm::ptrs::{BytePtr, RawPtr};
 
 #[derive(Debug)]
 pub struct MemoryMappedObjectTable {
@@ -119,6 +119,31 @@ impl ZPropertyTable for MemoryMappedPropertyTable {
       // Add 1 (for the size byte) plus the length of the property.
       prop_ptr = prop_ptr.inc_by(size as u16 + 1);
     }
+  }
+
+  fn next_property(&self, number: u16, memory: &Memory) -> u16 {
+    // * 2 because text_len is a word count, +1 to skip the size byte as well as the text.
+    let mut prop_ptr = self.ptr.inc_by(self.text_len as u16 * 2 + 1);
+    // TODO: oh, man, seriously test this.
+    if number > 0 {
+      match self.find_property(number, memory) {
+        None => panic!("Unknown property requested: {}", number),
+        Some((_, ptr)) => {
+          // Subtract one to get back to the size byte.
+          let val = usize::from(RawPtr::from(ptr)) - 1usize;
+          prop_ptr = BytePtr::new(val as u16);
+          let size_byte = memory.u8_at(prop_ptr);
+          let size = size_byte / 32 + 1;
+          prop_ptr.inc_by(size as u16 + 1);
+        }
+      }
+    }
+
+    // Now, prop_ptr should point to the next property.
+    let size_byte = memory.u8_at(prop_ptr);
+    let prop_num = (size_byte & 0b00011111u8) as u16;
+    prop_num
+
   }
 }
 

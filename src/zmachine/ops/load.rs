@@ -77,6 +77,14 @@ pub fn loadb_0x10<T>(vm: &mut T,
   Ok(())
 }
 
+pub fn load_0x0e<T>(vm: &mut T, src_op: Operand, result_ref: VariableRef) -> Result<()>
+  where T: VM {
+  let encoded = src_op.value(vm)?;
+  let src_variable = VariableRef::decode(encoded as u8);
+  let value = vm.read_variable(src_variable)?;
+  vm.write_variable(result_ref, value)
+}
+
 pub fn inc_0x05<T>(vm: &mut T, encoded_variable: Operand) -> Result<()>
   where T: VM {
   // TODO: test this.

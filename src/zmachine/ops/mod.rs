@@ -51,8 +51,6 @@ pub mod zeroops {
 }
 
 pub mod oneops {
-  // 2do: load_0x0e
-
   pub use super::branch::get_child_0x02;
   pub use super::branch::get_sibling_0x01;
   pub use super::branch::jump_0x0c;
@@ -60,6 +58,7 @@ pub mod oneops {
   pub use super::call::ret_0x0b;
   pub use super::load::dec_0x06;
   pub use super::load::inc_0x05;
+  pub use super::load::load_0x0e;
   pub use super::properties::get_parent_0x03;
   pub use super::properties::get_prop_len_0x04;
   pub use super::properties::remove_obj_0x09;
@@ -69,8 +68,6 @@ pub mod oneops {
 }
 
 pub mod twoops {
-  // 2do: get_next_prop_0x13
-
   pub use super::binop::add_0x14;
   pub use super::binop::and_0x09;
   pub use super::binop::div_0x17;
@@ -89,6 +86,7 @@ pub mod twoops {
   pub use super::load::loadw_0x0f;
   pub use super::load::store_0x0d;
   pub use super::properties::clear_attr_0x0c;
+  pub use super::properties::get_next_prop_0x13;
   pub use super::properties::get_prop_0x11;
   pub use super::properties::get_prop_addr_0x12;
   pub use super::properties::insert_obj_0x0e;

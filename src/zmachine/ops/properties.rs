@@ -187,6 +187,26 @@ pub fn get_prop_addr_0x12<T>(vm: &mut T,
   vm.write_variable(variable, value as u16)
 }
 
+pub fn get_next_prop_0x13<T>(vm: &mut T,
+                             object_number: Operand,
+                             property_number: Operand,
+                             variable: VariableRef)
+                             -> Result<()>
+  where T: VM {
+  let object_number = object_number.value(vm)?;
+  let property_number = property_number.value(vm)?;
+
+  let value = {
+    let object_table = vm.object_table()?;
+    let object_storage = vm.object_storage();
+    let property_storage = vm.property_storage();
+    let property_table = object_table.object_with_number(object_number)
+      .property_table(object_storage);
+    property_table.next_property(property_number, &property_storage)
+  };
+  vm.write_variable(variable, value)
+}
+
 #[cfg(test)]
 mod tests {
   // TODO: test everything in this file.

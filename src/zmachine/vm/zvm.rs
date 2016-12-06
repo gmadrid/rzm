@@ -189,6 +189,7 @@ impl ZMachine {
       0x0b => ops::oneops::ret_0x0b(self, operand),
       0x0c => ops::oneops::jump_0x0c(self, operand),
       0x0d => ops::oneops::print_paddr_0x0d(self, operand),
+      0x0e => self.process_1op_with_return(operand, &ops::oneops::load_0x0e),
       _ => {
         panic!("Unknown short 1op opcode: {:#x} @{:#x}", op, start_pc);
       }
@@ -254,6 +255,7 @@ impl ZMachine {
       0x10 => self.dispatch_2op_with_return(operands, &ops::twoops::loadb_0x10),
       0x11 => self.dispatch_2op_with_return(operands, &ops::twoops::get_prop_0x11),
       0x12 => self.dispatch_2op_with_return(operands, &ops::twoops::get_prop_addr_0x12),
+      0x13 => self.dispatch_2op_with_return(operands, &ops::twoops::get_next_prop_0x13),
       0x14 => self.dispatch_2op_with_return(operands, &ops::twoops::add_0x14),
       0x15 => self.dispatch_2op_with_return(operands, &ops::twoops::sub_0x15),
       0x16 => self.dispatch_2op_with_return(operands, &ops::twoops::mul_0x16),

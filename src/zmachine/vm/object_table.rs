@@ -122,6 +122,13 @@ pub trait ZPropertyTable {
   // property numbers are 1-31. Returns the size and ptr to the property.
   fn find_property(&self, number: u16, helper: &Self::PropertyAccess) -> Option<(u16, BytePtr)>;
 
+  // given a property number, return the next number of the property in the table.
+  // Special cases:
+  //   0: return the first property,
+  //   non-existing property: panic! (according to spec)
+  //   no next property: return 0
+  fn next_property(&self, number: u16, helper: &Self::PropertyAccess) -> u16;
+
   // TODO: test set_property
   fn set_property(&self, number: u16, value: u16, helper: &mut Self::PropertyAccess)
     where Self::PropertyAccess: ZPropertyAccess {
