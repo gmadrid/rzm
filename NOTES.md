@@ -22,7 +22,7 @@ From the ZMachine standards doc (Appendix E)
     2.   print       142755       Done
     3.   jz          112016       Done
     4.   call_vs     104075       Done (call, since I'm just doing v3)
-    5.   print_ret    80870       
+    5.   print_ret    80870       Done
     6.   store        71128       
     7.   rtrue        66125       Done
     8.   jump         56534       Done
