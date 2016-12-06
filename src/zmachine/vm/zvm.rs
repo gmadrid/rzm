@@ -182,6 +182,7 @@ impl ZMachine {
       0x03 => self.process_1op_with_return(operand, &ops::oneops::get_parent_0x03),
       0x04 => self.process_1op_with_return(operand, &ops::oneops::get_prop_len_0x04),
       0x05 => ops::oneops::inc_0x05(self, operand),
+      0x07 => ops::oneops::print_addr_0x07(self, operand),
       0x09 => ops::oneops::remove_obj_0x09(self, operand),
       0x0a => ops::oneops::print_obj_0x0a(self, operand),
       0x0b => ops::oneops::ret_0x0b(self, operand),

@@ -144,6 +144,14 @@ pub fn print_obj_0x0a<T>(vm: &mut T, operand: Operand) -> Result<()>
   Ok(())
 }
 
+pub fn print_addr_0x07<T>(vm: &mut T, operand: Operand) -> Result<()>
+  where T: VM {
+  let addr = BytePtr::new(operand.value(vm)?);
+  let str = decode_text(vm, TextSource::Memory(addr.into(), false))?;
+  print!("{}", str);
+  Ok(())
+}
+
 pub fn print_paddr_0x0d<T>(vm: &mut T, operand: Operand) -> Result<()>
   where T: VM {
   let paddr = PackedAddr::new(operand.value(vm)?);
