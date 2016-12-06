@@ -36,8 +36,8 @@ impl Operand {
 }
 
 pub mod zeroops {
-  // nop_0x04, save_0x05, restore_0x06, restart_0x07
-  // pop_0x09, quit_0x0a, show_status_0x0c, verify_0x0d
+  // 2do: nop_0x04, save_0x05, restore_0x06, restart_0x07
+  // 2do: pop_0x09, quit_0x0a, show_status_0x0c, verify_0x0d
 
   pub use super::call::ret_popped_0x08;
   pub use super::call::rfalse_0x01;
@@ -48,7 +48,7 @@ pub mod zeroops {
 }
 
 pub mod oneops {
-  // dec_0x06, print_addr_0x07, load_0x0e
+  // 2do: dec_0x06, print_addr_0x07, load_0x0e
 
   pub use super::branch::get_child_0x02;
   pub use super::branch::get_sibling_0x01;
@@ -64,7 +64,7 @@ pub mod oneops {
 }
 
 pub mod twoops {
-  // or_0x08, get_next_prop_0x13, mod_0x18
+  // 2do: or_0x08, get_next_prop_0x13, mod_0x18
 
   pub use super::binop::add_0x14;
   pub use super::binop::and_0x09;
@@ -90,7 +90,7 @@ pub mod twoops {
 }
 
 pub mod varops {
-  // split_window_0x0a, set_window_0x0b, output_stream_0x13, input_stream_0x14
+  // 2do: split_window_0x0a, set_window_0x0b, output_stream_0x13, input_stream_0x14
 
   pub use super::call::call_0x00;
   pub use super::input::read_0x04;
