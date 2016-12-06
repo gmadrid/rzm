@@ -41,6 +41,7 @@ pub mod zeroops {
   pub use super::call::rtrue_0x00;
   pub use super::text::new_line_0x0b;
   pub use super::text::print_0x02;
+  pub use super::text::print_ret_0x03;
 }
 
 pub mod oneops {
@@ -52,6 +53,7 @@ pub mod oneops {
   pub use super::load::inc_0x05;
   pub use super::properties::get_parent_0x03;
   pub use super::properties::get_prop_len_0x04;
+  pub use super::properties::remove_obj_0x09;
   pub use super::text::print_obj_0x0a;
   pub use super::text::print_paddr_0x0d;
 }

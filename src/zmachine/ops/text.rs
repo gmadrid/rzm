@@ -116,6 +116,13 @@ pub fn print_0x02<T>(vm: &mut T) -> Result<()>
   Ok(())
 }
 
+pub fn print_ret_0x03<T>(vm: &mut T) -> Result<()>
+  where T: VM {
+  let s = decode_text(vm, TextSource::PC)?;
+  print!("{}", s);
+  vm.ret_value(1)
+}
+
 pub fn print_num_0x06<T>(vm: &mut T, operands: [Operand; 4]) -> Result<()>
   where T: VM {
   // We only care about the first operand.

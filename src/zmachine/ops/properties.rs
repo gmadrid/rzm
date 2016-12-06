@@ -40,9 +40,12 @@ pub fn insert_obj_0x0e<T>(vm: &mut T, object_op: Operand, dest_op: Operand) -> R
   let dest_index = dest_op.value(vm)?;
 
   vm.object_table()?.insert_obj(object_index, dest_index, vm.object_storage_mut())
+}
 
-  //  vm.insert_obj(object_index, dest_index)?;
-  //  Ok(())
+pub fn remove_obj_0x09<T>(vm: &mut T, object_op: Operand) -> Result<()>
+  where T: VM {
+  let object_number = object_op.value(vm)?;
+  vm.object_table()?.remove_object_from_parent(object_number, vm.object_storage_mut())
 }
 
 // fn insert_obj(&mut self, object_number: u16, dest_number: u16) -> Result<()> {
