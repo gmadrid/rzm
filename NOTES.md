@@ -22,8 +22,8 @@ From the ZMachine standards doc (Appendix E)
     2.   print       142755       Done
     3.   jz          112016       Done
     4.   call_vs     104075       Done (call, since I'm just doing v3)
-    5.   print_ret    80870       
-    6.   store        71128       
+    5.   print_ret    80870       Done
+    6.   store        71128       Done
     7.   rtrue        66125       Done
     8.   jump         56534       Done
     9.   new_line     52553       Done
@@ -42,7 +42,7 @@ My next ops will probably be:
      7. insert_obj   Done
      8. ret_popped   Done
      9. push         Done
-    10. jg
+    10. jg           Done
     11. loadb        Done
     12. print        Done
     13. and          Done

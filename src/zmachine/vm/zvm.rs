@@ -148,6 +148,7 @@ impl ZMachine {
       0x00 => ops::zeroops::rtrue_0x00(self),
       0x01 => ops::zeroops::rfalse_0x01(self),
       0x02 => ops::zeroops::print_0x02(self),
+      0x03 => ops::zeroops::print_ret_0x03(self),
       0x08 => ops::zeroops::ret_popped_0x08(self),
       0x0b => ops::zeroops::new_line_0x0b(self),
       _ => {
@@ -173,6 +174,7 @@ impl ZMachine {
       0x03 => self.process_1op_with_return(operand, &ops::oneops::get_parent_0x03),
       0x04 => self.process_1op_with_return(operand, &ops::oneops::get_prop_len_0x04),
       0x05 => ops::oneops::inc_0x05(self, operand),
+      0x09 => ops::oneops::remove_obj_0x09(self, operand),
       0x0a => ops::oneops::print_obj_0x0a(self, operand),
       0x0b => ops::oneops::ret_0x0b(self, operand),
       0x0c => ops::oneops::jump_0x0c(self, operand),
