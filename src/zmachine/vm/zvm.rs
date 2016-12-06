@@ -64,6 +64,10 @@ impl ZMachine {
       let r = self.process_opcode();
       match r {
         Err(Error::Quitting) => break,
+        Err(Error::Restart) => {
+          self.memory.restore_dynamic_bytes();
+          self.pc = PC::new(self.memory.starting_pc());
+        }
         Err(_) => return r,
         _ => {}
       }
@@ -155,6 +159,7 @@ impl ZMachine {
       0x02 => ops::zeroops::print_0x02(self),
       0x03 => ops::zeroops::print_ret_0x03(self),
       0x04 => ops::zeroops::nop_0x04(self),
+      0x07 => ops::zeroops::restart_0x07(self),
       0x08 => ops::zeroops::ret_popped_0x08(self),
       0x09 => ops::zeroops::pop_0x09(self),
       0x0a => ops::zeroops::quit_0x0a(self),

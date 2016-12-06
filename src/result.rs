@@ -14,6 +14,7 @@ pub enum Error {
   UnknownOpcode(&'static str, u8, usize),
   ZFileTooShort,
 
+  Restart,
   Quitting,
 }
 

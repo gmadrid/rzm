@@ -6,12 +6,14 @@ const STARTING_PC_INDEX: u16 = 0x06;
 const DICTIONARY_INDEX: u16 = 0x08;
 const PROPERTY_TABLE_INDEX: u16 = 0x0a;
 const GLOBAL_TABLE_INDEX: u16 = 0x0c;
+const STATIC_MEM_INDEX: u16 = 0x0e;
 const ABBREV_TABLE_INDEX: u16 = 0x18;
 const FILE_LENGTH_INDEX: u16 = 0x1a;
 
 #[derive(Eq,PartialEq)]
 pub struct Memory {
   bytes: Vec<u8>,
+  original_dynamic_bytes: Vec<u8>,
 }
 
 impl From<Vec<u8>> for Memory {
@@ -22,7 +24,20 @@ impl From<Vec<u8>> for Memory {
 
 impl Memory {
   fn new(bytes: Vec<u8>) -> Memory {
-    Memory { bytes: bytes }
+    let num_dynamic_bytes = BigEndian::read_u16(&bytes[STATIC_MEM_INDEX as usize..]);
+    let dynamic_bytes: Vec<u8> = From::from(&bytes[..num_dynamic_bytes as usize]);
+    Memory {
+      bytes: bytes,
+      original_dynamic_bytes: dynamic_bytes,
+    }
+  }
+
+  pub fn restore_dynamic_bytes(&mut self) {
+    let num_dynamic_bytes = self.u16_at(BytePtr::new(STATIC_MEM_INDEX)) as usize;
+    for i in 0..num_dynamic_bytes {
+      // TODO: is there a better way to do this?
+      self.bytes[i] = self.original_dynamic_bytes[i];
+    }
   }
 
   pub fn u8_at<P>(&self, ptr: P) -> u8
