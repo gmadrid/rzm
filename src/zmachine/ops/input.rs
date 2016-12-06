@@ -1,4 +1,5 @@
 use result::Result;
+use std::cmp;
 use std::io::{self, Write};
 use zmachine::ops::Operand;
 use zmachine::ops::text::decode_at;
@@ -96,8 +97,9 @@ impl Tokenizer {
   fn lookup_in_dictionary<T>(&self, vm: &mut T) -> Option<BytePtr>
     where T: VM {
     // TODO: make this a binary search.
-    let str =
-      &self.str[(self.word_start - 1) as usize..(self.word_start - 1 + self.word_length) as usize];
+    // Truncate the match string to 6 characters to match what is in the dict.
+    let len = cmp::min(self.word_length, 6);
+    let str = &self.str[(self.word_start - 1) as usize..(self.word_start - 1 + len) as usize];
     for i in 0..vm.num_dict_entries() {
       let entry_number = i + 1;
       let entry_ptr = vm.dict_entry(entry_number);
