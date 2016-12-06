@@ -6,7 +6,6 @@ use zmachine::vm::{BytePtr, RawPtr, VM, VariableRef, WordPtr};
 use zmachine::vm::dictionary::Dictionary;
 use zmachine::vm::memory::Memory;
 use zmachine::vm::mm_object_table::{MemoryMappedObjectTable, MemoryMappedPropertyTable};
-use zmachine::vm::object_table::{ZObject, ZObjectTable, ZPropertyAccess, ZPropertyTable};
 use zmachine::vm::pc::PC;
 use zmachine::vm::stack::Stack;
 use zmachine::zconfig::{ZConfig, ZDefaults};
@@ -67,7 +66,7 @@ impl ZMachine {
   }
 
   fn process_opcode(&mut self) -> Result<()> {
-    let pcvalue = usize::from(self.pc.pc());
+    // let pcvalue = usize::from(self.pc.pc());
     // println!("PC: {:#x}", pcvalue);
     let first_byte = self.read_pc_byte();
     let top_two_bits = first_byte & 0b11000000;

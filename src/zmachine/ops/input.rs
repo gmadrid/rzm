@@ -57,8 +57,8 @@ impl Tokenizer {
       let ctype = CharType::char_type(ch);
       match ctype {
         CharType::WhiteSpace => self.handle_whitespace(vm),
-        CharType::Separator => self.handle_separator(vm, ch, offset as u8),
-        CharType::WordChar => self.handle_wordchar(vm, ch, offset as u8),
+        CharType::Separator => self.handle_separator(vm, offset as u8),
+        CharType::WordChar => self.handle_wordchar(offset as u8),
       }
     }
   }
@@ -67,8 +67,7 @@ impl Tokenizer {
     self.tokens
   }
 
-  fn handle_wordchar<T>(&mut self, vm: &mut T, ch: char, offset: u8)
-    where T: VM {
+  fn handle_wordchar(&mut self, offset: u8) {
     if self.in_word {
       self.word_length += 1
     } else {
@@ -78,7 +77,7 @@ impl Tokenizer {
     }
   }
 
-  fn handle_separator<T>(&mut self, vm: &mut T, ch: char, offset: u8)
+  fn handle_separator<T>(&mut self, vm: &mut T, offset: u8)
     where T: VM {
     self.maybe_push_word_token(vm);
     self.tokens.push(Token {
@@ -129,11 +128,11 @@ pub fn read_0x04<T>(vm: &mut T, operands: [Operand; 4]) -> Result<()>
 
   // TODO: put the status line in there.
   //          vm.display_status_line();
-  io::stdout().flush();
+  io::stdout().flush()?;
 
   let s = io::stdin();
   let mut buf = String::new();
-  s.read_line(&mut buf);
+  s.read_line(&mut buf)?;
   buf = buf.to_lowercase();
 
   let tbuf = BytePtr::new(operands[0].value(vm)?);
@@ -148,29 +147,29 @@ pub fn read_0x04<T>(vm: &mut T, operands: [Operand; 4]) -> Result<()>
     }
     if pos >= tbuf_len - 2 || ch == '\n' {
       // null-terminated
-      vm.write_memory_u8(ptr, 0);
+      vm.write_memory_u8(ptr, 0)?;
       break;
     }
-    vm.write_memory_u8(ptr, ch as u8);
+    vm.write_memory_u8(ptr, ch as u8)?;
     ptr = ptr.inc_by(1);
   }
 
   // TODO: split on the ., as well..
   let mut tokenizer = Tokenizer::new();
   tokenizer.tokenize(vm, buf);
-  let mut tokens = tokenizer.tokens();
+  let tokens = tokenizer.tokens();
 
   // TODO: add code to respect the end of the tbuf and pbuf.
   let mut ptr = pbuf.inc_by(1);
-  vm.write_memory_u8(ptr, tokens.len() as u8);
+  vm.write_memory_u8(ptr, tokens.len() as u8)?;
   ptr = ptr.inc_by(1);
   for token in tokens {
     let val = token.ptr.map(|p| RawPtr::from(p).into()).unwrap_or(0usize) as u16;
-    vm.write_memory(ptr, val);
+    vm.write_memory(ptr, val)?;
     ptr = ptr.inc_by(2);
-    vm.write_memory_u8(ptr, token.len);
+    vm.write_memory_u8(ptr, token.len)?;
     ptr = ptr.inc_by(1);
-    vm.write_memory_u8(ptr, token.offset);
+    vm.write_memory_u8(ptr, token.offset)?;
     ptr = ptr.inc_by(1);
   }
   Ok(())

@@ -4,9 +4,9 @@ pub trait ZConfig {
   }
 }
 
-pub struct ZConfigStack<'a> {
-  stack: Vec<&'a ZConfig>,
-}
+// pub struct ZConfigStack<'a> {
+//   stack: Vec<&'a ZConfig>,
+// }
 
 pub struct ZDefaults {}
 

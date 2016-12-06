@@ -1,4 +1,3 @@
-use result::Result;
 use zmachine::vm::{BytePtr, Memory};
 
 #[derive(Debug)]
