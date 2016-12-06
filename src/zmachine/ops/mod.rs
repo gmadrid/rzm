@@ -36,9 +36,10 @@ impl Operand {
 }
 
 pub mod zeroops {
-  // 2do: nop_0x04, save_0x05, restore_0x06, restart_0x07
+  // 2do: save_0x05, restore_0x06, restart_0x07
   // 2do: pop_0x09, quit_0x0a, show_status_0x0c, verify_0x0d
 
+  pub use super::call::nop_0x04;
   pub use super::call::ret_popped_0x08;
   pub use super::call::rfalse_0x01;
   pub use super::call::rtrue_0x00;

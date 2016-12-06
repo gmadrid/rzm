@@ -148,6 +148,7 @@ impl ZMachine {
       0x01 => ops::zeroops::rfalse_0x01(self),
       0x02 => ops::zeroops::print_0x02(self),
       0x03 => ops::zeroops::print_ret_0x03(self),
+      0x04 => ops::zeroops::nop_0x04(self),
       0x08 => ops::zeroops::ret_popped_0x08(self),
       0x0b => ops::zeroops::new_line_0x0b(self),
       _ => {

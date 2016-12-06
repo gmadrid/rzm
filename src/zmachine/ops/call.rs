@@ -55,6 +55,12 @@ pub fn call_0x00<T>(vm: &mut T, operands: [Operand; 4]) -> Result<()>
   Ok(())
 }
 
+pub fn nop_0x04<T>(_: &mut T) -> Result<()>
+  where T: VM {
+  // do nothing. It's a no-op!
+  Ok(())
+}
+
 pub fn ret_0x0b<T>(vm: &mut T, operand: Operand) -> Result<()>
   where T: VM {
   let value = operand.value(vm)?;
