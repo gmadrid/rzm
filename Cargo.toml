@@ -6,6 +6,7 @@ authors = ["George Madrid <gmadrid@gmail.com>"]
 [dependencies]
 byteorder = "0.5.3"
 clap = "2.13"
+ncurses = "5.84.0"
 rand = "0.3"
 
 [[bin]]

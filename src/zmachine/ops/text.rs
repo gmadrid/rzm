@@ -119,7 +119,7 @@ pub fn print_0x02<T>(vm: &mut T) -> Result<()>
 pub fn print_ret_0x03<T>(vm: &mut T) -> Result<()>
   where T: VM {
   let s = decode_text(vm, TextSource::PC)?;
-  print!("{}", s);
+  println!("{}", s);
   vm.ret_value(1)
 }
 
