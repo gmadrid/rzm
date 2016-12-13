@@ -6,6 +6,7 @@ mod mock_object_table;
 mod object_table;
 mod pc;
 mod ptrs;
+mod zreadline;
 mod stack;
 mod vm;
 pub mod zvm;

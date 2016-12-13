@@ -120,6 +120,7 @@ pub fn print_ret_0x03<T>(vm: &mut T) -> Result<()>
   where T: VM {
   let s = decode_text(vm, TextSource::PC)?;
   vm.write_main_window(s.as_str());
+  vm.write_main_window("\n");
   vm.ret_value(1)
 }
 

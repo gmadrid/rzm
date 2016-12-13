@@ -2,7 +2,7 @@ use result::Result;
 use std::cmp;
 use std::io::{self, Write};
 use zmachine::ops::Operand;
-use zmachine::ops::text::{decode_at, show_status_0x0c};
+use zmachine::ops::text::{decode_at, new_line_0x0b, show_status_0x0c};
 use zmachine::vm::{BytePtr, RawPtr, VM};
 
 enum CharType {
@@ -144,7 +144,7 @@ pub fn read_0x04<T>(vm: &mut T, operands: [Operand; 4]) -> Result<()>
   let mut ptr = tbuf.inc_by(1);
   for (pos, ch) in buf.chars().enumerate() {
     if ch == '\n' {
-      // Right now, I don't think I need to do anything, since the CR is getting printed when typed.
+      // We don't do anything, since the newline is echoed by readline.
     }
     if pos >= tbuf_len - 2 || ch == '\n' {
       // null-terminated

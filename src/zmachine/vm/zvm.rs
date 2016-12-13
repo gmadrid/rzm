@@ -1,6 +1,5 @@
-use ncurses::{A_REVERSE, CURSOR_VISIBILITY, WINDOW, curs_set, echo, endwin, getmaxyx, initscr,
-              mvwprintw, newwin, raw, refresh, scrollok, stdscr, waddch, wattron, wgetstr, wmove,
-              wprintw, wrefresh};
+use ncurses::{A_REVERSE, WINDOW, endwin, getmaxyx, getyx, initscr, mvwprintw, newwin, noecho, raw,
+              refresh, scrollok, stdscr, waddch, wattron, wgetstr, wmove, wprintw, wrefresh};
 use result::{Error, Result};
 use std::io::Read;
 use zmachine::ops;
@@ -11,6 +10,7 @@ use zmachine::vm::memory::Memory;
 use zmachine::vm::mm_object_table::{MemoryMappedObjectTable, MemoryMappedPropertyTable};
 use zmachine::vm::pc::PC;
 use zmachine::vm::stack::Stack;
+use zmachine::vm::zreadline::ZReadline;
 use zmachine::zconfig::{ZConfig, ZDefaults};
 
 const HEADER_SIZE: usize = 64;
@@ -73,7 +73,7 @@ impl ZMachine {
   pub fn init_windows(&mut self) {
     initscr();
     raw();
-    echo();
+    noecho();
     refresh();
 
     getmaxyx(stdscr(), &mut self.num_rows, &mut self.num_cols);
@@ -450,9 +450,16 @@ impl VM for ZMachine {
 
   fn write_status_line(&self, str: &str) {
     self.status_window.map(|w| {
-      curs_set(CURSOR_VISIBILITY::CURSOR_INVISIBLE);
-      mvwprintw(w, 0, 0, str);
-      wrefresh(w);
+      self.main_window.map(|mw| {
+        let mut x = 0i32;
+        let mut y = 0i32;
+        getyx(mw, &mut y, &mut x);
+
+        mvwprintw(w, 0, 0, str);
+        wmove(mw, y, x);
+        wrefresh(w);
+        wrefresh(mw);
+      })
     });
   }
 
@@ -471,14 +478,12 @@ impl VM for ZMachine {
   }
 
   fn read_line(&self) -> Result<String> {
-    let str = self.main_window.map(|w| {
-      let mut s = String::new();
-      curs_set(CURSOR_VISIBILITY::CURSOR_VISIBLE);
-      wgetstr(w, &mut s);
-      s.push('\n');
-      s
-    });
-    Ok(str.unwrap())
+    self.main_window
+      .map(|w| {
+        let rl = ZReadline::new(w, 40);
+        Ok(rl.readline())
+      })
+      .unwrap()
   }
 
   fn screen_width(&self) -> u16 {
