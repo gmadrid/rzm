@@ -2,7 +2,7 @@ use result::Result;
 use std::cmp;
 use std::io::{self, Write};
 use zmachine::ops::Operand;
-use zmachine::ops::text::{decode_at, new_line_0x0b, show_status_0x0c};
+use zmachine::ops::text::{decode_at, show_status_0x0c};
 use zmachine::vm::{BytePtr, RawPtr, VM};
 
 enum CharType {

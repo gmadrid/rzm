@@ -1,5 +1,5 @@
 use ncurses::{A_REVERSE, WINDOW, endwin, getmaxyx, getyx, initscr, mvwprintw, newwin, noecho, raw,
-              refresh, scrollok, stdscr, waddch, wattron, wgetstr, wmove, wprintw, wrefresh};
+              refresh, scrollok, stdscr, waddch, wattron, wmove, wprintw, wrefresh};
 use result::{Error, Result};
 use std::io::Read;
 use zmachine::ops;
@@ -119,8 +119,8 @@ impl ZMachine {
   }
 
   fn process_opcode(&mut self) -> Result<()> {
-    // let pcvalue = usize::from(self.pc.pc());
-    // println!("PC: {:#x}", pcvalue);
+    info!(target: "pctrace", "PC: {}", usize::from(self.pc.pc()));
+
     let first_byte = self.read_pc_byte();
     let top_two_bits = first_byte & 0b11000000;
 

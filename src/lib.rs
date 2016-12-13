@@ -1,5 +1,7 @@
 extern crate byteorder;
 extern crate clap;
+#[macro_use]
+extern crate log;
 extern crate ncurses;
 extern crate rand;
 
