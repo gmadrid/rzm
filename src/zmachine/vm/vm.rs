@@ -99,6 +99,7 @@ pub trait VM: Sized {
 
   fn rand(&self, range: u16) -> u16;
   fn write_status_line(&self, &str);
+  fn screen_width(&self) -> u16;
   fn write_main_window_char(&self, u16);
   fn write_main_window(&self, &str);
   /// Return the address as a WordPtr of the specified abbrev.

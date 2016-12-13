@@ -469,6 +469,10 @@ impl VM for ZMachine {
     });
   }
 
+  fn screen_width(&self) -> u16 {
+    self.num_cols as u16
+  }
+
   fn abbrev_addr(&self, abbrev_table: u8, abbrev_index: u8) -> Result<WordPtr> {
     let abbrev_table_ptr = self.memory.abbrev_table_ptr();
     let abbrev_entry_ptr =

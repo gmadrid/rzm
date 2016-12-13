@@ -193,9 +193,18 @@ pub fn show_status_0x0c<T>(vm: &mut T) -> Result<()>
 
   let first_num = vm.read_global(1)?;
   let second_num = vm.read_global(2)?;
+  let score_str = format!("{}/{}", first_num, second_num);
+
+  // TODO: ellipsize this.
+  let width = vm.screen_width();
+  let mut spaces = String::new();
+  for _ in 0..(width as usize - name_str.len() - score_str.len() - 2) {
+    spaces.push(' ');
+  }
+
+  let str = format!(" {}{}{} ", name_str, spaces, score_str);
 
   // TODO: time-based status line.
-  let str = format!("{}    {}/{}", name_str, first_num, second_num);
   vm.write_status_line(str.as_str());
   Ok(())
 }
