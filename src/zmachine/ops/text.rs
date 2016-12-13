@@ -112,14 +112,14 @@ fn decode_text<T>(vm: &mut T, src: TextSource) -> Result<String>
 pub fn print_0x02<T>(vm: &mut T) -> Result<()>
   where T: VM {
   let s = decode_text(vm, TextSource::PC)?;
-  print!("{}", s);
+  vm.write_main_window(s.as_str());
   Ok(())
 }
 
 pub fn print_ret_0x03<T>(vm: &mut T) -> Result<()>
   where T: VM {
   let s = decode_text(vm, TextSource::PC)?;
-  println!("{}", s);
+  vm.write_main_window(s.as_str());
   vm.ret_value(1)
 }
 
@@ -127,7 +127,8 @@ pub fn print_num_0x06<T>(vm: &mut T, operands: [Operand; 4]) -> Result<()>
   where T: VM {
   // We only care about the first operand.
   let value = operands[0].value(vm)?;
-  print!("{}", value);
+  let str = format!("{}", value);
+  vm.write_main_window(str.as_str());
   Ok(())
 }
 
@@ -140,7 +141,7 @@ pub fn print_obj_0x0a<T>(vm: &mut T, operand: Operand) -> Result<()>
   let obj = object_table.object_with_number(object_number);
   let ptr = obj.property_table(vm.object_storage()).name_ptr(vm.property_storage());
   let str = decode_text(vm, TextSource::Memory(ptr.into(), false))?;
-  print!("{}", str);
+  vm.write_main_window(str.as_str());
   Ok(())
 }
 
@@ -148,7 +149,7 @@ pub fn print_addr_0x07<T>(vm: &mut T, operand: Operand) -> Result<()>
   where T: VM {
   let addr = BytePtr::new(operand.value(vm)?);
   let str = decode_text(vm, TextSource::Memory(addr.into(), false))?;
-  print!("{}", str);
+  vm.write_main_window(str.as_str());
   Ok(())
 }
 
@@ -156,7 +157,7 @@ pub fn print_paddr_0x0d<T>(vm: &mut T, operand: Operand) -> Result<()>
   where T: VM {
   let paddr = PackedAddr::new(operand.value(vm)?);
   let str = decode_text(vm, TextSource::Memory(paddr.into(), false))?;
-  print!("{}", str);
+  vm.write_main_window(str.as_str());
   Ok(())
 }
 
@@ -164,18 +165,38 @@ pub fn print_char_0x05<T>(vm: &mut T, operands: [Operand; 4]) -> Result<()>
   where T: VM {
   let ch = operands[0].value(vm)?;
   match ch {
-    13 => print!("\n"),
-    32...126 => print!("{}", ch as u8 as char),
+    13 => vm.write_main_window_char('\n' as u16),
+    32...126 => {
+      vm.write_main_window_char(ch as u8 as char as u16);
+    }
     _ => {
-      println!("UNKNOWN CHARACTER");
+      vm.write_main_window("?");
     }
   }
   Ok(())
 }
 
-pub fn new_line_0x0b<T>(_: &mut T) -> Result<()>
+pub fn new_line_0x0b<T>(vm: &mut T) -> Result<()>
   where T: VM {
-  print!("\n");
+  vm.write_main_window("\n");
+  Ok(())
+}
+
+pub fn show_status_0x0c<T>(vm: &mut T) -> Result<()>
+  where T: VM {
+  let object_number = vm.read_global(0)?;
+  let object_table = vm.object_table()?;
+  let object = object_table.object_with_number(object_number);
+  let property_table = object.property_table(vm.object_storage());
+  let name_ptr = property_table.name_ptr(vm.property_storage());
+  let name_str = decode_at(vm, name_ptr)?;
+
+  let first_num = vm.read_global(1)?;
+  let second_num = vm.read_global(2)?;
+
+  // TODO: time-based status line.
+  let str = format!("{}    {}/{}", name_str, first_num, second_num);
+  vm.write_status_line(str.as_str());
   Ok(())
 }
 

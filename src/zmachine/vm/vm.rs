@@ -98,7 +98,9 @@ pub trait VM: Sized {
   fn dict_entry(&self, number: u16) -> BytePtr;
 
   fn rand(&self, range: u16) -> u16;
-
+  fn write_status_line(&self, &str);
+  fn write_main_window_char(&self, u16);
+  fn write_main_window(&self, &str);
   /// Return the address as a WordPtr of the specified abbrev.
   fn abbrev_addr(&self, abbrev_table: u8, abbrev_index: u8) -> Result<WordPtr>;
 

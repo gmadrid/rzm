@@ -1,3 +1,5 @@
+use ncurses::{A_REVERSE, WINDOW, endwin, getmaxyx, initscr, mvwprintw, newwin, noecho, raw,
+              refresh, scrollok, stdscr, waddch, wattron, wmove, wprintw, wrefresh};
 use result::{Error, Result};
 use std::io::Read;
 use zmachine::ops;
@@ -16,6 +18,11 @@ pub struct ZMachine {
   memory: Memory,
   pc: PC,
   stack: Stack,
+
+  status_window: Option<WINDOW>,
+  main_window: Option<WINDOW>,
+  num_rows: i32,
+  num_cols: i32,
 }
 
 impl ZMachine {
@@ -26,6 +33,10 @@ impl ZMachine {
       memory: memory,
       pc: pc,
       stack: Stack::new(config.stack_size().unwrap()),
+      status_window: None,
+      main_window: None,
+      num_rows: 0,
+      num_cols: 0,
     };
     zmachine.reset_interpreter_flags();
     zmachine
@@ -58,7 +69,36 @@ impl ZMachine {
     self.memory.set_flag1(old_val & flag1_mask);
   }
 
+  pub fn init_windows(&mut self) {
+    initscr();
+    raw();
+    noecho();
+    refresh();
+
+    getmaxyx(stdscr(), &mut self.num_rows, &mut self.num_cols);
+
+    let win = newwin(1, self.num_cols, 0, 0);
+    scrollok(win, false);
+    wattron(win, A_REVERSE());
+    self.status_window = Some(win);
+    wrefresh(win);
+
+    let win = newwin(self.num_rows - 1, self.num_cols, 1, 0);
+    scrollok(win, true);
+    wmove(win, self.num_rows - 2, 0);
+    self.main_window = Some(win);
+    wrefresh(win);
+  }
+
+  pub fn tear_down_windows(&mut self) {
+    self.status_window = None;
+    self.main_window = None;
+    endwin();
+  }
+
   pub fn run(&mut self) -> Result<()> {
+    self.init_windows();
+
     // TODO: check version number
     loop {
       let r = self.process_opcode();
@@ -72,6 +112,8 @@ impl ZMachine {
         _ => {}
       }
     }
+
+    self.tear_down_windows();
     Ok(())
   }
 
@@ -403,6 +445,28 @@ impl VM for ZMachine {
 
     // TODO: write real randomness.
     3235 % range
+  }
+
+  fn write_status_line(&self, str: &str) {
+    self.status_window.map(|w| {
+      // TODO: pad this with spaces.
+      mvwprintw(w, 0, 0, str);
+      wrefresh(w);
+    });
+  }
+
+  fn write_main_window_char(&self, ch: u16) {
+    self.main_window.map(|w| {
+      waddch(w, ch as u32);
+      wrefresh(w);
+    });
+  }
+
+  fn write_main_window(&self, str: &str) {
+    self.main_window.map(|w| {
+      wprintw(w, str);
+      wrefresh(w);
+    });
   }
 
   fn abbrev_addr(&self, abbrev_table: u8, abbrev_index: u8) -> Result<WordPtr> {

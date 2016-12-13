@@ -1,5 +1,6 @@
 extern crate byteorder;
 extern crate clap;
+extern crate ncurses;
 extern crate rand;
 
 mod result;

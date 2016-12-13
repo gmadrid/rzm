@@ -2,7 +2,7 @@ use result::Result;
 use std::cmp;
 use std::io::{self, Write};
 use zmachine::ops::Operand;
-use zmachine::ops::text::decode_at;
+use zmachine::ops::text::{decode_at, show_status_0x0c};
 use zmachine::vm::{BytePtr, RawPtr, VM};
 
 enum CharType {
@@ -128,8 +128,8 @@ impl Tokenizer {
 pub fn read_0x04<T>(vm: &mut T, operands: [Operand; 4]) -> Result<()>
   where T: VM {
 
-  // TODO: put the status line in there.
-  //          vm.display_status_line();
+  show_status_0x0c(vm)?;
+
   // TODO: separators not getting tokenized correctly. "hi, sailor"
   io::stdout().flush()?;
 
