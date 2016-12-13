@@ -1,5 +1,6 @@
-use ncurses::{A_REVERSE, WINDOW, endwin, getmaxyx, initscr, mvwprintw, newwin, noecho, raw,
-              refresh, scrollok, stdscr, waddch, wattron, wmove, wprintw, wrefresh};
+use ncurses::{A_REVERSE, CURSOR_VISIBILITY, WINDOW, curs_set, echo, endwin, getmaxyx, initscr,
+              mvwprintw, newwin, raw, refresh, scrollok, stdscr, waddch, wattron, wgetstr, wmove,
+              wprintw, wrefresh};
 use result::{Error, Result};
 use std::io::Read;
 use zmachine::ops;
@@ -72,7 +73,7 @@ impl ZMachine {
   pub fn init_windows(&mut self) {
     initscr();
     raw();
-    noecho();
+    echo();
     refresh();
 
     getmaxyx(stdscr(), &mut self.num_rows, &mut self.num_cols);
@@ -449,7 +450,7 @@ impl VM for ZMachine {
 
   fn write_status_line(&self, str: &str) {
     self.status_window.map(|w| {
-      // TODO: pad this with spaces.
+      curs_set(CURSOR_VISIBILITY::CURSOR_INVISIBLE);
       mvwprintw(w, 0, 0, str);
       wrefresh(w);
     });
@@ -467,6 +468,17 @@ impl VM for ZMachine {
       wprintw(w, str);
       wrefresh(w);
     });
+  }
+
+  fn read_line(&self) -> Result<String> {
+    let str = self.main_window.map(|w| {
+      let mut s = String::new();
+      curs_set(CURSOR_VISIBILITY::CURSOR_VISIBLE);
+      wgetstr(w, &mut s);
+      s.push('\n');
+      s
+    });
+    Ok(str.unwrap())
   }
 
   fn screen_width(&self) -> u16 {

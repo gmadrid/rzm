@@ -102,6 +102,7 @@ pub trait VM: Sized {
   fn screen_width(&self) -> u16;
   fn write_main_window_char(&self, u16);
   fn write_main_window(&self, &str);
+  fn read_line(&self) -> Result<String>;
   /// Return the address as a WordPtr of the specified abbrev.
   fn abbrev_addr(&self, abbrev_table: u8, abbrev_index: u8) -> Result<WordPtr>;
 

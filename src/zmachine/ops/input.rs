@@ -133,10 +133,8 @@ pub fn read_0x04<T>(vm: &mut T, operands: [Operand; 4]) -> Result<()>
   // TODO: separators not getting tokenized correctly. "hi, sailor"
   io::stdout().flush()?;
 
-  let s = io::stdin();
-  let mut buf = String::new();
-  s.read_line(&mut buf)?;
-  buf = buf.to_lowercase();
+  // TODO: write a real readline. :-(
+  let buf = vm.read_line()?;
 
   let tbuf = BytePtr::new(operands[0].value(vm)?);
   let pbuf = BytePtr::new(operands[1].value(vm)?);

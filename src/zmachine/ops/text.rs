@@ -193,7 +193,7 @@ pub fn show_status_0x0c<T>(vm: &mut T) -> Result<()>
 
   let first_num = vm.read_global(1)?;
   let second_num = vm.read_global(2)?;
-  let score_str = format!("{}/{}", first_num, second_num);
+  let score_str = format!("Score: {} Moves: {}", first_num, second_num);
 
   // TODO: ellipsize this.
   let width = vm.screen_width();
