@@ -1,5 +1,6 @@
 #[macro_use]
 extern crate clap;
+extern crate env_logger;
 extern crate rzm;
 
 mod args;
@@ -18,6 +19,8 @@ fn real_main() -> Result<()> {
 }
 
 fn main() {
+  env_logger::init().unwrap();
+
   // A shell that calls a "real main" function and reports errors.
   // A convenience so that I can try!() inside the "main" function.
   // TODO: make this return non-zero on failure.

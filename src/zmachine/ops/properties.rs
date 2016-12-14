@@ -204,6 +204,10 @@ pub fn get_next_prop_0x13<T>(vm: &mut T,
       .property_table(object_storage);
     property_table.next_property(property_number, &property_storage)
   };
+  info!(target: "pctrace", "get_next_prop: {}, {} => {}",
+        object_number,
+        property_number,
+        value);
   vm.write_variable(variable, value)
 }
 

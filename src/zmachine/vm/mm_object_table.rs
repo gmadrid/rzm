@@ -124,6 +124,7 @@ impl ZPropertyTable for MemoryMappedPropertyTable {
   fn next_property(&self, number: u16, memory: &Memory) -> u16 {
     // * 2 because text_len is a word count, +1 to skip the size byte as well as the text.
     let mut prop_ptr = self.ptr.inc_by(self.text_len as u16 * 2 + 1);
+    info!(target: "pctrace", "start ptr: {:?}", prop_ptr);
     // TODO: oh, man, seriously test this.
     if number > 0 {
       match self.find_property(number, memory) {
@@ -134,12 +135,13 @@ impl ZPropertyTable for MemoryMappedPropertyTable {
           prop_ptr = BytePtr::new(val as u16);
           let size_byte = memory.u8_at(prop_ptr);
           let size = size_byte / 32 + 1;
-          prop_ptr.inc_by(size as u16 + 1);
+          prop_ptr = prop_ptr.inc_by(size as u16 + 1);
         }
       }
     }
 
     // Now, prop_ptr should point to the next property.
+    info!(target: "pctrace", "end ptr: {:?}", prop_ptr);
     let size_byte = memory.u8_at(prop_ptr);
     let prop_num = (size_byte & 0b00011111u8) as u16;
     prop_num
