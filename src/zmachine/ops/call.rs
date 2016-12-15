@@ -88,4 +88,9 @@ pub fn rfalse_0x01<T>(vm: &mut T) -> Result<()>
   vm.ret_value(0)
 }
 
+pub fn save_0x05<T>(vm: &mut T) -> Result<()>
+  where T: VM {
+  vm.save()
+}
+
 // TODO: test this shit.
