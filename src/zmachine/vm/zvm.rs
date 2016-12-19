@@ -483,7 +483,7 @@ impl VM for ZMachine {
   fn read_line(&self) -> Result<String> {
     self.main_window
       .map(|w| {
-        let rl = ZReadline::new(w, 40);
+        let rl = ZReadline::new(w);
         Ok(rl.readline())
       })
       .unwrap()
