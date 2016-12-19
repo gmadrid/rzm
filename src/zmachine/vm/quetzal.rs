@@ -2,6 +2,8 @@ use byteorder::{BigEndian, ByteOrder, WriteBytesExt};
 use result::Result;
 use std::io::Write;
 use zmachine::vm::memory::Memory;
+use zmachine::vm::pc::PC;
+use zmachine::vm::ptrs::BytePtr;
 use zmachine::vm::stack::Stack;
 
 struct Chunk {
@@ -10,9 +12,15 @@ struct Chunk {
 }
 
 // Make this work with a &str.
-pub fn newId(ch1: char, ch2: char, ch3: char, ch4: char) -> u32 {
-  let bytes = [ch1 as u8, ch2 as u8, ch3 as u8, ch4 as u8];
-  BigEndian::read_u32(&bytes)
+// pub fn newId(ch1: char, ch2: char, ch3: char, ch4: char) -> u32 {
+//   let bytes = [ch1 as u8, ch2 as u8, ch3 as u8, ch4 as u8];
+//   BigEndian::read_u32(&bytes)
+// }
+
+fn newId(str: &str) -> u32 {
+  assert!(str.len() == 4);
+  let bytes = str.as_bytes();
+  BigEndian::read_u32(bytes)
 }
 
 impl Chunk {
@@ -44,25 +52,45 @@ pub struct Quetzal {
 }
 
 impl Quetzal {
-  fn write_header(&mut self, memory: &Memory) -> Result<()> {
-    let chunk = Chunk::start(newId('I', 'F', 'h', 'd'), &mut self.bytes)?;
+  fn write_header(&mut self, memory: &Memory, pc: &PC) -> Result<()> {
+    let chunk = Chunk::start(newId(&"IFhd"), &mut self.bytes)?;
 
-    &self.bytes.write_u16::<BigEndian>(0x1234)?;
-    &self.bytes.write_u32::<BigEndian>(0x23456789)?;
-    &self.bytes.write_u16::<BigEndian>(0xabcd)?;
-    &self.bytes.write_u16::<BigEndian>(0xeeee)?;
-    &self.bytes.write_u16::<BigEndian>(0xcccc)?;
-    &self.bytes.write_u8(0xdd)?;
+    // TODO: fix magic numbers?
+    // release number
+    &self.bytes.write_u16::<BigEndian>(memory.u16_at(BytePtr::new(0x02)));
+
+    // serial number
+    let mut ptr = BytePtr::new(0x12);
+    for i in 0..6 {
+      &self.bytes.write_u8(memory.u8_at(ptr.inc_by(i)));
+    }
+
+    // checksum
+    &self.bytes.write_u16::<BigEndian>(memory.u16_at(BytePtr::new(0x1c)));
+
+    // PC
+    // Awkward, writing 3 bytes of a 4-byte value.
+    let pc_as_u32 = usize::from(pc.pc()) as u32;
+    &self.bytes.write_u8((pc_as_u32 >> 16) as u8);
+    &self.bytes.write_u16::<BigEndian>(pc_as_u32 as u16);
 
     chunk.end(&mut self.bytes);
     Ok(())
   }
 
-  pub fn write(memory: &Memory, stack: &Stack) -> Result<Vec<u8>> {
+  fn write_umem(&mut self, memory: &Memory) -> Result<()> {
+    let chunk = Chunk::start(newId(&"UMem"), &mut self.bytes)?;
+    self.bytes.extend_from_slice(memory.dynamic_slice());
+    chunk.end(&mut self.bytes);
+    Ok(())
+  }
+
+  pub fn write(memory: &Memory, stack: &Stack, pc: &PC) -> Result<Vec<u8>> {
     let mut q = Quetzal { bytes: Vec::new() };
-    let chunk = Chunk::start(newId('F', 'O', 'R', 'M'), &mut q.bytes)?;
-    q.bytes.write_u32::<BigEndian>(newId('I', 'F', 'Z', 'S'))?;
-    q.write_header(memory)?;
+    let chunk = Chunk::start(newId(&"FORM"), &mut q.bytes)?;
+    q.bytes.write_u32::<BigEndian>(newId(&"IFZS"))?;
+    q.write_header(memory, pc)?;
+    q.write_umem(memory)?;
     chunk.end(&mut q.bytes);
 
     Ok(q.bytes)

@@ -40,6 +40,11 @@ impl Memory {
     }
   }
 
+  pub fn dynamic_slice(&self) -> &[u8] {
+    let num_dynamic_bytes = self.u16_at(BytePtr::new(STATIC_MEM_INDEX)) as usize;
+    &self.bytes[0..num_dynamic_bytes]
+  }
+
   pub fn u8_at<P>(&self, ptr: P) -> u8
     where P: Into<RawPtr> {
     self.bytes[ptr.into().ptr()]

@@ -1,5 +1,6 @@
 use result::{Error, Result};
 use zmachine::ops::Operand;
+use zmachine::ops::branch::branch_on_condition;
 use zmachine::vm::{PackedAddr, RawPtr, VM, VariableRef};
 
 pub fn call_0x00<T>(vm: &mut T, operands: [Operand; 4]) -> Result<()>
@@ -90,7 +91,8 @@ pub fn rfalse_0x01<T>(vm: &mut T) -> Result<()>
 
 pub fn save_0x05<T>(vm: &mut T) -> Result<()>
   where T: VM {
-  vm.save()
+  let result = vm.save();
+  branch_on_condition(vm, result.is_ok())
 }
 
 // TODO: test this shit.
