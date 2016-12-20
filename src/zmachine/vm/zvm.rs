@@ -1,7 +1,9 @@
 use ncurses::{A_REVERSE, WINDOW, endwin, getmaxyx, getyx, initscr, mvwprintw, newwin, noecho, raw,
               refresh, scrollok, stdscr, waddch, wattron, wmove, wprintw, wrefresh};
 use result::{Error, Result};
+use std::cell::RefCell;
 use std::io::Read;
+use std::rc::Rc;
 use zmachine::ops;
 use zmachine::ops::Operand;
 use zmachine::vm::{BytePtr, RawPtr, VM, VariableRef, WordPtr};
@@ -16,7 +18,7 @@ use zmachine::zconfig::{ZConfig, ZDefaults};
 const HEADER_SIZE: usize = 64;
 
 pub struct ZMachine {
-  memory: Memory,
+  memory: Rc<RefCell<Memory>>,
   pc: PC,
   stack: Stack,
 
@@ -31,7 +33,7 @@ impl ZMachine {
     where T: ZConfig {
     let pc = PC::new(memory.starting_pc());
     let mut zmachine = ZMachine {
-      memory: memory,
+      memory: Rc::new(RefCell::new(memory)),
       pc: pc,
       stack: Stack::new(config.stack_size().unwrap()),
       status_window: None,
@@ -54,7 +56,7 @@ impl ZMachine {
     let memory = Memory::from(zbytes);
     let zmachine = ZMachine::from_memory(memory, &config);
 
-    let expected_file_length = zmachine.memory.file_length();
+    let expected_file_length = zmachine.memory.borrow().file_length();
     if expected_file_length != 0 && expected_file_length > bytes_read as u32 {
       // It's okay for the memory too be too big, but not too small.
       return Err(Error::ZFileTooShort);
@@ -66,8 +68,8 @@ impl ZMachine {
   fn reset_interpreter_flags(&mut self) {
     // The interpreter sets flags in the header to express its capabilities to the game.
     let flag1_mask = !0b01110000;  // no status line, no split screen, fixed-width font
-    let old_val = self.memory.flag1();
-    self.memory.set_flag1(old_val & flag1_mask);
+    let old_val = self.memory.borrow().flag1();
+    self.memory.borrow_mut().set_flag1(old_val & flag1_mask);
   }
 
   pub fn init_windows(&mut self) {
@@ -106,8 +108,8 @@ impl ZMachine {
       match r {
         Err(Error::Quitting) => break,
         Err(Error::Restart) => {
-          self.memory.restore_dynamic_bytes();
-          self.pc = PC::new(self.memory.starting_pc());
+          self.memory.borrow_mut().restore_dynamic_bytes();
+          self.pc = PC::new(self.memory.borrow().starting_pc());
         }
         Err(_) => return r,
         _ => {}
@@ -317,16 +319,14 @@ impl ZMachine {
 
 impl VM for ZMachine {
   type ObjTable = MemoryMappedObjectTable;
-  type ObjStorage = Memory;
   type PropertyTable = MemoryMappedPropertyTable;
-  type PropertyAccess = Memory;
 
   fn read_pc_byte(&mut self) -> u8 {
-    self.pc.next_byte(&self.memory)
+    self.pc.next_byte(&self.memory.borrow())
   }
 
   fn read_pc_word(&mut self) -> u16 {
-    self.pc.next_word(&self.memory)
+    self.pc.next_word(&self.memory.borrow())
   }
 
   fn current_pc(&self) -> usize {
@@ -378,65 +378,47 @@ impl VM for ZMachine {
   }
 
   fn read_global(&self, global_idx: u8) -> Result<u16> {
-    Ok(self.memory.read_global(global_idx))
+    Ok(self.memory.borrow().read_global(global_idx))
   }
 
   fn write_global(&mut self, global_idx: u8, val: u16) -> Result<()> {
-    self.memory.write_global(global_idx, val);
+    self.memory.borrow_mut().write_global(global_idx, val);
     Ok(())
   }
 
   fn read_memory<T>(&self, ptr: T) -> Result<u16>
     where T: Into<RawPtr> {
-    Ok(self.memory.u16_at(ptr))
+    Ok(self.memory.borrow().u16_at(ptr))
   }
 
   fn write_memory<T>(&mut self, ptr: T, val: u16) -> Result<()>
     where T: Into<RawPtr> {
-    self.memory.set_u16_at(val, ptr);
+    self.memory.borrow_mut().set_u16_at(val, ptr);
     Ok(())
   }
 
   fn read_memory_u8<T>(&self, ptr: T) -> Result<u8>
     where T: Into<RawPtr> {
-    Ok(self.memory.u8_at(ptr))
+    Ok(self.memory.borrow().u8_at(ptr))
   }
 
   fn write_memory_u8<T>(&mut self, ptr: T, val: u8) -> Result<()>
     where T: Into<RawPtr> {
-    self.memory.set_u8_at(val, ptr);
+    self.memory.borrow_mut().set_u8_at(val, ptr);
     Ok(())
   }
 
   fn object_table(&self) -> Result<MemoryMappedObjectTable> {
-    let ptr = self.memory.property_table_ptr();
-    Ok(MemoryMappedObjectTable::new(ptr))
-  }
-
-  fn object_storage(&self) -> &Memory {
-    &self.memory
-  }
-
-  fn object_storage_mut(&mut self) -> &mut Memory {
-    &mut self.memory
-  }
-
-  // TODO: is it possible to combine this with object_storage by letting the
-  // compiler know that they are the same type.
-  fn property_storage(&self) -> &Memory {
-    &self.memory
-  }
-
-  fn property_storage_mut(&mut self) -> &mut Memory {
-    &mut self.memory
+    let ptr = self.memory.borrow().property_table_ptr();
+    Ok(MemoryMappedObjectTable::new(ptr, self.memory.clone()))
   }
 
   fn num_dict_entries(&self) -> u16 {
-    Dictionary::new(&self.memory).num_entries()
+    Dictionary::new(&*self.memory.borrow()).num_entries()
   }
 
   fn dict_entry(&self, number: u16) -> BytePtr {
-    Dictionary::new(&self.memory).entry_ptr(number)
+    Dictionary::new(&*self.memory.borrow()).entry_ptr(number)
   }
 
   fn rand(&self, range: u16) -> u16 {
@@ -491,10 +473,10 @@ impl VM for ZMachine {
   }
 
   fn abbrev_addr(&self, abbrev_table: u8, abbrev_index: u8) -> Result<WordPtr> {
-    let abbrev_table_ptr = self.memory.abbrev_table_ptr();
+    let abbrev_table_ptr = self.memory.borrow().abbrev_table_ptr();
     let abbrev_entry_ptr =
       abbrev_table_ptr.inc_by((32 * (abbrev_table as u16 - 1) + abbrev_index as u16) * 2);
-    let abbrev_addr = self.memory.u16_at(abbrev_entry_ptr);
+    let abbrev_addr = self.memory.borrow().u16_at(abbrev_entry_ptr);
     Ok(WordPtr::new(abbrev_addr))
   }
 }

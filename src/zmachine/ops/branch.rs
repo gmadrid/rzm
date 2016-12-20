@@ -141,7 +141,7 @@ pub fn jin_0x06<T>(vm: &mut T, lhs: Operand, rhs: Operand) -> Result<()>
   let parent_number = rhs.value(vm)?;
   let object_table = vm.object_table()?;
   let child_obj = object_table.object_with_number(child_number);
-  let childs_parent_number = child_obj.parent(vm.object_storage());
+  let childs_parent_number = child_obj.parent();
 
   branch_on_condition(vm, parent_number == childs_parent_number)
 }
@@ -153,7 +153,7 @@ pub fn get_child_0x02<T>(vm: &mut T, object_number: Operand, variable: VariableR
   let object_table = vm.object_table()?;
 
   let obj = object_table.object_with_number(object_number);
-  let child_number = obj.child(vm.object_storage());
+  let child_number = obj.child();
 
   vm.write_variable(variable, child_number)?;
   branch_on_condition(vm, child_number != 0)
@@ -169,7 +169,7 @@ pub fn get_sibling_0x01<T>(vm: &mut T,
   let object_table = vm.object_table()?;
 
   let obj = object_table.object_with_number(object_number);
-  let sibling_number = obj.sibling(vm.object_storage());
+  let sibling_number = obj.sibling();
   vm.write_variable(variable, sibling_number)?;
   branch_on_condition(vm, sibling_number != 0)
 }

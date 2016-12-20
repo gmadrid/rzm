@@ -140,7 +140,7 @@ pub fn print_obj_0x0a<T>(vm: &mut T, operand: Operand) -> Result<()>
   // TODO: test print_obj_0x0a
   let object_number = operand.value(vm)?;
   let obj = object_table.object_with_number(object_number);
-  let ptr = obj.property_table(vm.object_storage()).name_ptr(vm.property_storage());
+  let ptr = obj.property_table().name_ptr();
   let str = decode_text(vm, TextSource::Memory(ptr.into(), false))?;
   vm.write_main_window(str.as_str());
   Ok(())
@@ -188,8 +188,8 @@ pub fn show_status_0x0c<T>(vm: &mut T) -> Result<()>
   let object_number = vm.read_global(0)?;
   let object_table = vm.object_table()?;
   let object = object_table.object_with_number(object_number);
-  let property_table = object.property_table(vm.object_storage());
-  let name_ptr = property_table.name_ptr(vm.property_storage());
+  let property_table = object.property_table();
+  let name_ptr = property_table.name_ptr();
   let name_str = decode_at(vm, name_ptr)?;
 
   let first_num = vm.read_global(1)?;

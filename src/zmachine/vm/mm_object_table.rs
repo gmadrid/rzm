@@ -1,110 +1,135 @@
+use std::cell::RefCell;
+use std::rc::Rc;
 use zmachine::vm::memory::Memory;
-use zmachine::vm::object_table::{ZObject, ZObjectTable, ZPropertyAccess, ZPropertyTable};
+use zmachine::vm::object_table::{ZObject, ZObjectTable, ZPropertyStorage, ZPropertyTable};
 use zmachine::vm::ptrs::{BytePtr, RawPtr};
 
-#[derive(Debug)]
 pub struct MemoryMappedObjectTable {
+  memory: Rc<RefCell<Memory>>,
   base_ptr: BytePtr,
 }
 
 impl MemoryMappedObjectTable {
-  pub fn new(ptr: BytePtr) -> MemoryMappedObjectTable {
-    MemoryMappedObjectTable { base_ptr: ptr }
+  pub fn new(ptr: BytePtr, memory: Rc<RefCell<Memory>>) -> MemoryMappedObjectTable {
+    MemoryMappedObjectTable {
+      memory: memory,
+      base_ptr: ptr,
+    }
   }
 }
 
-#[derive(Debug)]
 pub struct MemoryMappedObject {
-  number: u16,
+  memory: Rc<RefCell<Memory>>,
   ptr: BytePtr,
 }
 
-#[derive(Debug)]
 pub struct MemoryMappedPropertyTable {
+  memory: Rc<RefCell<Memory>>,
   ptr: BytePtr,
   text_len: u8,
 }
 
 impl ZObjectTable for MemoryMappedObjectTable {
   type ZObject = MemoryMappedObject;
-  type DataAccess = Memory;
   type PropertyTable = MemoryMappedPropertyTable;
-  type PropertyAccess = Memory;
 
   fn object_with_number(&self, object_number: u16) -> MemoryMappedObject {
     // TODO: check for 0.
     MemoryMappedObject {
-      number: object_number,
       // 31 * 2 to skip the defaults table.
       // Subtract one from object_number because objects are 1-indexed.
+      memory: self.memory.clone(),
       ptr: self.base_ptr.inc_by(31 * 2 + (object_number - 1) * 9),
     }
   }
 
-  fn default_property_value(&self, property_number: u16, access: &Memory) -> u16 {
+  fn default_property_value(&self, property_number: u16) -> u16 {
     // TODO: test this.
     let ptr = self.base_ptr.inc_by(2 * (property_number - 1));
-    access.u16_at(ptr)
+    self.memory.borrow().u16_at(ptr)
   }
 }
 
 impl ZObject for MemoryMappedObject {
-  type DataAccess = Memory;
   type PropertyTable = MemoryMappedPropertyTable;
 
-  fn attributes(&self, memory: &Memory) -> u32 {
-    memory.u32_at(self.ptr)
+  fn attributes(&self) -> u32 {
+    self.memory.borrow().u32_at(self.ptr)
   }
 
-  fn set_attributes(&self, attrs: u32, memory: &mut Memory) {
-    memory.set_u32_at(self.ptr, attrs);
+  fn set_attributes(&self, attrs: u32) {
+    self.memory.borrow_mut().set_u32_at(self.ptr, attrs);
   }
 
-  fn parent(&self, memory: &Memory) -> u16 {
-    memory.u8_at(self.ptr.inc_by(4)) as u16
+  fn parent(&self) -> u16 {
+    self.memory.borrow().u8_at(self.ptr.inc_by(4)) as u16
   }
 
-  fn set_parent(&self, parent: u16, memory: &mut Memory) {
-    memory.set_u8_at(parent as u8, self.ptr.inc_by(4));
+  fn set_parent(&self, parent: u16) {
+    self.memory.borrow_mut().set_u8_at(parent as u8, self.ptr.inc_by(4));
   }
 
-  fn sibling(&self, memory: &Memory) -> u16 {
-    memory.u8_at(self.ptr.inc_by(5)) as u16
+  fn sibling(&self) -> u16 {
+    self.memory.borrow().u8_at(self.ptr.inc_by(5)) as u16
   }
 
-  fn set_sibling(&self, sibling: u16, memory: &mut Memory) {
-    memory.set_u8_at(sibling as u8, self.ptr.inc_by(5))
+  fn set_sibling(&self, sibling: u16) {
+    self.memory.borrow_mut().set_u8_at(sibling as u8, self.ptr.inc_by(5))
   }
 
-  fn child(&self, memory: &Memory) -> u16 {
-    memory.u8_at(self.ptr.inc_by(6)) as u16
+  fn child(&self) -> u16 {
+    self.memory.borrow().u8_at(self.ptr.inc_by(6)) as u16
   }
 
-  fn set_child(&self, child: u16, memory: &mut Memory) {
-    memory.set_u8_at(child as u8, self.ptr.inc_by(6));
+  fn set_child(&self, child: u16) {
+    self.memory.borrow_mut().set_u8_at(child as u8, self.ptr.inc_by(6));
   }
 
-  fn property_table(&self, memory: &Memory) -> MemoryMappedPropertyTable {
-    let ptr = BytePtr::new(memory.u16_at(self.ptr.inc_by(7)));
+  fn property_table(&self) -> MemoryMappedPropertyTable {
+    let ptr = BytePtr::new(self.memory.borrow().u16_at(self.ptr.inc_by(7)));
     MemoryMappedPropertyTable {
       ptr: ptr,
-      text_len: memory.u8_at(ptr),
+      memory: self.memory.clone(),
+      text_len: self.memory.borrow().u8_at(ptr),
     }
   }
 }
 
-impl ZPropertyTable for MemoryMappedPropertyTable {
-  type PropertyAccess = Memory;
+pub struct MemoryWrapper {
+  memory: Rc<RefCell<Memory>>,
+}
 
-  fn name_ptr(&self, _: &Memory) -> BytePtr {
+impl ZPropertyStorage for MemoryWrapper {
+  fn byte_property(&self, ptr: BytePtr) -> u16 {
+    self.memory.borrow().u8_at(ptr) as u16
+  }
+  fn word_property(&self, ptr: BytePtr) -> u16 {
+    self.memory.borrow().u16_at(ptr)
+  }
+  fn set_byte_property(&mut self, value: u8, ptr: BytePtr) {
+    self.memory.borrow_mut().set_u8_at(value, ptr);
+  }
+  fn set_word_property(&mut self, value: u16, ptr: BytePtr) {
+    self.memory.borrow_mut().set_u16_at(value, ptr);
+  }
+}
+
+impl ZPropertyTable for MemoryMappedPropertyTable {
+  type Storage = MemoryWrapper;
+
+  fn storage(&self) -> MemoryWrapper {
+    MemoryWrapper { memory: self.memory.clone() }
+  }
+
+  fn name_ptr(&self) -> BytePtr {
     self.ptr.inc_by(1)
   }
 
-  fn find_property(&self, number: u16, memory: &Memory) -> Option<(u16, BytePtr)> {
+  fn find_property(&self, number: u16) -> Option<(u16, BytePtr)> {
     // * 2 because it's a word count, +1 to skip the size byte as well as the text.
     let mut prop_ptr = self.ptr.inc_by(self.text_len as u16 * 2 + 1);
     loop {
-      let size_byte = memory.u8_at(prop_ptr);
+      let size_byte = self.memory.borrow().u8_at(prop_ptr);
       let prop_num = (size_byte & 0b00011111u8) as u16;
       // Properties are sorted descending, and terminated by a 0 size_byte.
       if prop_num < number {
@@ -121,19 +146,19 @@ impl ZPropertyTable for MemoryMappedPropertyTable {
     }
   }
 
-  fn next_property(&self, number: u16, memory: &Memory) -> u16 {
+  fn next_property(&self, number: u16) -> u16 {
     // * 2 because text_len is a word count, +1 to skip the size byte as well as the text.
     let mut prop_ptr = self.ptr.inc_by(self.text_len as u16 * 2 + 1);
     info!(target: "pctrace", "start ptr: {:?}", prop_ptr);
     // TODO: oh, man, seriously test this.
     if number > 0 {
-      match self.find_property(number, memory) {
+      match self.find_property(number) {
         None => panic!("Unknown property requested: {}", number),
         Some((_, ptr)) => {
           // Subtract one to get back to the size byte.
           let val = usize::from(RawPtr::from(ptr)) - 1usize;
           prop_ptr = BytePtr::new(val as u16);
-          let size_byte = memory.u8_at(prop_ptr);
+          let size_byte = self.memory.borrow().u8_at(prop_ptr);
           let size = size_byte / 32 + 1;
           prop_ptr = prop_ptr.inc_by(size as u16 + 1);
         }
@@ -142,28 +167,10 @@ impl ZPropertyTable for MemoryMappedPropertyTable {
 
     // Now, prop_ptr should point to the next property.
     info!(target: "pctrace", "end ptr: {:?}", prop_ptr);
-    let size_byte = memory.u8_at(prop_ptr);
+    let size_byte = self.memory.borrow().u8_at(prop_ptr);
     let prop_num = (size_byte & 0b00011111u8) as u16;
     prop_num
 
-  }
-}
-
-impl ZPropertyAccess for Memory {
-  // TODO: test ZPropertyAccess for Memory
-  fn byte_property(&self, ptr: BytePtr) -> u16 {
-    self.u8_at(ptr) as u16
-  }
-
-  fn word_property(&self, ptr: BytePtr) -> u16 {
-    self.u16_at(ptr)
-  }
-
-  fn set_byte_property(&mut self, value: u8, ptr: BytePtr) {
-    self.set_u8_at(value, ptr);
-  }
-  fn set_word_property(&mut self, value: u16, ptr: BytePtr) {
-    self.set_u16_at(value, ptr);
   }
 }
 

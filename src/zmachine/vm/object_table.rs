@@ -11,20 +11,15 @@ use zmachine::vm::BytePtr;
 // So, we will implement and test the memory-mapped versions, but we will use
 // a struct-based implementation to test the higher-level functions.
 pub trait ZObjectTable {
-  type ZObject: ZObject<DataAccess = Self::DataAccess, PropertyTable = Self::PropertyTable>;
-  type DataAccess;
-  type PropertyTable: ZPropertyTable<PropertyAccess = Self::PropertyAccess>;
-  type PropertyAccess: ZPropertyAccess;
+  type ZObject: ZObject<PropertyTable = Self::PropertyTable>;
+  type PropertyTable: ZPropertyTable;
 
   fn object_with_number(&self, object_number: u16) -> Self::ZObject;
-  fn default_property_value(&self, property_number: u16, access: &Self::DataAccess) -> u16;
+  fn default_property_value(&self, property_number: u16) -> u16;
 
-  fn remove_object_from_parent(&self,
-                               object_number: u16,
-                               access: &mut Self::DataAccess)
-                               -> Result<()> {
+  fn remove_object_from_parent(&self, object_number: u16) -> Result<()> {
     let obj = self.object_with_number(object_number);
-    let parent_number = obj.parent(access);
+    let parent_number = obj.parent();
 
     if parent_number == 0 {
       // object has no parent, so just return.
@@ -32,20 +27,20 @@ pub trait ZObjectTable {
     }
 
     let parent_obj = self.object_with_number(parent_number);
-    let mut current_number = parent_obj.child(access);
+    let mut current_number = parent_obj.child();
     if current_number == object_number {
       // object is first child
-      let new_child = obj.sibling(access);
-      parent_obj.set_child(new_child, access);
+      let new_child = obj.sibling();
+      parent_obj.set_child(new_child);
     } else {
       // object should be in sibling list
       loop {
         assert!(current_number != 0);
         let current_sibling = self.object_with_number(current_number);
-        let next_sibling = current_sibling.sibling(access);
+        let next_sibling = current_sibling.sibling();
         if next_sibling == object_number {
-          let new_next_sibling = obj.sibling(access);
-          current_sibling.set_sibling(new_next_sibling, access);
+          let new_next_sibling = obj.sibling();
+          current_sibling.set_sibling(new_next_sibling);
           break;
         } else {
           current_number = next_sibling;
@@ -53,62 +48,53 @@ pub trait ZObjectTable {
       }
     }
 
-    obj.set_sibling(0, access);
-    obj.set_parent(0, access);
+    obj.set_sibling(0);
+    obj.set_parent(0);
     return Ok(());
   }
 
-  fn add_object_to_parent(&self,
-                          object_number: u16,
-                          parent_number: u16,
-                          access: &mut Self::DataAccess)
-                          -> Result<()> {
+  fn add_object_to_parent(&self, object_number: u16, parent_number: u16) -> Result<()> {
     let parent_obj = self.object_with_number(parent_number);
     let obj = self.object_with_number(object_number);
 
-    let new_sibling = parent_obj.child(access);
-    obj.set_parent(parent_number, access);
-    obj.set_sibling(new_sibling, access);
-    parent_obj.set_child(object_number, access);
+    let new_sibling = parent_obj.child();
+    obj.set_parent(parent_number);
+    obj.set_sibling(new_sibling);
+    parent_obj.set_child(object_number);
     Ok(())
   }
 
-  fn insert_obj(&self,
-                object_number: u16,
-                parent_number: u16,
-                access: &mut Self::DataAccess)
-                -> Result<()> {
+  fn insert_obj(&self, object_number: u16, parent_number: u16) -> Result<()> {
     if object_number == 0 {
       // null object - nothing to do
       return Ok(());
     }
 
-    self.remove_object_from_parent(object_number, access)?;
+    self.remove_object_from_parent(object_number)?;
 
     if parent_number == 0 {
       return Ok(());
     }
 
-    self.add_object_to_parent(object_number, parent_number, access)
+    self.add_object_to_parent(object_number, parent_number)
   }
 }
 
 pub trait ZObject {
-  type DataAccess;
   type PropertyTable;
 
-  fn attributes(&self, helper: &Self::DataAccess) -> u32;
-  fn set_attributes(&self, attrs: u32, helper: &mut Self::DataAccess);
-  fn parent(&self, helper: &Self::DataAccess) -> u16;
-  fn set_parent(&self, parent: u16, helper: &mut Self::DataAccess);
-  fn sibling(&self, helper: &Self::DataAccess) -> u16;
-  fn set_sibling(&self, sibling: u16, helper: &mut Self::DataAccess);
-  fn child(&self, helper: &Self::DataAccess) -> u16;
-  fn set_child(&self, child: u16, helper: &mut Self::DataAccess);
-  fn property_table(&self, helper: &Self::DataAccess) -> Self::PropertyTable;
+  fn attributes(&self) -> u32;
+  fn set_attributes(&self, attrs: u32);
+  fn parent(&self) -> u16;
+  fn set_parent(&self, parent: u16);
+  fn sibling(&self) -> u16;
+  fn set_sibling(&self, sibling: u16);
+  fn child(&self) -> u16;
+  fn set_child(&self, child: u16);
+  fn property_table(&self) -> Self::PropertyTable;
 }
 
-pub trait ZPropertyAccess {
+pub trait ZPropertyStorage {
   fn byte_property(&self, ptr: BytePtr) -> u16;
   fn word_property(&self, ptr: BytePtr) -> u16;
   fn set_byte_property(&mut self, value: u8, ptr: BytePtr);
@@ -116,26 +102,27 @@ pub trait ZPropertyAccess {
 }
 
 pub trait ZPropertyTable {
-  type PropertyAccess: ZPropertyAccess;
+  type Storage: ZPropertyStorage;
 
-  fn name_ptr(&self, helper: &Self::PropertyAccess) -> BytePtr;
+  fn storage(&self) -> Self::Storage;
+
+  fn name_ptr(&self) -> BytePtr;
   // property numbers are 1-31. Returns the size and ptr to the property.
-  fn find_property(&self, number: u16, helper: &Self::PropertyAccess) -> Option<(u16, BytePtr)>;
+  fn find_property(&self, number: u16) -> Option<(u16, BytePtr)>;
 
   // given a property number, return the next number of the property in the table.
   // Special cases:
   //   0: return the first property,
   //   non-existing property: panic! (according to spec)
   //   no next property: return 0
-  fn next_property(&self, number: u16, helper: &Self::PropertyAccess) -> u16;
+  fn next_property(&self, number: u16) -> u16;
 
   // TODO: test set_property
-  fn set_property(&self, number: u16, value: u16, helper: &mut Self::PropertyAccess)
-    where Self::PropertyAccess: ZPropertyAccess {
-    if let Some((size, ptr)) = self.find_property(number, helper) {
+  fn set_property(&self, number: u16, value: u16) {
+    if let Some((size, ptr)) = self.find_property(number) {
       match size {
-        1 => helper.set_byte_property(value as u8, ptr),
-        2 => helper.set_word_property(value, ptr),
+        1 => self.storage().set_byte_property(value as u8, ptr),
+        2 => self.storage().set_word_property(value, ptr),
         _ => {
           panic!("Invalid size, {}, for property {}.", size, number);
         }
