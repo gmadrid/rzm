@@ -21,6 +21,7 @@ pub struct ZMachine {
   memory: Rc<RefCell<Memory>>,
   pc: PC,
   stack: Stack,
+  dict: Dictionary,
 
   status_window: Option<WINDOW>,
   main_window: Option<WINDOW>,
@@ -34,9 +35,10 @@ impl ZMachine {
     let memory_rc = Rc::new(RefCell::new(memory));
     let pc = PC::new(memory_rc.borrow().starting_pc(), memory_rc.clone());
     let mut zmachine = ZMachine {
-      memory: memory_rc,
+      memory: memory_rc.clone(),
       pc: pc,
       stack: Stack::new(config.stack_size().unwrap()),
+      dict: Dictionary::new(&memory_rc.borrow()),
       status_window: None,
       main_window: None,
       num_rows: 0,
@@ -415,11 +417,11 @@ impl VM for ZMachine {
   }
 
   fn num_dict_entries(&self) -> u16 {
-    Dictionary::new(&*self.memory.borrow()).num_entries()
+    self.dict.num_entries()
   }
 
   fn dict_entry(&self, number: u16) -> BytePtr {
-    Dictionary::new(&*self.memory.borrow()).entry_ptr(number)
+    self.dict.entry_ptr(number)
   }
 
   fn rand(&self, range: u16) -> u16 {
