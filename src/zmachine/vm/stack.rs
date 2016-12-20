@@ -48,6 +48,21 @@ impl Stack {
     stack
   }
 
+  fn frame_ptrs(&self) -> Vec<usize> {
+    let mut ptrs = Vec::<usize>::new();
+    let mut curr_fp = self.fp;
+    loop {
+      ptrs.push(curr_fp);
+      let next_fp = BigEndian::read_u16(&self.stack[self.fp..]) as usize;
+      if next_fp == 0 {
+        break;
+      }
+      curr_fp = next_fp;
+    }
+    ptrs.reverse();
+    ptrs
+  }
+
   // Allocate a new stack frame, adding it to the call stack.
   // Also allocate space for local variables, setting them all to zero.
   pub fn new_frame(&mut self, pc: usize, num_locals: u8, result_location: VariableRef) {
