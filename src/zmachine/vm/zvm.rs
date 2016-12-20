@@ -31,9 +31,10 @@ pub struct ZMachine {
 impl ZMachine {
   pub fn from_memory<T>(memory: Memory, config: &T) -> ZMachine
     where T: ZConfig {
-    let pc = PC::new(memory.starting_pc());
+    let memory_rc = Rc::new(RefCell::new(memory));
+    let pc = PC::new(memory_rc.borrow().starting_pc(), memory_rc.clone());
     let mut zmachine = ZMachine {
-      memory: Rc::new(RefCell::new(memory)),
+      memory: memory_rc,
       pc: pc,
       stack: Stack::new(config.stack_size().unwrap()),
       status_window: None,
@@ -109,7 +110,7 @@ impl ZMachine {
         Err(Error::Quitting) => break,
         Err(Error::Restart) => {
           self.memory.borrow_mut().restore_dynamic_bytes();
-          self.pc = PC::new(self.memory.borrow().starting_pc());
+          self.pc.set_pc(self.memory.borrow().starting_pc());
         }
         Err(_) => return r,
         _ => {}
@@ -322,11 +323,11 @@ impl VM for ZMachine {
   type PropertyTable = MemoryMappedPropertyTable;
 
   fn read_pc_byte(&mut self) -> u8 {
-    self.pc.next_byte(&self.memory.borrow())
+    self.pc.next_byte()
   }
 
   fn read_pc_word(&mut self) -> u16 {
-    self.pc.next_word(&self.memory.borrow())
+    self.pc.next_word()
   }
 
   fn current_pc(&self) -> usize {

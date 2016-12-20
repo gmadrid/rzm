@@ -1,14 +1,20 @@
+use std::cell::RefCell;
+use std::rc::Rc;
 use super::memory::Memory;
 use super::ptrs::RawPtr;
 
 pub struct PC {
   pc: RawPtr,
+  memory: Rc<RefCell<Memory>>,
 }
 
 impl PC {
-  pub fn new<P>(p: P) -> PC
+  pub fn new<P>(p: P, memory: Rc<RefCell<Memory>>) -> PC
     where P: Into<RawPtr> {
-    PC { pc: p.into() }
+    PC {
+      pc: p.into(),
+      memory: memory,
+    }
   }
 
   pub fn pc(&self) -> RawPtr {
@@ -20,14 +26,14 @@ impl PC {
     self.pc = p.into();
   }
 
-  pub fn next_byte(&mut self, memory: &Memory) -> u8 {
-    let result = memory.u8_at(self.pc);
+  pub fn next_byte(&mut self) -> u8 {
+    let result = self.memory.borrow().u8_at(self.pc);
     self.pc.inc_by(1usize);
     result
   }
 
-  pub fn next_word(&mut self, memory: &Memory) -> u16 {
-    let result = memory.u16_at(self.pc);
+  pub fn next_word(&mut self) -> u16 {
+    let result = self.memory.borrow().u16_at(self.pc);
     self.pc.inc_by(2usize);
     result
   }
