@@ -75,12 +75,36 @@ impl Quetzal {
     Ok(())
   }
 
+  fn write_stack(&mut self, stack: &Stack) -> Result<()> {
+    let chunk = Chunk::start(new_id("Stks"), &mut self.bytes)?;
+    stack.map_frames(|old_pc, flags, retvar, locals, eval_stack| {
+        let return_and_flags = (old_pc << 8) + flags as u32;
+        &self.bytes.write_u32::<BigEndian>(return_and_flags);
+        &self.bytes.write_u8(retvar);
+        &self.bytes.write_u8(0);  // TODO: num arguments passed.
+        &self.bytes.write_u16::<BigEndian>(eval_stack.len() as u16);
+
+        for local in locals {
+          &self.bytes.write_u16::<BigEndian>(local);
+        }
+
+        for eval_word in eval_stack {
+          &self.bytes.write_u16::<BigEndian>(eval_word);
+        }
+
+        Ok(())
+      })?;
+    chunk.end(&mut self.bytes)?;
+    Ok(())
+  }
+
   pub fn write(memory: &Memory, stack: &Stack, pc: &PC) -> Result<Vec<u8>> {
     let mut q = Quetzal { bytes: Vec::new() };
     let chunk = Chunk::start(new_id(&"FORM"), &mut q.bytes)?;
     q.bytes.write_u32::<BigEndian>(new_id(&"IFZS"))?;
     q.write_header(memory, pc)?;
     q.write_umem(memory)?;
+    q.write_stack(stack)?;
     chunk.end(&mut q.bytes)?;
 
     Ok(q.bytes)
