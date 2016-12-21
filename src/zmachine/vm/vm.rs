@@ -91,7 +91,7 @@ pub trait VM: Sized {
   fn num_dict_entries(&self) -> u16;
   fn dict_entry(&self, number: u16) -> BytePtr;
 
-  fn rand(&self, range: u16) -> u16;
+  fn rand(&mut self, range: u16) -> u16;
   fn write_status_line(&self, &str);
   fn screen_width(&self) -> u16;
   fn write_main_window_char(&self, u16);
