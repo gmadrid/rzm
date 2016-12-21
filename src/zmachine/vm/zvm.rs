@@ -2,7 +2,8 @@ use ncurses::{A_REVERSE, WINDOW, endwin, getmaxyx, getyx, initscr, mvwprintw, ne
               refresh, scrollok, stdscr, waddch, wattron, wmove, wprintw, wrefresh};
 use result::{Error, Result};
 use std::cell::RefCell;
-use std::io::Read;
+use std::fs::File;
+use std::io::{Read, Write};
 use std::rc::Rc;
 use zmachine::ops;
 use zmachine::ops::Operand;
@@ -11,6 +12,7 @@ use zmachine::vm::dictionary::Dictionary;
 use zmachine::vm::memory::Memory;
 use zmachine::vm::mm_object_table::{MemoryMappedObjectTable, MemoryMappedPropertyTable};
 use zmachine::vm::pc::PC;
+use zmachine::vm::quetzal::Quetzal;
 use zmachine::vm::stack::Stack;
 use zmachine::vm::zreadline::ZReadline;
 use zmachine::zconfig::{ZConfig, ZDefaults};
@@ -207,6 +209,7 @@ impl ZMachine {
       0x02 => ops::zeroops::print_0x02(self),
       0x03 => ops::zeroops::print_ret_0x03(self),
       0x04 => ops::zeroops::nop_0x04(self),
+      0x05 => ops::zeroops::save_0x05(self),
       0x07 => ops::zeroops::restart_0x07(self),
       0x08 => ops::zeroops::ret_popped_0x08(self),
       0x09 => ops::zeroops::pop_0x09(self),
@@ -465,7 +468,7 @@ impl VM for ZMachine {
   fn read_line(&self) -> Result<String> {
     self.main_window
       .map(|w| {
-        let rl = ZReadline::new(w, 40);
+        let rl = ZReadline::new(w);
         Ok(rl.readline())
       })
       .unwrap()
@@ -473,6 +476,14 @@ impl VM for ZMachine {
 
   fn screen_width(&self) -> u16 {
     self.num_cols as u16
+  }
+
+  fn save(&self) -> Result<()> {
+    let bytes = Quetzal::write(&self.memory, &self.stack, &self.pc)?;
+    // TODO: make this sane.
+    let mut f = File::create("foobar.zinf").unwrap();
+    f.write_all(&bytes).unwrap();
+    Ok(())
   }
 
   fn abbrev_addr(&self, abbrev_table: u8, abbrev_index: u8) -> Result<WordPtr> {

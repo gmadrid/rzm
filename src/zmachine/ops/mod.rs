@@ -42,13 +42,14 @@ pub fn restart_0x07<T>(_: &mut T) -> Result<()>
 }
 
 pub mod zeroops {
-  // 2do: save_0x05, restore_0x06, show_status_0x0c, verify_0x0d
+  // 2do: restore_0x06, show_status_0x0c, verify_0x0d
 
   pub use super::call::nop_0x04;
   pub use super::call::quit_0x0a;
   pub use super::call::ret_popped_0x08;
   pub use super::call::rfalse_0x01;
   pub use super::call::rtrue_0x00;
+  pub use super::call::save_0x05;
   pub use super::restart_0x07;
   pub use super::stackops::pop_0x09;
   pub use super::text::new_line_0x0b;

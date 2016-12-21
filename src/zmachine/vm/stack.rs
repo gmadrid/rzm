@@ -1,4 +1,5 @@
 use byteorder::{BigEndian, ByteOrder};
+use result::Result;
 use std::u16;
 use super::vm::VariableRef;
 
@@ -46,6 +47,66 @@ impl Stack {
     stack.push_u8(0);
     stack.base_sp = stack.sp;
     stack
+  }
+
+  pub fn map_frames<T>(&self, mut f: T) -> Result<()>
+    where T: FnMut(u32, u8, u8, Vec<u16>, Vec<u16>) -> Result<()> {
+    for (start_of_frame, end_of_frame) in self.frame_ptrs() {
+      let return_pc = BigEndian::read_u32(&self.stack[start_of_frame + PC_OFFSET..]);
+
+      let p_flag = 0u8;  // No Call_N implemented for v3.
+      let num_locals = self.stack[start_of_frame + NUM_LOCALS_OFFSET];
+      let flags = (p_flag << 4) + (num_locals & 0x0f);
+
+      let encoded_result_variable = self.stack[start_of_frame + RESULT_LOCATION_OFFSET];
+
+      let start_of_eval_stack = start_of_frame + FIRST_LOCAL_OFFSET + 2 * num_locals as usize;
+      let eval_stack_words = ((end_of_frame - start_of_eval_stack) / 2) as u16;
+
+      // TODO: save/write num_args_passed
+
+      let mut locals = Vec::<u16>::new();
+      let local_offset = start_of_frame + FIRST_LOCAL_OFFSET;
+      for idx in 0..num_locals {
+        let local = BigEndian::read_u16(&self.stack[local_offset + 2 * idx as usize..]);
+        locals.push(local);
+      }
+
+      let mut stack_words = Vec::<u16>::new();
+      for idx in 0..eval_stack_words {
+        let stack_word = BigEndian::read_u16(&self.stack[start_of_eval_stack + 2 * idx as usize..]);
+        stack_words.push(stack_word);
+      }
+
+      f(return_pc,
+        flags,
+        encoded_result_variable,
+        locals,
+        stack_words)?;
+    }
+    Ok(())
+  }
+
+  // Return a vector of (start_of_frame, end_of_frame) pairs.
+  // start_of_frame is the offset of the beginning of the frame as described
+  // above. end_of_frame is the offset of the first byte in the stack *after*
+  // the frame.
+  fn frame_ptrs(&self) -> Vec<(usize, usize)> {
+    let mut ptrs = Vec::<(usize, usize)>::new();
+    let mut start_of_frame = self.fp;
+    let mut end_of_frame = self.sp;
+
+    loop {
+      ptrs.push((start_of_frame, end_of_frame));
+      let next_fp = BigEndian::read_u16(&self.stack[start_of_frame..]) as usize;
+      if start_of_frame == 0 {
+        break;
+      }
+      end_of_frame = start_of_frame;
+      start_of_frame = next_fp;
+    }
+    ptrs.reverse();
+    ptrs
   }
 
   // Allocate a new stack frame, adding it to the call stack.

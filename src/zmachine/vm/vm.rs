@@ -100,6 +100,8 @@ pub trait VM: Sized {
   /// Return the address as a WordPtr of the specified abbrev.
   fn abbrev_addr(&self, abbrev_table: u8, abbrev_index: u8) -> Result<WordPtr>;
 
+  fn save(&self) -> Result<()>;
+
   /// Read the value from the specified variable.
   fn read_variable(&mut self, variable: VariableRef) -> Result<u16> {
     match variable {

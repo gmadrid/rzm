@@ -17,7 +17,7 @@ const NL: i32 = '\n' as i32;
 const BS: i32 = 0x7fi32;
 
 impl ZReadline {
-  pub fn new(window: WINDOW, max_length: usize) -> ZReadline {
+  pub fn new(window: WINDOW) -> ZReadline {
     let mut startx = 0i32;
     let mut starty = 0i32;
     getyx(window, &mut starty, &mut startx);
