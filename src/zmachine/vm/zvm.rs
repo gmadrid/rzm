@@ -1,5 +1,6 @@
 use ncurses::{A_REVERSE, WINDOW, endwin, getmaxyx, getyx, initscr, mvwprintw, newwin, noecho, raw,
               refresh, scrollok, stdscr, waddch, wattron, wmove, wprintw, wrefresh};
+use rand::{Rng, SeedableRng, StdRng};
 use result::{Error, Result};
 use std::cell::RefCell;
 use std::fs::File;
@@ -29,6 +30,8 @@ pub struct ZMachine {
   main_window: Option<WINDOW>,
   num_rows: i32,
   num_cols: i32,
+
+  rng: StdRng,
 }
 
 impl ZMachine {
@@ -36,6 +39,7 @@ impl ZMachine {
     where T: ZConfig {
     let memory_rc = Rc::new(RefCell::new(memory));
     let pc = PC::new(memory_rc.borrow().starting_pc(), memory_rc.clone());
+    let rng = StdRng::new().unwrap();
     let mut zmachine = ZMachine {
       memory: memory_rc.clone(),
       pc: pc,
@@ -45,6 +49,7 @@ impl ZMachine {
       main_window: None,
       num_rows: 0,
       num_cols: 0,
+      rng: rng,
     };
     zmachine.reset_interpreter_flags();
     zmachine
@@ -427,13 +432,21 @@ impl VM for ZMachine {
     self.dict.entry_ptr(number)
   }
 
-  fn rand(&self, range: u16) -> u16 {
-    if range <= 0 {
-      unimplemented!();
+  fn rand(&mut self, range: u16) -> u16 {
+    let range = range as i16;
+    if range < 0 {
+      // Seed with -range.
+      let new_seed = [-range as usize];
+      self.rng.reseed(&new_seed);
+      0
+    } else if range == 0 {
+      // Seed as randomly as possible.
+      self.rng = StdRng::new().unwrap();
+      0
+    } else {
+      // Return a random number in 1..range.
+      (self.rng.next_u32() as u16) % range as u16 + 1
     }
-
-    // TODO: write real randomness.
-    3235 % range
   }
 
   fn write_status_line(&self, str: &str) {
