@@ -57,7 +57,6 @@ pub fn loadw_0x0f<T>(vm: &mut T,
   let word_index_val = word_index_op.value(vm)?;
 
   let result = vm.read_memory(BytePtr::new(array_val).inc_by(word_index_val * 2))?;
-  println!("GEORGE");
 
   vm.write_variable(result_ref, result)?;
   Ok(())
