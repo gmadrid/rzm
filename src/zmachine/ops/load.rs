@@ -59,6 +59,7 @@ pub fn loadw_0x0f<T>(vm: &mut T,
   let result = vm.read_memory(BytePtr::new(array_val).inc_by(word_index_val * 2))?;
 
   vm.write_variable(result_ref, result)?;
+  println!("MADRID");
   Ok(())
 }
 
