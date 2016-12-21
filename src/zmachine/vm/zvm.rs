@@ -479,7 +479,7 @@ impl VM for ZMachine {
   }
 
   fn save(&self) -> Result<()> {
-    let bytes = Quetzal::write(&self.memory, &self.stack, &self.pc)?;
+    let bytes = Quetzal::write(&self.memory.borrow(), &self.stack, &self.pc)?;
     // TODO: make this sane.
     let mut f = File::create("foobar.zinf").unwrap();
     f.write_all(&bytes).unwrap();
