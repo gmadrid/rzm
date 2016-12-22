@@ -37,7 +37,7 @@ fn parse_from<'a, I, T>(itr: I) -> Result<ArgMatches<'a>>
         T: Into<OsString> {
   App::new("rzm")
     // App configuration
-    .about("Collection of image tools in one command")
+    .about("Rust implementation of the ZMachine.")
     .author(crate_authors!())
     .version(crate_version!())
     .setting(AppSettings::StrictUtf8)
