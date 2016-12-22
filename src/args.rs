@@ -8,6 +8,7 @@ use std::path::Path;
 const ZFILE: &'static str = "ZFILE";
 const STACK_SIZE: &'static str = "stacksize";
 const DEFAULT_STACK_SIZE: &'static str = "61440";
+const START_PC: &'static str = "startpc";
 
 pub struct Args<'a> {
   matches: ArgMatches<'a>,
@@ -21,6 +22,17 @@ impl<'a> Args<'a> {
 
   pub fn zfile(&self) -> Cow<Path> {
     Cow::Borrowed(Path::new(self.matches.value_of(ZFILE).unwrap()))
+  }
+
+  pub fn start_pc(&self) -> Result<Option<usize>> {
+    if let Some(s) = self.matches.value_of(START_PC) {
+      match s.parse::<usize>() {
+        Ok(val) => Ok(Some(val)),
+        Err(e) => Err(Error::ParseIntError(START_PC, e)),
+      }
+    } else {
+      Ok(None)
+    }
   }
 
   // pub fn stacksize(&self) -> Result<u16> {
@@ -57,6 +69,12 @@ fn parse_from<'a, I, T>(itr: I) -> Result<ArgMatches<'a>>
       .number_of_values(1)
       .help("Size of the ZMachine stack (in bytes)")
       .default_value(DEFAULT_STACK_SIZE))
+    .arg(Arg::with_name(START_PC)
+      .long(START_PC)
+      .takes_value(true)
+      .multiple(false)
+      .number_of_values(1)
+      .help("Byte address to execute first. Mostly for debugging."))
 
     // Process it.
     .get_matches_from_safe(itr)

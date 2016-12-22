@@ -109,7 +109,8 @@ impl ZMachine {
     endwin();
   }
 
-  pub fn run(&mut self) -> Result<()> {
+  pub fn run(&mut self, start_pc: Option<usize>) -> Result<()> {
+    start_pc.map(|new_pc| self.pc.set_raw_pc(new_pc));
     self.init_windows();
 
     // TODO: check version number

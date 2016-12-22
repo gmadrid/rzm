@@ -70,15 +70,20 @@ fn decode_text<T>(vm: &mut T, src: TextSource) -> Result<String>
         match state {
           State::Normal => {
             if row == ROW3 && *ch == 6 {
-              state = State::FirstHalfZChar
+              state = State::FirstHalfZChar;
+              row = ROW1;
             } else {
               match *ch {
-                0x00u16 => s.push(' '),
+                0x00u16 => {
+                  s.push(' ');
+                  row = ROW1;
+                }
                 0x01u16...0x03u16 => {
                   if in_abbrev {
                     panic!("Attempted to read abbrev in abbrev");
                   }
                   abbrev_set = Some(*ch);
+                  row = ROW1;
                 }
                 0x04u16 => row = ROW2,
                 0x05u16 => row = ROW3,

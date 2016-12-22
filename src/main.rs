@@ -14,7 +14,7 @@ fn real_main() -> Result<()> {
   let path = args.zfile();
   let f = File::open(path)?;
   let mut zmachine = ZMachine::from_reader(f)?;
-  zmachine.run()?;
+  zmachine.run(args.start_pc()?)?;
   Ok(())
 }
 

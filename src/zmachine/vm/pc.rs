@@ -26,6 +26,10 @@ impl PC {
     self.pc = p.into();
   }
 
+  pub fn set_raw_pc(&mut self, p: usize) {
+    self.pc = RawPtr::new(p);
+  }
+
   pub fn next_byte(&mut self) -> u8 {
     let result = self.memory.borrow().u8_at(self.pc);
     self.pc.inc_by(1usize);
